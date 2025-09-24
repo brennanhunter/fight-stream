@@ -10,11 +10,6 @@ export default function Home() {
   return (
     <>
       <HeroBanner />
-      <StreamPlayer />
-      <TaleOfTheTape />
-      <FightCard />
-      <Undercard />
-      <PricingTiers />
       <EventDetails />
     </>
   );

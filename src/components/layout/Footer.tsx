@@ -6,7 +6,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1">
             <h3 className="text-2xl font-bold text-white mb-4">
-              FIGHT<span className="text-accent">STREAM</span>
+              FIGHTSTREAM<span className="text-accent">.COM</span>
             </h3>
             <p className="text-gray-300 text-sm mb-4">
               Premium boxing pay-per-view streaming platform delivering the ultimate fight experience in 4K Ultra HD.
@@ -71,7 +71,7 @@ export default function Footer() {
         <div className="border-t border-gray-700 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2025 FightStream. All rights reserved.
+              © 2025 FightStream.com. All rights reserved.
             </p>
             <div className="flex items-center space-x-6 mt-4 md:mt-0">
               <span className="text-gray-400 text-sm">Secure payments by</span>

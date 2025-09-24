@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fight Stream | Premium Boxing Pay-Per-View",
+  title: "FightStream.com | Premium Boxing Pay-Per-View",
   description: "Watch the biggest boxing matches live in 4K Ultra HD. Premium pay-per-view boxing events with real-time stats, multiple camera angles, and expert commentary.",
   keywords: "boxing, pay-per-view, live stream, PPV, championship, fight night",
   openGraph: {
-    title: "Fight Stream | Premium Boxing Pay-Per-View",
+    title: "FightStream.com | Premium Boxing Pay-Per-View",
     description: "Watch the biggest boxing matches live in 4K Ultra HD",
     type: "website",
   },

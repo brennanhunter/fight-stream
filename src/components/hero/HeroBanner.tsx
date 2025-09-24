@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import StreamPlayer from '@/components/player/StreamPlayer';
 
 export default function HeroBanner() {
   const [timeLeft, setTimeLeft] = useState({
@@ -35,7 +36,7 @@ export default function HeroBanner() {
   }, []);
 
   return (
-    <div className="relative bg-gradient-to-r from-secondary via-secondary/90 to-primary/20 min-h-screen flex items-center justify-center overflow-hidden pt-16">
+    <div className="relative bg-gradient-to-r from-secondary via-secondary/90 to-primary/20 py-16 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-30">
         <div className="w-full h-full bg-repeat bg-[length:60px_60px]" 
@@ -46,19 +47,18 @@ export default function HeroBanner() {
         {/* Main Event Title */}
         <div className="mb-8">
           <h1 className="text-6xl md:text-8xl font-bold text-white mb-4 tracking-tight">
-            FIGHT
-            <span className="block text-accent">NIGHT</span>
+            FIGHTSTREAM
+            <span className="block text-accent">.COM</span>
           </h1>
-          <div className="w-32 h-1 bg-accent mx-auto mb-6"></div>
+          {/* <div className="w-32 h-1 bg-accent mx-auto mb-6"></div>
           <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
             Championship Boxing • Live Pay-Per-View Event
-          </p>
+          </p> */}
         </div>
 
         {/* Fighter Matchup */}
-        <div className="mb-12 bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-accent/20">
+        {/* <div className="mb-12 bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-accent/20">
           <div className="grid md:grid-cols-3 gap-8 items-center">
-            {/* Fighter 1 */}
             <div className="text-center">
               <div className="w-32 h-32 bg-gradient-to-br from-primary to-primary/70 rounded-full mx-auto mb-4 flex items-center justify-center">
                 <span className="text-4xl font-bold text-white">JD</span>
@@ -68,14 +68,12 @@ export default function HeroBanner() {
               <p className="text-gray-300">Heavyweight Division</p>
             </div>
 
-            {/* VS */}
             <div className="text-center">
               <div className="text-6xl font-bold text-accent mb-4">VS</div>
               <p className="text-white text-lg">December 31, 2025</p>
               <p className="text-gray-300">8:00 PM EST</p>
             </div>
 
-            {/* Fighter 2 */}
             <div className="text-center">
               <div className="w-32 h-32 bg-gradient-to-br from-accent to-accent/70 rounded-full mx-auto mb-4 flex items-center justify-center">
                 <span className="text-4xl font-bold text-black">MR</span>
@@ -85,10 +83,10 @@ export default function HeroBanner() {
               <p className="text-gray-300">Heavyweight Division</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Countdown Timer */}
-        <div className="mb-12">
+        {/* <div className="mb-12">
           <h2 className="text-3xl font-bold text-white mb-6">Fight Starts In:</h2>
           <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto">
             {[
@@ -107,10 +105,10 @@ export default function HeroBanner() {
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
           <button className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
             Buy PPV Access - $19.99
           </button>
@@ -119,13 +117,18 @@ export default function HeroBanner() {
           </button>
         </div>
 
+        {/* Stream Player */}
+        <div className="w-full mx-auto">
+          <StreamPlayer />
+        </div>
+
         {/* Live Badge */}
-        <div className="mt-8">
+        {/* <div className="mt-8">
           <span className="inline-flex items-center px-4 py-2 rounded-full bg-primary/20 border border-primary text-primary font-semibold">
             <span className="w-2 h-2 bg-primary rounded-full mr-2 animate-pulse"></span>
             Live December 31st
           </span>
-        </div>
+        </div> */}
       </div>
     </div>
   );

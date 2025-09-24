@@ -7,7 +7,7 @@ export default function EventDetails() {
             Event <span className="text-accent">Details</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Everything you need to know about fight night
+            Everything you need to know about the event
           </p>
         </div>
 

@@ -13,7 +13,7 @@ export default function Header() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <h1 className="text-2xl font-bold text-white">
-                FIGHT<span className="text-accent">STREAM</span>
+                FIGHTSTREAM<span className="text-accent">.COM</span>
               </h1>
             </div>
           </div>
