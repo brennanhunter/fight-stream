@@ -12,9 +12,11 @@ export default function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-white">
-                FIGHTSTREAM<span className="text-accent">.COM</span>
-              </h1>
+              <img 
+                src="/logos/thin-logo.png" 
+                alt="FightStream Logo" 
+                className="h-8 w-auto"
+              />
             </div>
           </div>
 
