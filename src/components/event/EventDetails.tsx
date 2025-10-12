@@ -7,7 +7,7 @@ export default function EventDetails() {
             Event <span className="text-accent">Details</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Everything you need to know about the event
+            Havoc at the Hilton - November 8, 2025
           </p>
         </div>
 
@@ -24,15 +24,15 @@ export default function EventDetails() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-300">Date:</span>
-                  <span className="text-white font-semibold">December 31, 2025</span>
+                  <span className="text-white font-semibold">November 8, 2025</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Time:</span>
-                  <span className="text-white font-semibold">8:00 PM EST</span>
+                  <span className="text-gray-300">Doors Open:</span>
+                  <span className="text-white font-semibold">5:30 PM</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Duration:</span>
-                  <span className="text-white font-semibold">~4 hours</span>
+                  <span className="text-gray-300">First Bell:</span>
+                  <span className="text-white font-semibold">6:00 PM</span>
                 </div>
               </div>
             </div>
@@ -46,16 +46,16 @@ export default function EventDetails() {
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Arena:</span>
-                  <span className="text-white font-semibold">MGM Grand Garden Arena</span>
+                  <span className="text-gray-300">Venue:</span>
+                  <span className="text-white font-semibold">The Hilton</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300">Address:</span>
+                  <span className="text-white font-semibold">350 Northlake Blvd</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-300">Location:</span>
-                  <span className="text-white font-semibold">Las Vegas, Nevada</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Capacity:</span>
-                  <span className="text-white font-semibold">17,000 seats</span>
+                  <span className="text-white font-semibold">Altamonte Springs, FL 32701</span>
                 </div>
               </div>
             </div>
@@ -63,83 +63,47 @@ export default function EventDetails() {
             <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-accent/20">
               <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
                 <span className="w-8 h-8 bg-accent rounded-full flex items-center justify-center mr-3">
-                  🎥
+                  🥊
                 </span>
-                Broadcast Details
+                Event Information
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Production:</span>
-                  <span className="text-white font-semibold">Live in 4K Ultra HD</span>
+                  <span className="text-gray-300">Event:</span>
+                  <span className="text-white font-semibold">Havoc at the Hilton</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Commentary:</span>
-                  <span className="text-white font-semibold">Expert Analysis</span>
+                  <span className="text-gray-300">Presented by:</span>
+                  <span className="text-white font-semibold">4 Man Crew</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300">Languages:</span>
-                  <span className="text-white font-semibold">English, Spanish</span>
+                  <span className="text-gray-300">Category:</span>
+                  <span className="text-white font-semibold">Boxing</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Additional Content */}
+          {/* Event Poster */}
           <div className="space-y-8">
-            <div className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl p-8 border border-accent/20">
-              <h3 className="text-2xl font-bold text-white mb-6">What&apos;s Included</h3>
-              <ul className="space-y-3">
-                {[
-                  "Complete live fight card",
-                  "Pre-fight ceremonies & walkouts",
-                  "Post-fight interviews",
-                  "Behind-the-scenes access",
-                  "Instant replay capabilities",
-                  "Multi-camera angle views",
-                  "Expert commentary team",
-                  "Real-time fight statistics"
-                ].map((feature, index) => (
-                  <li key={index} className="flex items-center text-white">
-                    <span className="w-2 h-2 bg-accent rounded-full mr-3"></span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-accent/20">
-              <h3 className="text-2xl font-bold text-white mb-6">Special Features</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-accent/10 rounded-xl">
-                  <div className="text-3xl mb-2">🎬</div>
-                  <h4 className="font-semibold text-white">Multi-Cam</h4>
-                  <p className="text-sm text-gray-300">Choose your angle</p>
-                </div>
-                <div className="text-center p-4 bg-accent/10 rounded-xl">
-                  <div className="text-3xl mb-2">📊</div>
-                  <h4 className="font-semibold text-white">Live Stats</h4>
-                  <p className="text-sm text-gray-300">Real-time data</p>
-                </div>
-                <div className="text-center p-4 bg-accent/10 rounded-xl">
-                  <div className="text-3xl mb-2">💬</div>
-                  <h4 className="font-semibold text-white">Live Chat</h4>
-                  <p className="text-sm text-gray-300">Fan interaction</p>
-                </div>
-                <div className="text-center p-4 bg-accent/10 rounded-xl">
-                  <div className="text-3xl mb-2">⏪</div>
-                  <h4 className="font-semibold text-white">Replays</h4>
-                  <p className="text-sm text-gray-300">Instant access</p>
-                </div>
+              <h3 className="text-2xl font-bold text-white mb-6 text-center">Official Event Poster</h3>
+              <div className="rounded-xl overflow-hidden">
+                <img 
+                  src="/event-posters/havoc-hilton-poster.JPG" 
+                  alt="Havoc at Hilton Event Poster" 
+                  className="w-full h-auto object-cover"
+                />
               </div>
             </div>
 
-            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-accent/20">
-              <h3 className="text-2xl font-bold text-white mb-4">Need Help?</h3>
+            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-8 border border-accent/20 text-center">
+              <h3 className="text-2xl font-bold text-white mb-4">Watch Live</h3>
               <p className="text-gray-300 mb-4">
-                Our support team is available 24/7 to help with technical issues or questions.
+                Stream live from The Hilton in Altamonte Springs
               </p>
-              <button className="bg-accent hover:bg-accent/90 text-black font-semibold py-2 px-6 rounded-lg transition-colors">
-                Contact Support
+              <button className="bg-accent hover:bg-accent/90 text-black font-semibold py-3 px-8 rounded-lg transition-colors">
+                Get Access - $19.99
               </button>
             </div>
           </div>
