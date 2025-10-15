@@ -65,11 +65,6 @@ export default function Hero() {
                   <p className="text-sm text-gray-400">August 20, 2025</p>
                   <p className="text-xs text-accent mt-2">Watch Replay →</p>
                 </div>
-                <div className="bg-secondary/50 rounded-lg p-4 border border-accent/10 hover:border-accent/30 transition-colors cursor-pointer">
-                  <h3 className="text-white font-bold mb-1">Summer Showdown</h3>
-                  <p className="text-sm text-gray-400">July 4, 2025</p>
-                  <p className="text-xs text-accent mt-2">Watch Replay →</p>
-                </div>
               </div>
             </div>
           </div>
@@ -87,16 +82,11 @@ export default function Hero() {
         </div>
       </div>
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-8">
+      <div className="relative z-5 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-8">
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
             Buy PPV Access - $19.99
           </button>
-          <button className="bg-accent hover:bg-accent/90 text-black font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
-            Watch Trailer
-          </button>
-        </div>
       </div>
     </div>
   );

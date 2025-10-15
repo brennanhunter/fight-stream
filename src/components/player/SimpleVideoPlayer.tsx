@@ -171,9 +171,7 @@ export default function SimpleVideoPlayer() {
 
       {/* Simple Info Bar */}
       <div className="mt-4 text-center">
-        <p className="text-gray-300 text-sm">
-          Premium HD Stream • Low Latency
-        </p>
+
       </div>
     </div>
   );

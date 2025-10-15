@@ -14,7 +14,6 @@ export default function Home() {
       <LogoBanner />
       <Hero />
       <VideoSection />
-      <EventDetails />
     </>
   );
 }
