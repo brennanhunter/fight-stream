@@ -11,8 +11,8 @@ export default function Hero() {
   });
 
   useEffect(() => {
-    // Set fight date - you can change this to your actual fight date
-    const fightDate = new Date('2025-12-31T20:00:00').getTime();
+    // Set fight date - November 8th, 2025 at 6:00 PM EST
+    const fightDate = new Date('2025-11-08T18:00:00-05:00').getTime();
 
     const timer = setInterval(() => {
       const now = new Date().getTime();
@@ -90,14 +90,67 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right Column - Event Poster */}
-          <div className="lg:col-span-2">
-            <div className="rounded-xl overflow-hidden shadow-2xl border border-accent/20">
+          {/* Right Column - Event Poster (order-1 on mobile, order-2 on desktop) */}
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <div className="relative rounded-xl overflow-hidden shadow-2xl border border-accent/20">
               <img 
                 src="/event-posters/havoc-hilton-poster.JPG" 
                 alt="Havoc at Hilton Event Poster" 
                 className="w-full h-auto object-cover"
               />
+              
+              {/* Countdown Timer */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-r from-primary/90 via-red-600/90 to-primary/90 backdrop-blur-md border-t-2 border-red-500/50 shadow-2xl">
+                <div className="px-4 py-4 md:px-6 md:py-5">
+                  <div className="text-center mb-2">
+                    <p className="text-white font-bold text-sm md:text-base tracking-wider uppercase">
+                      Event Starts In
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 md:gap-4 max-w-xl mx-auto">
+                    <div className="text-center">
+                      <div className="bg-black/40 backdrop-blur-sm rounded-lg p-2 md:p-3 border border-red-500/30 shadow-lg">
+                        <div className="text-2xl md:text-4xl font-bold text-white tabular-nums">
+                          {timeLeft.days}
+                        </div>
+                        <div className="text-xs md:text-sm text-red-200 font-medium mt-1">
+                          Days
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="bg-black/40 backdrop-blur-sm rounded-lg p-2 md:p-3 border border-red-500/30 shadow-lg">
+                        <div className="text-2xl md:text-4xl font-bold text-white tabular-nums">
+                          {timeLeft.hours}
+                        </div>
+                        <div className="text-xs md:text-sm text-red-200 font-medium mt-1">
+                          Hours
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="bg-black/40 backdrop-blur-sm rounded-lg p-2 md:p-3 border border-red-500/30 shadow-lg">
+                        <div className="text-2xl md:text-4xl font-bold text-white tabular-nums">
+                          {timeLeft.minutes}
+                        </div>
+                        <div className="text-xs md:text-sm text-red-200 font-medium mt-1">
+                          Minutes
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="bg-black/40 backdrop-blur-sm rounded-lg p-2 md:p-3 border border-red-500/30 shadow-lg">
+                        <div className="text-2xl md:text-4xl font-bold text-white tabular-nums">
+                          {timeLeft.seconds}
+                        </div>
+                        <div className="text-xs md:text-sm text-red-200 font-medium mt-1">
+                          Seconds
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
