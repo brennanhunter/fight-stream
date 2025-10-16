@@ -46,7 +46,28 @@ export default function Hero() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Past Events */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Flashy Buy PPV Button */}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-red-600 to-primary rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+              <button className="relative w-full bg-gradient-to-r from-primary to-black hover:from-black hover:to-primary text-white font-bold py-6 px-6 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-2xl border-2 border-primary/50">
+                <span className="flex items-center justify-center gap-3">
+                  <svg className="w-6 h-6 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"/>
+                    <path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd"/>
+                  </svg>
+                  <div className="text-left">
+                    <div className="text-sm font-normal opacity-90">Havoc at Hilton</div>
+                    <div className="text-xl font-black tracking-wide">BUY PPV NOW</div>
+                    <div className="text-lg font-bold text-red-400">$19.99</div>
+                  </div>
+                  <svg className="w-6 h-6 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd"/>
+                  </svg>
+                </span>
+              </button>
+            </div>
+            
             <div className="bg-black/40 backdrop-blur-sm rounded-xl p-6 border border-accent/20">
               <h2 className="text-2xl font-bold text-white mb-6 text-center">Past Events</h2>
               <div className="space-y-4">
