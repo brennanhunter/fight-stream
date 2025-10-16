@@ -45,8 +45,8 @@ export default function Hero() {
       {/* Two Column Layout */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Past Events */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Left Column - Past Events (order-2 on mobile, order-1 on desktop) */}
+          <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
             {/* Flashy Buy PPV Button */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary via-red-600 to-primary rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
@@ -59,7 +59,7 @@ export default function Hero() {
                   <div className="text-left">
                     <div className="text-sm font-normal opacity-90">Havoc at Hilton</div>
                     <div className="text-xl font-black tracking-wide">BUY PPV NOW</div>
-                    <div className="text-lg font-bold text-red-400">$19.99</div>
+                    <div className="text-lg font-bold text-red-400">$21.99</div>
                   </div>
                   <svg className="w-6 h-6 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd"/>
@@ -72,18 +72,18 @@ export default function Hero() {
               <h2 className="text-2xl font-bold text-white mb-6 text-center">Past Events</h2>
               <div className="space-y-4">
                 <div className="bg-secondary/50 rounded-lg p-4 border border-accent/10 hover:border-accent/30 transition-colors cursor-pointer">
-                  <h3 className="text-white font-bold mb-1">Thunder at The Ritz</h3>
-                  <p className="text-sm text-gray-400">October 5, 2025</p>
+                  <h3 className="text-white font-bold mb-1">Night of Prospects</h3>
+                  <p className="text-sm text-gray-400">September 6, 2025</p>
                   <p className="text-xs text-accent mt-2">Watch Replay →</p>
                 </div>
                 <div className="bg-secondary/50 rounded-lg p-4 border border-accent/10 hover:border-accent/30 transition-colors cursor-pointer">
-                  <h3 className="text-white font-bold mb-1">Clash of Champions</h3>
-                  <p className="text-sm text-gray-400">September 15, 2025</p>
+                  <h3 className="text-white font-bold mb-1">Rumble at the Ritz II</h3>
+                  <p className="text-sm text-gray-400">August 23, 2025</p>
                   <p className="text-xs text-accent mt-2">Watch Replay →</p>
                 </div>
                 <div className="bg-secondary/50 rounded-lg p-4 border border-accent/10 hover:border-accent/30 transition-colors cursor-pointer">
-                  <h3 className="text-white font-bold mb-1">Battle Royale</h3>
-                  <p className="text-sm text-gray-400">August 20, 2025</p>
+                  <h3 className="text-white font-bold mb-1">Apocolypto: The New Beginning</h3>
+                  <p className="text-sm text-gray-400">May 24, 2025</p>
                   <p className="text-xs text-accent mt-2">Watch Replay →</p>
                 </div>
               </div>
@@ -106,7 +106,7 @@ export default function Hero() {
       <div className="relative z-5 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-8">
         {/* CTA Buttons */}
           <button className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
-            Buy PPV Access - $19.99
+            Buy PPV Access - $21.99
           </button>
       </div>
     </div>
