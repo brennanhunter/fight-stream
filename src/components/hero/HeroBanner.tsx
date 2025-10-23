@@ -9,6 +9,26 @@ export default function HeroBanner() {
     minutes: 0,
     seconds: 0
   });
+  
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  
+  const pastEvents = [
+    {
+      title: "Rumble at The Ritz",
+      date: "October 5, 2025",
+      videoUrl: "/replays/rumble-at-the-ritz.mp4"
+    },
+    {
+      title: "Night of Prospects",
+      date: "September 15, 2025",
+      videoUrl: "/replays/night-of-prospects.mp4"
+    },
+    {
+      title: "Apocolypto: The New Beginning",
+      date: "August 20, 2025",
+      videoUrl: "/replays/apocolypto-the-new-beginning.mp4"
+    }
+  ];
 
   useEffect(() => {
     // Set fight date - you can change this to your actual fight date
@@ -51,6 +71,12 @@ export default function HeroBanner() {
             className="h-32 md:h-40 w-auto"
           />
         </div>
+        {/* Debug info - remove after testing */}
+        {selectedVideo && (
+          <div className="text-white text-sm mt-2">
+            Selected: {selectedVideo}
+          </div>
+        )}
       </div>
 
       {/* Two Column Layout */}
@@ -61,38 +87,58 @@ export default function HeroBanner() {
             <div className="bg-black/40 backdrop-blur-sm rounded-xl p-6 border border-accent/20">
               <h2 className="text-2xl font-bold text-white mb-6 text-center">Past Events</h2>
               <div className="space-y-4">
-                <div className="bg-secondary/50 rounded-lg p-4 border border-accent/10 hover:border-accent/30 transition-colors cursor-pointer">
-                  <h3 className="text-white font-bold mb-1">Thunder at The Ritz</h3>
-                  <p className="text-sm text-gray-400">October 5, 2025</p>
-                  <p className="text-xs text-accent mt-2">Watch Replay →</p>
-                </div>
-                <div className="bg-secondary/50 rounded-lg p-4 border border-accent/10 hover:border-accent/30 transition-colors cursor-pointer">
-                  <h3 className="text-white font-bold mb-1">Clash of Champions</h3>
-                  <p className="text-sm text-gray-400">September 15, 2025</p>
-                  <p className="text-xs text-accent mt-2">Watch Replay →</p>
-                </div>
-                <div className="bg-secondary/50 rounded-lg p-4 border border-accent/10 hover:border-accent/30 transition-colors cursor-pointer">
-                  <h3 className="text-white font-bold mb-1">Battle Royale</h3>
-                  <p className="text-sm text-gray-400">August 20, 2025</p>
-                  <p className="text-xs text-accent mt-2">Watch Replay →</p>
-                </div>
-                <div className="bg-secondary/50 rounded-lg p-4 border border-accent/10 hover:border-accent/30 transition-colors cursor-pointer">
-                  <h3 className="text-white font-bold mb-1">Summer Showdown</h3>
-                  <p className="text-sm text-gray-400">July 4, 2025</p>
-                  <p className="text-xs text-accent mt-2">Watch Replay →</p>
-                </div>
+                {pastEvents.map((event, index) => (
+                  <div 
+                    key={index}
+                    onClick={() => {
+                      console.log('Clicked:', event.title, event.videoUrl);
+                      setSelectedVideo(event.videoUrl);
+                    }}
+                    className={`bg-secondary/50 rounded-lg p-4 border transition-colors cursor-pointer ${
+                      selectedVideo === event.videoUrl 
+                        ? 'border-accent bg-accent/10' 
+                        : 'border-accent/10 hover:border-accent/30'
+                    }`}
+                  >
+                    <h3 className="text-white font-bold mb-1">{event.title}</h3>
+                    <p className="text-sm text-gray-400">{event.date}</p>
+                    <p className="text-xs text-accent mt-2">
+                      {selectedVideo === event.videoUrl ? '▶ Playing Now' : 'Watch Replay →'}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Right Column - Event Poster */}
+          {/* Right Column - Event Poster or Video Player */}
           <div className="lg:col-span-2">
-            <div className="rounded-xl overflow-hidden shadow-2xl border border-accent/20">
-              <img 
-                src="/event-posters/havoc-hilton-poster.JPG" 
-                alt="Havoc at Hilton Event Poster" 
-                className="w-full h-auto object-cover"
-              />
+            <div className="rounded-xl overflow-hidden shadow-2xl border border-accent/20 bg-black">
+              {selectedVideo ? (
+                <div className="relative aspect-video">
+                  <video 
+                    key={selectedVideo}
+                    controls 
+                    autoPlay
+                    className="w-full h-full object-contain"
+                  >
+                    <source src={selectedVideo} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                  <button
+                    onClick={() => setSelectedVideo(null)}
+                    className="absolute top-4 right-4 bg-black/70 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    ✕ Close Video
+                  </button>
+                </div>
+              ) : (
+                <img 
+                  src="/event-posters/havoc-hilton-poster.JPG" 
+                  alt="Havoc at Hilton Event Poster" 
+                  className="w-full h-auto object-cover"
+                />
+              )}
             </div>
           </div>
         </div>
