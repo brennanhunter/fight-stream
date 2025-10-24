@@ -43,6 +43,7 @@ export default function IVSVideoPlayer() {
   const [volume, setVolume] = useState(75);
   const [showControls, setShowControls] = useState(true);
   const [playerLoaded, setPlayerLoaded] = useState(false);
+  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load IVS Player script
   useEffect(() => {
@@ -141,12 +142,27 @@ export default function IVSVideoPlayer() {
           setIsPlaying(true);
           setIsStreamLive(true);
           setError(null);
+          
+          // Clear idle timeout if stream resumes
+          if (idleTimeoutRef.current) {
+            clearTimeout(idleTimeoutRef.current);
+            idleTimeoutRef.current = null;
+          }
         });
 
         player.addEventListener(IVSPlayer.PlayerState.IDLE, () => {
           console.log('Player state: IDLE');
           setIsPlaying(false);
-          // Don't set isStreamLive to false here - stream might just be paused
+          
+          // Set a timeout - if stream doesn't resume in 10 seconds, assume it ended
+          if (idleTimeoutRef.current) {
+            clearTimeout(idleTimeoutRef.current);
+          }
+          
+          idleTimeoutRef.current = setTimeout(() => {
+            console.log('Stream idle for 10 seconds, marking as offline');
+            setIsStreamLive(false);
+          }, 10000);
         });
 
         player.addEventListener(IVSPlayer.PlayerState.READY, () => {
@@ -154,9 +170,14 @@ export default function IVSVideoPlayer() {
           setIsLoading(false);
           setIsStreamLive(true);
           // Auto-play when stream is ready
-          player.play().catch((err: Error) => {
-            console.log('Auto-play prevented, user interaction required:', err);
-          });
+          if (player.play) {
+            const playPromise = player.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+              playPromise.catch((err: Error) => {
+                console.log('Auto-play prevented, user interaction required:', err);
+              });
+            }
+          }
         });
 
         player.addEventListener(IVSPlayer.PlayerEventType.ERROR, (err?: { code?: number }) => {
