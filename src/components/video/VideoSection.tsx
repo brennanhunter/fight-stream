@@ -1,6 +1,6 @@
 'use client';
 
-import SimpleVideoPlayer from '@/components/player/SimpleVideoPlayer';
+import IVSVideoPlayer from '@/components/player/IVSVideoPlayer';
 
 export default function VideoSection() {
   return (
@@ -9,7 +9,7 @@ export default function VideoSection() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Video Player - 75% */}
           <div className="lg:w-3/4">
-            <SimpleVideoPlayer />
+            <IVSVideoPlayer />
           </div>
 
           {/* Chat Window - 25% */}
