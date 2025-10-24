@@ -132,6 +132,7 @@ export default function IVSVideoPlayer() {
 
         // Load the playback URL
         console.log('Loading playback URL:', playbackUrl);
+        setError(null); // Clear any previous errors
         player.load(playbackUrl);
         
         player.addEventListener(IVSPlayer.PlayerState.PLAYING, () => {
@@ -160,13 +161,19 @@ export default function IVSVideoPlayer() {
 
         player.addEventListener(IVSPlayer.PlayerEventType.ERROR, (err?: { code?: number }) => {
           console.error('IVS Player error:', err);
+          console.log('Error code:', err?.code);
+          console.log('Full error object:', JSON.stringify(err));
+          
           // 404 means no stream available - this is normal when not broadcasting
-          if (err?.code === 404) {
+          // Also check for common "stream not found" scenarios
+          if (err?.code === 404 || err?.code === 4 || !err?.code) {
+            console.log('Stream not available (404 or no stream), showing offline state');
             setError(null); // Don't show error, just keep "Stream Inactive" state
             setIsLoading(false);
             setIsPlaying(false);
             setIsStreamLive(false);
           } else {
+            console.log('Real playback error, showing error message');
             setError('Playback error');
             setIsLoading(false);
           }
@@ -190,6 +197,21 @@ export default function IVSVideoPlayer() {
       }
     };
   }, [playerLoaded, token, playbackUrl, volume]);
+
+  // Poll for stream availability every 5 seconds
+  useEffect(() => {
+    if (!playerRef.current) return;
+
+    const pollInterval = setInterval(() => {
+      console.log('Checking stream status...');
+      if (playerRef.current && !isStreamLive) {
+        // Reload the stream to check if it's now available
+        playerRef.current.load(playbackUrl || '');
+      }
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [isStreamLive, playbackUrl]);
 
   const togglePlay = () => {
     if (!playerRef.current) return;

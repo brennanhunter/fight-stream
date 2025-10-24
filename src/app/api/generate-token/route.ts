@@ -20,11 +20,19 @@ export async function POST(req: NextRequest) {
     // Get the private key from environment
     const privateKey = process.env.IVS_PRIVATE_KEY;
     if (!privateKey) {
+      console.error('IVS_PRIVATE_KEY is not set');
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
       );
     }
+
+    // Replace \n with actual newlines if needed
+    const formattedKey = privateKey.replace(/\\n/g, '\n');
+    
+    console.log('Attempting to generate token...');
+    console.log('Channel ARN:', process.env.IVS_CHANNEL_ARN);
+    console.log('Key Pair ARN:', process.env.IVS_KEY_PAIR_ARN);
 
     // Generate IVS token
     const token = jwt.sign(
@@ -33,13 +41,15 @@ export async function POST(req: NextRequest) {
         'aws:access-control-allow-origin': process.env.NEXT_PUBLIC_SITE_URL,
         exp: Math.floor(Date.now() / 1000) + (60 * 60 * 2) // 2 hour expiry
       },
-      privateKey,
+      formattedKey,
       {
         algorithm: 'ES384',
         keyid: process.env.IVS_KEY_PAIR_ARN
       }
     );
 
+    console.log('Token generated successfully');
+    
     return NextResponse.json({ 
       token, 
       playbackUrl: process.env.IVS_PLAYBACK_URL 
