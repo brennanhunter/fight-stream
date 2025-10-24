@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Replace literal \n with actual newlines
+    const formattedKey = privateKey.replace(/\\n/g, '\n');
+
     // Generate IVS token
     const token = jwt.sign(
       {
@@ -33,7 +36,7 @@ export async function POST(req: NextRequest) {
         'aws:access-control-allow-origin': process.env.NEXT_PUBLIC_SITE_URL,
         exp: Math.floor(Date.now() / 1000) + (60 * 60 * 2) // 2 hour expiry
       },
-      privateKey,
+      formattedKey,
       {
         algorithm: 'ES384',
         keyid: process.env.IVS_KEY_PAIR_ARN
