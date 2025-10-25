@@ -132,6 +132,10 @@ export default function IVSVideoPlayer() {
         if (videoRef.current) {
           player.attachHTMLVideoElement(videoRef.current);
           
+          // Set initial volume on video element
+          videoRef.current.volume = 0.75;
+          videoRef.current.muted = false;
+          
           videoRef.current.addEventListener('ended', () => {
             setIsStreamLive(false);
             setIsPlaying(false);
@@ -209,7 +213,8 @@ export default function IVSVideoPlayer() {
           }
         });
 
-        player.setVolume(volume / 100);
+        // Set initial volume (only on player creation)
+        player.setVolume(0.75); // Start at 75%
 
       } catch (err) {
         setError('Failed to load player');
@@ -230,7 +235,7 @@ export default function IVSVideoPlayer() {
         videoRef.current.removeEventListener('timeupdate', handleTimeUpdate);
       }
     };
-  }, [playerLoaded, token, playbackUrl, volume]);
+  }, [playerLoaded, token, playbackUrl]);
 
   // Poll for stream availability every 5 seconds
   useEffect(() => {
@@ -257,13 +262,15 @@ export default function IVSVideoPlayer() {
   };
 
   const toggleMute = () => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || !videoRef.current) return;
     
     if (isMuted) {
       playerRef.current.setVolume(volume / 100);
+      videoRef.current.muted = false;
       setIsMuted(false);
     } else {
       playerRef.current.setVolume(0);
+      videoRef.current.muted = true;
       setIsMuted(true);
     }
   };
@@ -274,6 +281,11 @@ export default function IVSVideoPlayer() {
     
     if (playerRef.current) {
       playerRef.current.setVolume(newVolume / 100);
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume / 100;
+      videoRef.current.muted = false;
     }
     
     if (newVolume > 0) {
@@ -301,6 +313,7 @@ export default function IVSVideoPlayer() {
             playsInline
             className="w-full h-full"
             onClick={togglePlay}
+            muted={false}
           />
 
           {/* Loading State */}
