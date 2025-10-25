@@ -106,12 +106,15 @@ export default function IVSVideoPlayer() {
   useEffect(() => {
     if (!playerLoaded || !token || !playbackUrl || !videoRef.current) return;
 
+    // Declare these at effect scope so cleanup can access them
+    let streamHealthCheck: NodeJS.Timeout | null = null;
+    let handleTimeUpdate: (() => void) | null = null;
+
     const initPlayer = () => {
       try {
         const { IVSPlayer } = window;
         
         if (!IVSPlayer) {
-          console.error('IVS Player not available');
           setError('Player not available');
           setIsLoading(false);
           return;
@@ -123,88 +126,92 @@ export default function IVSVideoPlayer() {
           return;
         }
 
-        console.log('Creating IVS Player...');
         const player = IVSPlayer.create();
         playerRef.current = player;
         
         if (videoRef.current) {
           player.attachHTMLVideoElement(videoRef.current);
+          
+          videoRef.current.addEventListener('ended', () => {
+            setIsStreamLive(false);
+            setIsPlaying(false);
+          });
         }
 
-        // Load the playback URL
-        console.log('Loading playback URL:', playbackUrl);
-        setError(null); // Clear any previous errors
+        setError(null);
         player.load(playbackUrl);
         
+        // Monitor video element's timeupdate event for stream health
+        // This is a real signal - if time stops updating, stream is dead
+        let lastTimeUpdate = Date.now();
+        let shouldBeStreaming = false; // Track if we expect stream to be active
+        
+        handleTimeUpdate = () => {
+          if (videoRef.current) {
+            lastTimeUpdate = Date.now();
+          }
+        };
+        
+        if (videoRef.current) {
+          videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
+        }
+        
+        // Check every 3 seconds if we're still getting time updates
+        streamHealthCheck = setInterval(() => {
+          const timeSinceLastUpdate = Date.now() - lastTimeUpdate;
+          
+          // If no time update in 5 seconds and we expect stream to be active, it ended
+          if (timeSinceLastUpdate > 5000 && shouldBeStreaming) {
+            setIsStreamLive(false);
+            setIsPlaying(false);
+            shouldBeStreaming = false;
+          }
+        }, 3000);
+
         player.addEventListener(IVSPlayer.PlayerState.PLAYING, () => {
-          console.log('Player state: PLAYING');
           setIsLoading(false);
           setIsPlaying(true);
           setIsStreamLive(true);
           setError(null);
-          
-          // Clear idle timeout if stream resumes
-          if (idleTimeoutRef.current) {
-            clearTimeout(idleTimeoutRef.current);
-            idleTimeoutRef.current = null;
-          }
+          lastTimeUpdate = Date.now();
+          shouldBeStreaming = true;
         });
 
         player.addEventListener(IVSPlayer.PlayerState.IDLE, () => {
-          console.log('Player state: IDLE');
           setIsPlaying(false);
-          
-          // Set a timeout - if stream doesn't resume in 10 seconds, assume it ended
-          if (idleTimeoutRef.current) {
-            clearTimeout(idleTimeoutRef.current);
-          }
-          
-          idleTimeoutRef.current = setTimeout(() => {
-            console.log('Stream idle for 10 seconds, marking as offline');
-            setIsStreamLive(false);
-          }, 10000);
+          shouldBeStreaming = false;
         });
 
         player.addEventListener(IVSPlayer.PlayerState.READY, () => {
-          console.log('Player state: READY');
           setIsLoading(false);
           setIsStreamLive(true);
           // Auto-play when stream is ready
           if (player.play) {
             const playPromise = player.play();
             if (playPromise && typeof playPromise.catch === 'function') {
-              playPromise.catch((err: Error) => {
-                console.log('Auto-play prevented, user interaction required:', err);
+              playPromise.catch(() => {
+                // Auto-play prevented, user interaction required
               });
             }
           }
         });
 
         player.addEventListener(IVSPlayer.PlayerEventType.ERROR, (err?: { code?: number }) => {
-          console.error('IVS Player error:', err);
-          console.log('Error code:', err?.code);
-          console.log('Full error object:', JSON.stringify(err));
-          
           // 404 means no stream available - this is normal when not broadcasting
-          // Also check for common "stream not found" scenarios
           if (err?.code === 404 || err?.code === 4 || !err?.code) {
-            console.log('Stream not available (404 or no stream), showing offline state');
-            setError(null); // Don't show error, just keep "Stream Inactive" state
+            setError(null);
             setIsLoading(false);
             setIsPlaying(false);
             setIsStreamLive(false);
           } else {
-            console.log('Real playback error, showing error message');
             setError('Playback error');
             setIsLoading(false);
           }
         });
 
-        // Set initial volume
         player.setVolume(volume / 100);
 
       } catch (err) {
-        console.error('Player init error:', err);
         setError('Failed to load player');
         setIsLoading(false);
       }
@@ -216,6 +223,12 @@ export default function IVSVideoPlayer() {
       if (playerRef.current) {
         playerRef.current.delete();
       }
+      if (streamHealthCheck) {
+        clearInterval(streamHealthCheck);
+      }
+      if (videoRef.current && handleTimeUpdate) {
+        videoRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+      }
     };
   }, [playerLoaded, token, playbackUrl, volume]);
 
@@ -224,15 +237,14 @@ export default function IVSVideoPlayer() {
     if (!playerRef.current) return;
 
     const pollInterval = setInterval(() => {
-      console.log('Checking stream status...');
-      if (playerRef.current && !isStreamLive) {
-        // Reload the stream to check if it's now available
-        playerRef.current.load(playbackUrl || '');
+      // Only reload if we think stream is not live to check if it came back online
+      if (playerRef.current && playbackUrl && !isStreamLive) {
+        playerRef.current.load(playbackUrl);
       }
     }, 5000);
 
     return () => clearInterval(pollInterval);
-  }, [isStreamLive, playbackUrl]);
+  }, [playbackUrl, isStreamLive]);
 
   const togglePlay = () => {
     if (!playerRef.current) return;
