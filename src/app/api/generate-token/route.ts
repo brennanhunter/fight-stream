@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { hasEventAccess } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
-    // TODO: Verify user has paid/has access
-    // const userId = req.session?.userId; // or however you handle auth
-    // const hasPurchased = await checkUserPurchase(userId);
-    
-    // For now, we'll allow access (you'll add auth later)
-    const hasPurchased = true;
+    // Verify user has purchased access to the event
+    const hasPurchased = await hasEventAccess('havoc-hilton-2025');
     
     if (!hasPurchased) {
       return NextResponse.json(
-        { error: 'Access denied' },
+        { error: 'Access denied. Please purchase the event to watch.' },
         { status: 403 }
       );
     }
@@ -46,13 +43,8 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Token generation error:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
     return NextResponse.json(
-      { error: 'Failed to generate token', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to generate token' },
       { status: 500 }
     );
   }

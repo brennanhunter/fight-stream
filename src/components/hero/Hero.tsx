@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PaymentModal from '@/components/payment/PaymentModal';
 
 export default function Hero() {
   const [timeLeft, setTimeLeft] = useState({
@@ -11,6 +12,7 @@ export default function Hero() {
   });
   
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   
   const pastEvents = [
     {
@@ -70,7 +72,10 @@ export default function Hero() {
             {/* Flashy Buy PPV Button */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary via-red-600 to-primary rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-              <button className="relative w-full bg-gradient-to-r from-primary to-black hover:from-black hover:to-primary text-white font-bold py-6 px-6 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-2xl border-2 border-primary/50">
+              <button 
+                onClick={() => setIsPaymentModalOpen(true)}
+                className="relative w-full bg-gradient-to-r from-primary to-black hover:from-black hover:to-primary text-white font-bold py-6 px-6 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-2xl border-2 border-primary/50"
+              >
                 <span className="flex items-center justify-center gap-3">
                   <svg className="w-6 h-6 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"/>
@@ -197,6 +202,12 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal 
+        isOpen={isPaymentModalOpen} 
+        onClose={() => setIsPaymentModalOpen(false)} 
+      />
     </div>
   );
 }
