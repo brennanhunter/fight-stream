@@ -16,7 +16,7 @@ export default function Hero() {
   
   const pastEvents = [
     {
-      title: "Night of Prospects",
+      title: "Night of Prospects 5",
       date: "September 6, 2025",
       videoUrl: "/replays/night-of-prospects.mp4"
     },
@@ -140,7 +140,7 @@ export default function Hero() {
                 </div>
               ) : (
                 <img 
-                  src="/event-posters/havoc-hilton-poster.JPG" 
+                  src="/event-posters/havoc-at-hilton-basic.jpg" 
                   alt="Havoc at Hilton Event Poster" 
                   className="w-full h-auto object-cover"
                 />
