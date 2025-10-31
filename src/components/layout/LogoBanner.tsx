@@ -4,11 +4,11 @@ export default function LogoBanner() {
   return (
     <section className="bg-black py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center h-[88px]">
           <img 
-            src="/logos/logo-white-text.png" 
+            src="/logos/logo-banner.png" 
             alt="BoxStreamTV Logo" 
-            className="h-[70px] md:h-[88px] w-auto p-2"
+            className="h-[360px] md:h-[420px] w-auto"
           />
           
           {/* Social Media Links */}
