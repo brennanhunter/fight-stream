@@ -117,10 +117,10 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right Column - Event Poster (order-1 on mobile, order-2 on desktop) */}
+          {/* Right Column - Video Player (order-1 on mobile, order-2 on desktop) */}
           <div className="lg:col-span-2 order-1 lg:order-2">
-            <div className="rounded-xl overflow-hidden shadow-2xl border border-accent/20 bg-black">
-              {selectedVideo ? (
+            {selectedVideo && (
+              <div className="rounded-xl overflow-hidden shadow-2xl border border-accent/20 bg-black">
                 <div className="relative">
                   <video 
                     key={selectedVideo}
@@ -138,14 +138,8 @@ export default function Hero() {
                     ✕ Close Video
                   </button>
                 </div>
-              ) : (
-                <img 
-                  src="/event-posters/havoc-at-hilton-basic.jpg" 
-                  alt="Havoc at Hilton Event Poster" 
-                  className="w-full h-auto object-cover"
-                />
-              )}
-            </div>
+              </div>
+            )}
             
             {/* Countdown Timer - Touching bottom of poster */}
             <div className="bg-gradient-to-r from-primary/90 via-red-600/90 to-primary/90 backdrop-blur-md border-2 border-red-500/50 shadow-2xl rounded-xl mt-1">
