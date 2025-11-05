@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import PaymentModal from '@/components/payment/PaymentModal';
 
 export default function Hero() {
   const [timeLeft, setTimeLeft] = useState({
@@ -12,7 +11,6 @@ export default function Hero() {
   });
   
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   
   const pastEvents = [
     {
@@ -69,30 +67,6 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Past Events (order-2 on mobile, order-1 on desktop) */}
           <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
-            {/* Flashy Buy PPV Button */}
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-red-600 to-primary rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-              <button 
-                onClick={() => setIsPaymentModalOpen(true)}
-                className="relative w-full bg-gradient-to-r from-primary to-black hover:from-black hover:to-primary text-white font-bold py-6 px-6 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-2xl border-2 border-primary/50"
-              >
-                <span className="flex items-center justify-center gap-3">
-                  <svg className="w-6 h-6 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"/>
-                    <path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd"/>
-                  </svg>
-                  <div className="text-left">
-                    <div className="text-sm font-normal opacity-90">Havoc at Hilton</div>
-                    <div className="text-xl font-black tracking-wide">BUY PPV NOW</div>
-                    <div className="text-lg font-bold text-red-400">$21.99</div>
-                  </div>
-                  <svg className="w-6 h-6 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd"/>
-                  </svg>
-                </span>
-              </button>
-            </div>
-            
             <div className="bg-black/40 backdrop-blur-sm rounded-xl p-6 border border-accent/20">
               <h2 className="text-2xl font-bold text-white mb-6 text-center">Past Events</h2>
               <div className="space-y-4">
@@ -117,9 +91,10 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right Column - Video Player (order-1 on mobile, order-2 on desktop) */}
+          {/* Right Column - Video Player or Social Icons (order-1 on mobile, order-2 on desktop) */}
           <div className="lg:col-span-2 order-1 lg:order-2">
-            {selectedVideo && (
+            {selectedVideo ? (
+              /* Video Player */
               <div className="rounded-xl overflow-hidden shadow-2xl border border-accent/20 bg-black">
                 <div className="relative">
                   <video 
@@ -139,10 +114,41 @@ export default function Hero() {
                   </button>
                 </div>
               </div>
+            ) : (
+              /* Social Media Icons - Centered */
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="flex gap-8">
+                  {/* Instagram Link */}
+                  <a
+                    href="https://www.instagram.com/boxstreamtv/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 hover:rotate-6"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 rounded-3xl blur-lg opacity-50 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                    <svg className="relative w-10 h-10 md:w-12 md:h-12 text-white group-hover:scale-110 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </a>
+                  
+                  {/* YouTube Link */}
+                  <a
+                    href="https://www.youtube.com/@BoxStreamTV"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-red-600 via-red-500 to-red-600 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 hover:-rotate-6"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-red-500 to-red-600 rounded-3xl blur-lg opacity-50 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                    <svg className="relative w-10 h-10 md:w-12 md:h-12 text-white group-hover:scale-110 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
             )}
             
             {/* Countdown Timer - Touching bottom of poster */}
-            <div className="bg-gradient-to-r from-primary/90 via-red-600/90 to-primary/90 backdrop-blur-md border-2 border-red-500/50 shadow-2xl rounded-xl mt-1">
+            {/* <div className="bg-gradient-to-r from-primary/90 via-red-600/90 to-primary/90 backdrop-blur-md border-2 border-red-500/50 shadow-2xl rounded-xl mt-1">
               <div className="px-4 py-4 md:px-6 md:py-5">
                 <div className="text-center mb-2">
                   <p className="text-white font-bold text-sm md:text-base tracking-wider uppercase">
@@ -192,16 +198,10 @@ export default function Hero() {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
-
-      {/* Payment Modal */}
-      <PaymentModal 
-        isOpen={isPaymentModalOpen} 
-        onClose={() => setIsPaymentModalOpen(false)} 
-      />
     </div>
   );
 }

@@ -356,14 +356,14 @@ export default function IVSVideoPlayer() {
                 </p>
 
                 {/* Purchase CTA */}
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   <button className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto">
                     🥊 Purchase PPV Access - $21.99
                   </button>
                   <div className="text-sm text-gray-500">
                     Get instant access when the event starts
                   </div>
-                </div>
+                </div> */}
 
                 {/* Event Details */}
                 <div className="mt-8 pt-8 border-t border-gray-800">
