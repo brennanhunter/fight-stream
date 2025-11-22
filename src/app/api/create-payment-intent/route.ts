@@ -3,6 +3,15 @@ import { stripeServer } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
   try {
+    // Check if Stripe is configured
+    if (!stripeServer) {
+      console.error('Stripe is not configured - STRIPE_SECRET_KEY is missing');
+      return NextResponse.json(
+        { error: 'Payment system is not configured. Please contact support.' },
+        { status: 500 }
+      );
+    }
+
     // Create a PaymentIntent with the event details
     const paymentIntent = await stripeServer.paymentIntents.create({
       amount: 2199, // $21.99 in cents
@@ -25,8 +34,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error creating payment intent:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create payment intent';
     return NextResponse.json(
-      { error: 'Failed to create payment intent' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

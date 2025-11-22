@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import PaymentModal from '@/components/payment/PaymentModal';
 
 // Declare IVS Player types
 declare global {
@@ -43,6 +44,7 @@ export default function IVSVideoPlayer() {
   const [volume, setVolume] = useState(75);
   const [showControls, setShowControls] = useState(true);
   const [playerLoaded, setPlayerLoaded] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load IVS Player script
@@ -304,10 +306,13 @@ export default function IVSVideoPlayer() {
   };
 
   return (
-    <div className="w-full mx-auto">
-      <div className="relative bg-black rounded-lg overflow-hidden shadow-2xl">
-        {/* Video Element */}
-        <div className="relative aspect-video bg-black">
+    <>
+      <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} />
+      
+      <div className="w-full mx-auto">
+        <div className="relative bg-black rounded-lg overflow-hidden shadow-2xl">
+          {/* Video Element */}
+          <div className="relative aspect-video bg-black">
           <video 
             ref={videoRef}
             playsInline
@@ -356,14 +361,17 @@ export default function IVSVideoPlayer() {
                 </p>
 
                 {/* Purchase CTA */}
-                {/* <div className="space-y-4">
-                  <button className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto">
-                    🥊 Purchase PPV Access - $21.99
+                <div className="space-y-4">
+                  <button 
+                    onClick={() => setShowPaymentModal(true)}
+                    className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto"
+                  >
+                    Purchase PPV Access - $21.99
                   </button>
                   <div className="text-sm text-gray-500">
                     Get instant access when the event starts
                   </div>
-                </div> */}
+                </div>
 
                 {/* Event Details */}
                 <div className="mt-8 pt-8 border-t border-gray-800">
@@ -476,8 +484,9 @@ export default function IVSVideoPlayer() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

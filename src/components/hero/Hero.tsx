@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PaymentModal from '@/components/payment/PaymentModal';
 
 export default function Hero() {
   const [timeLeft, setTimeLeft] = useState({
@@ -11,6 +12,7 @@ export default function Hero() {
   });
   
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   
   const pastEvents = [
     {
@@ -55,7 +57,10 @@ export default function Hero() {
   }, []);
 
   return (
-    <div className="relative bg-gradient-to-r from-secondary via-secondary/90 to-primary/20 py-8 md:py-12 overflow-hidden min-h-[80vh] flex flex-col justify-center">
+    <>
+      <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} />
+      
+      <div className="relative bg-gradient-to-r from-secondary via-secondary/90 to-primary/20 py-8 md:py-12 overflow-hidden min-h-[80vh] flex flex-col justify-center">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-30">
         <div className="w-full h-full bg-repeat bg-[length:60px_60px]" 
@@ -102,6 +107,29 @@ export default function Hero() {
 
           {/* Right Column - Video Player or Empty Space (order-1 on mobile, order-2 on desktop) */}
           <div className="lg:col-span-2 order-1 lg:order-2">
+            {/* Purchase Button - Shows when no video selected */}
+            {!selectedVideo && (
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center space-y-6">
+                  <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                    Watch <span className="text-accent">Live Boxing</span>
+                  </h2>
+                  <p className="text-gray-300 text-lg mb-6 max-w-md mx-auto">
+                    Get instant access to Havoc at Hilton and watch the biggest fights live in HD
+                  </p>
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="bg-gradient-to-r from-primary to-red-600 hover:from-red-600 hover:to-primary text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
+                  >
+                    Buy PPV Access - $21.99
+                  </button>
+                  <p className="text-sm text-gray-400 mt-4">
+                    November 8, 2025 at 6:00 PM EST
+                  </p>
+                </div>
+              </div>
+            )}
+            
             {selectedVideo ? (
               /* Video Player */
               <div className="rounded-xl overflow-hidden shadow-2xl border border-accent/20 bg-black">
@@ -180,6 +208,7 @@ export default function Hero() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
