@@ -21,9 +21,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/thumbnail.png", type: "image/png" },
+      { url: "/logos/BoxStreamVerticalLogo.png", type: "image/png" },
     ],
-    apple: "/thumbnail.png",
+    apple: "/logos/BoxStreamVerticalLogo.png",
     shortcut: "/favicon.ico",
   },
   openGraph: {
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/thumbnail.png",
+        url: "/logos/BoxStreamVerticalLogo.png",
         width: 1200,
         height: 630,
         alt: "BoxStreamTV - Live Boxing Streaming",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "BoxStreamTV.com | Live Boxing Streaming & Pay-Per-View Events",
     description: "Watch live boxing matches, championship fights, and exclusive PPV events in HD. Stream boxing online with BoxStreamTV.",
-    images: ["/thumbnail.png"],
+    images: ["/logos/BoxStreamVerticalLogo.png"],
   },
   robots: {
     index: true,
