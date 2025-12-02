@@ -43,9 +43,9 @@ export default function Hero() {
     <>
       <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} />
       
-      <div className="relative bg-gradient-to-r from-secondary via-secondary/90 to-primary/20 py-8 md:py-12 overflow-hidden min-h-[80vh] flex flex-col justify-center">
-        {/* Carousel Background - Full Section */}
-        <div className="absolute inset-0 z-0">
+      <div className="relative bg-gradient-to-r from-secondary via-secondary/90 to-primary/20 py-8 md:py-12 overflow-hidden min-h-0 lg:min-h-[80vh] flex flex-col justify-center">
+        {/* Carousel Background - Full Section (visible on desktop) */}
+        <div className="absolute inset-0 z-0 hidden lg:block">
           {carouselImages.map((image, index) => (
             <div
               key={image}
@@ -67,7 +67,7 @@ export default function Hero() {
         </div>
 
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10 z-0">
+        <div className="absolute inset-0 opacity-10 z-0 hidden lg:block">
         <div className="w-full h-full bg-repeat bg-[length:60px_60px]" 
              style={{backgroundImage: "url('data:image/svg+xml;utf8,<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"><g fill=\"none\" fill-rule=\"evenodd\"><g fill=\"%23ffffff\" fill-opacity=\"0.05\"><circle cx=\"7\" cy=\"7\" r=\"1\"/></g></g></svg>')"}}></div>
       </div>
@@ -84,8 +84,8 @@ export default function Hero() {
       {/* Two Column Layout */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Past Events (order-2 on mobile, order-1 on desktop) */}
-          <div className="lg:col-span-1 space-y-6 order-2 lg:order-1">
+          {/* Left Column - Past Events (order-3 on mobile, order-1 on desktop) */}
+          <div className="lg:col-span-1 space-y-6 order-3 lg:order-1">
             <div className="bg-black/40 backdrop-blur-sm rounded-xl p-6 border border-accent/20">
               <h2 className="text-2xl font-bold text-white mb-6 text-center">Past Events</h2>
               <div className="space-y-4">
@@ -105,6 +105,43 @@ export default function Hero() {
                       {selectedVideo === event.videoUrl ? '▶ Playing Now' : 'Watch Replay →'}
                     </p>
                   </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Carousel Section - Only visible on mobile (order-2 on mobile, hidden on desktop) */}
+          <div className="lg:hidden order-2 w-full">
+            <div className="relative h-[400px] rounded-xl overflow-hidden border-2 border-accent/30">
+              {carouselImages.map((image, index) => (
+                <div
+                  key={image}
+                  className={`absolute inset-0 transition-opacity duration-1000 ${
+                    index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`Event poster ${index + 1}`}
+                    className="w-full h-full object-contain bg-black/80"
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Mobile Carousel indicators */}
+            <div className="flex justify-center mt-4">
+              <div className="flex space-x-2 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
+                {carouselImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === currentImageIndex
+                        ? 'bg-accent w-8'
+                        : 'bg-white/50 hover:bg-white/75'
+                    }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
                 ))}
               </div>
             </div>
@@ -210,8 +247,8 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Carousel indicators */}
-        <div className="relative z-10 flex justify-center mt-6">
+        {/* Carousel indicators - Desktop only */}
+        <div className="relative z-10 hidden lg:flex justify-center mt-6">
           <div className="flex space-x-2 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
             {carouselImages.map((_, index) => (
               <button

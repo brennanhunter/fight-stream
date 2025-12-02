@@ -2,9 +2,43 @@ export default function SlidingScalePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary via-black to-secondary/90 py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-12 text-center">
+        {/* About Us Section */}
+        <div className="mb-16">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-8 text-center">
+            About Us
+          </h1>
+          
+          <div className="bg-black/40 backdrop-blur-sm border-2 border-accent/20 rounded-xl p-8 md:p-12 max-w-4xl mx-auto">
+            <div className="prose prose-invert max-w-none">
+              <p className="text-lg text-gray-300 mb-6">
+                Box Stream TV was born from a simple observation: boxing promoters are great at packing the house, but what about all the fans who can&apos;t make it to the venue? And let&apos;s be honest—getting quality event footage shouldn&apos;t cost an arm and a leg.
+              </p>
+              
+              <p className="text-lg text-gray-300 mb-6">
+                That&apos;s where we come in. Founded by <span className="text-white font-semibold">Ryan Ross</span> (sports video production pro with years in the game) and <span className="text-white font-semibold">Hunter Coleman</span> (full-stack developer and tech wizard), Box Stream TV offers a solution that&apos;s a win-win for everyone.
+              </p>
+              
+              <h2 className="text-2xl font-bold text-accent mb-4">Here&apos;s how it works:</h2>
+              <p className="text-lg text-gray-300 mb-6">
+                Instead of paying big upfront fees for production, we stream your event live and split the PPV revenue with you. You get professional, multi-camera coverage, we capture high-quality footage you can use to promote future events, and fans around the world get to watch the action—everyone wins.
+              </p>
+              
+              <p className="text-lg text-gray-300 mb-6">
+                Ryan brings the cameras, the skills, and years of production know-how. Hunter brings the tech to make sure your stream runs smoothly every single time. Together, we make streaming your event easy and profitable.
+              </p>
+              
+              <div className="mt-8 p-6 bg-primary/10 border-l-4 border-accent rounded-r-lg">
+                <p className="text-xl font-bold text-white mb-2">Want to see how we can help?</p>
+                <p className="text-gray-300">Book a free 30-minute call with us. Let&apos;s talk about making your next event bigger, better, and more accessible.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Revenue Sharing Section */}
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-12 text-center">
           Revenue Sharing Program
-        </h1>
+        </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Left Side - Table */}
