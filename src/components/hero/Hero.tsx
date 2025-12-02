@@ -10,7 +10,8 @@ export default function Hero() {
   
   const carouselImages = [
     '/event-posters/fight-announcement.png',
-    '/event-posters/rumble-3.jpg'
+    '/event-posters/rumble-3.jpg',
+    '/event-posters/evo.jpg'
   ];
 
   useEffect(() => {
