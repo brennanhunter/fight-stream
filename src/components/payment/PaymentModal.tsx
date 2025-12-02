@@ -103,7 +103,7 @@ export default function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
             </div>
             <div className="text-right space-y-1">
               <p className="text-gray-400">Price</p>
-              <p className="text-accent font-bold text-2xl">$5.00</p>
+              <p className="text-accent font-bold text-2xl">$4.99</p>
             </div>
           </div>
         </div>

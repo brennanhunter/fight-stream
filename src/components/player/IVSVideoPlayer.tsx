@@ -377,7 +377,7 @@ export default function IVSVideoPlayer() {
                       onClick={() => setShowPaymentModal(true)}
                       className="bg-primary hover:bg-primary/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto"
                     >
-                      Purchase PPV Access - $5.00
+                      Purchase PPV Access - $4.99
                     </button>
                     <div className="text-xs sm:text-sm text-gray-300 drop-shadow">
                       Get instant access when the event starts

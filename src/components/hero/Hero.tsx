@@ -164,7 +164,7 @@ export default function Hero() {
                     onClick={() => setShowPaymentModal(true)}
                     className="bg-gradient-to-r from-primary to-red-600 hover:from-red-600 hover:to-primary text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
                   >
-                    Buy PPV Access - $5.00
+                    Buy PPV Access - $4.99
                   </button>
                 </div>
               </div>
