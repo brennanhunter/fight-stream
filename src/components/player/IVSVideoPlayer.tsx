@@ -45,7 +45,6 @@ export default function IVSVideoPlayer() {
   const [showControls, setShowControls] = useState(true);
   const [playerLoaded, setPlayerLoaded] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load IVS Player script
   useEffect(() => {
@@ -202,23 +201,18 @@ export default function IVSVideoPlayer() {
           }
         });
 
-        player.addEventListener(IVSPlayer.PlayerEventType.ERROR, (err?: { code?: number }) => {
+        player.addEventListener(IVSPlayer.PlayerEventType.ERROR, () => {
           // 404 means no stream available - this is normal when not broadcasting
-          if (err?.code === 404 || err?.code === 4 || !err?.code) {
-            setError(null);
-            setIsLoading(false);
-            setIsPlaying(false);
-            setIsStreamLive(false);
-          } else {
-            setError('Playback error');
-            setIsLoading(false);
-          }
+          setError(null);
+          setIsLoading(false);
+          setIsPlaying(false);
+          setIsStreamLive(false);
         });
 
         // Set initial volume (only on player creation)
         player.setVolume(0.75); // Start at 75%
 
-      } catch (err) {
+      } catch {
         setError('Failed to load player');
         setIsLoading(false);
       }
@@ -233,8 +227,9 @@ export default function IVSVideoPlayer() {
       if (streamHealthCheck) {
         clearInterval(streamHealthCheck);
       }
-      if (videoRef.current && handleTimeUpdate) {
-        videoRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+      const videoElement = videoRef.current;
+      if (videoElement && handleTimeUpdate) {
+        videoElement.removeEventListener('timeupdate', handleTimeUpdate);
       }
     };
   }, [playerLoaded, token, playbackUrl]);

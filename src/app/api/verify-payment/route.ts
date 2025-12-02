@@ -13,6 +13,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if Stripe is configured
+    if (!stripeServer) {
+      console.error('Stripe is not configured - STRIPE_SECRET_KEY is missing');
+      return NextResponse.json(
+        { error: 'Payment system is not configured. Please contact support.' },
+        { status: 500 }
+      );
+    }
+
     // Retrieve the payment intent from Stripe
     const paymentIntent = await stripeServer.paymentIntents.retrieve(paymentIntentId);
 

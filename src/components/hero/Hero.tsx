@@ -1,16 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import PaymentModal from '@/components/payment/PaymentModal';
 
 export default function Hero() {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
-  
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   
@@ -31,30 +24,6 @@ export default function Hero() {
       videoUrl: "/replays/apocolypto-the-new-beginning.mp4"
     }
   ];
-
-  useEffect(() => {
-    // Set fight date - November 8th, 2025 at 6:00 PM EST
-    const fightDate = new Date('2025-11-08T18:00:00-05:00').getTime();
-
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = fightDate - now;
-
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      setTimeLeft({ days, hours, minutes, seconds });
-
-      if (distance < 0) {
-        clearInterval(timer);
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   return (
     <>

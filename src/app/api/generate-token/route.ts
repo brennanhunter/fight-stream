@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { hasEventAccess } from '@/lib/session';
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     // Verify user has purchased access to the event
     const hasPurchased = await hasEventAccess('havoc-hilton-2025');

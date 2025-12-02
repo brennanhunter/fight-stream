@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { stripeServer } from '@/lib/stripe';
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     // Check if Stripe is configured
     if (!stripeServer) {

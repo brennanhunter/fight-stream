@@ -46,7 +46,7 @@ export default function CheckoutForm({ onSuccess }: CheckoutFormProps) {
         // Payment succeeded - user will be redirected to return_url
         onSuccess();
       }
-    } catch (err) {
+    } catch {
       setErrorMessage('Payment failed. Please try again.');
       setIsProcessing(false);
     }

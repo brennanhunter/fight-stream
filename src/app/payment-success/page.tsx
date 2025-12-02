@@ -19,38 +19,38 @@ function PaymentSuccessContent() {
       return;
     }
 
+    const verifyPayment = async (paymentIntentId: string) => {
+      try {
+        const response = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ paymentIntentId }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || data.details || 'Payment verification failed');
+        }
+
+        setStatus('success');
+        
+        // Redirect to home page after 3 seconds
+        setTimeout(() => {
+          router.push('/');
+        }, 3000);
+      } catch (error) {
+        console.error('Payment verification error:', error);
+        setStatus('error');
+        setErrorMessage(error instanceof Error ? error.message : 'Verification failed');
+      }
+    };
+
     // Verify payment and create session
     verifyPayment(paymentIntent);
-  }, [searchParams]);
-
-  const verifyPayment = async (paymentIntentId: string) => {
-    try {
-      const response = await fetch('/api/verify-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ paymentIntentId }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || data.details || 'Payment verification failed');
-      }
-
-      setStatus('success');
-      
-      // Redirect to home page after 3 seconds
-      setTimeout(() => {
-        router.push('/');
-      }, 3000);
-    } catch (error) {
-      console.error('Payment verification error:', error);
-      setStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Verification failed');
-    }
-  };
+  }, [searchParams, router]);
 
   if (status === 'loading') {
     return (
