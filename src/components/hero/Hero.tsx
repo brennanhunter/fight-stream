@@ -1,11 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PaymentModal from '@/components/payment/PaymentModal';
 
 export default function Hero() {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const carouselImages = [
+    '/event-posters/fight-announcement.png',
+    '/event-posters/rumble-3.jpg'
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length);
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [carouselImages.length]);
   
   const pastEvents = [
     {
@@ -30,8 +44,30 @@ export default function Hero() {
       <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} />
       
       <div className="relative bg-gradient-to-r from-secondary via-secondary/90 to-primary/20 py-8 md:py-12 overflow-hidden min-h-[80vh] flex flex-col justify-center">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-30">
+        {/* Carousel Background - Full Section */}
+        <div className="absolute inset-0 z-0">
+          {carouselImages.map((image, index) => (
+            <div
+              key={image}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <div className="w-full h-full flex justify-end items-center pr-0 lg:pr-8">
+                <img
+                  src={image}
+                  alt={`Event poster ${index + 1}`}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            </div>
+          ))}
+          {/* Dark overlay for better content readability */}
+          <div className="absolute inset-0 bg-black/60"></div>
+        </div>
+
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10 z-0">
         <div className="w-full h-full bg-repeat bg-[length:60px_60px]" 
              style={{backgroundImage: "url('data:image/svg+xml;utf8,<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"><g fill=\"none\" fill-rule=\"evenodd\"><g fill=\"%23ffffff\" fill-opacity=\"0.05\"><circle cx=\"7\" cy=\"7\" r=\"1\"/></g></g></svg>')"}}></div>
       </div>
@@ -78,23 +114,20 @@ export default function Hero() {
           <div className="lg:col-span-2 order-1 lg:order-2">
             {/* Purchase Button - Shows when no video selected */}
             {!selectedVideo && (
-              <div className="flex items-center justify-center min-h-[400px]">
-                <div className="text-center space-y-6">
+              <div className="flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
+                <div className="text-center space-y-6 px-6 bg-black/40 backdrop-blur-sm rounded-xl p-8 border border-accent/20">
                   <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
                     Watch <span className="text-accent">Live Boxing</span>
                   </h2>
-                  <p className="text-gray-300 text-lg mb-6 max-w-md mx-auto">
-                    Get instant access to Havoc at Hilton and watch the biggest fights live in HD
+                  <p className="text-white text-lg mb-6 max-w-md mx-auto">
+                    Stay tuned for our next event. Get PPV access for the biggest fights live in HD.
                   </p>
                   <button
                     onClick={() => setShowPaymentModal(true)}
                     className="bg-gradient-to-r from-primary to-red-600 hover:from-red-600 hover:to-primary text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl"
                   >
-                    Buy PPV Access - $21.99
+                    Buy PPV Access - $5.00
                   </button>
-                  <p className="text-sm text-gray-400 mt-4">
-                    November 8, 2025 at 6:00 PM EST
-                  </p>
                 </div>
               </div>
             )}
@@ -174,6 +207,24 @@ export default function Hero() {
                 </div>
               </div>
             </div> */}
+          </div>
+        </div>
+
+        {/* Carousel indicators */}
+        <div className="relative z-10 flex justify-center mt-6">
+          <div className="flex space-x-2 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
+            {carouselImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentImageIndex
+                    ? 'bg-accent w-8'
+                    : 'bg-white/50 hover:bg-white/75'
+                }`}
+                aria-label={`Go to image ${index + 1}`}
+              />
+            ))}
           </div>
         </div>
       </div>

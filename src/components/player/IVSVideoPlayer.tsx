@@ -94,7 +94,7 @@ export default function IVSVideoPlayer() {
         setToken(data.token);
         setPlaybackUrl(data.playbackUrl);
       } catch (err) {
-        setError('Failed to load stream');
+        // Don't set error - just show placeholder video when stream isn't available
         setIsLoading(false);
         console.error('Token fetch error:', err);
       }
@@ -203,7 +203,7 @@ export default function IVSVideoPlayer() {
 
         player.addEventListener(IVSPlayer.PlayerEventType.ERROR, () => {
           // 404 means no stream available - this is normal when not broadcasting
-          setError(null);
+          // Don't show error, just show the placeholder video
           setIsLoading(false);
           setIsPlaying(false);
           setIsStreamLive(false);
@@ -213,7 +213,7 @@ export default function IVSVideoPlayer() {
         player.setVolume(0.75); // Start at 75%
 
       } catch {
-        setError('Failed to load player');
+        // Player initialization failed - show placeholder video instead of error
         setIsLoading(false);
       }
     };
@@ -337,43 +337,60 @@ export default function IVSVideoPlayer() {
             </div>
           )}
 
-          {/* Not Live - Purchase Overlay */}
+          {/* Not Live - Placeholder Video with Purchase Overlay */}
           {!isLoading && !error && !isStreamLive && (
-            <div className="absolute inset-0 bg-gradient-to-br from-black via-secondary to-black flex items-center justify-center">
-              <div className="text-center px-6 max-w-2xl">
-                {/* Stream Offline Icon */}
-                <div className="mb-6">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-800 border-2 border-gray-700">
-                    <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
+            <div className="absolute inset-0">
+              {/* Background Placeholder Video */}
+              <video 
+                className="w-full h-full object-cover"
+                autoPlay 
+                loop 
+                muted
+                playsInline
+              >
+                <source src="/replays/highlight.mp4" type="video/mp4" />
+              </video>
+              
+              {/* Dark overlay for better text readability */}
+              <div className="absolute inset-0 bg-black/60"></div>
+              
+              {/* Purchase Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center px-6 max-w-2xl z-10">
+                  {/* Stream Offline Icon */}
+                  <div className="mb-6">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-800/80 border-2 border-gray-700 backdrop-blur-sm">
+                      <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
 
-                <h2 className="text-3xl font-bold text-white mb-3">Stream Offline</h2>
-                <p className="text-gray-400 text-lg mb-8">
-                  The live event hasn&apos;t started yet. Purchase PPV access to watch when we go live!
-                </p>
-
-                {/* Purchase CTA */}
-                <div className="space-y-4">
-                  <button 
-                    onClick={() => setShowPaymentModal(true)}
-                    className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto"
-                  >
-                    Purchase PPV Access - $21.99
-                  </button>
-                  <div className="text-sm text-gray-500">
-                    Get instant access when the event starts
-                  </div>
-                </div>
-
-                {/* Event Details */}
-                <div className="mt-8 pt-8 border-t border-gray-800">
-                  <p className="text-gray-400 text-sm">
-                    <span className="font-semibold text-white">Event:</span> Havoc at Hilton<br />
-                    <span className="font-semibold text-white">Date:</span> November 8, 2025 at 6:00 PM EST
+                  <h2 className="text-3xl font-bold text-white mb-3 drop-shadow-lg">Stream Offline</h2>
+                  <p className="text-gray-200 text-lg mb-8 drop-shadow-md">
+                    The live event hasn&apos;t started yet. Purchase PPV access to watch when we go live!
                   </p>
+
+                  {/* Purchase CTA */}
+                  <div className="space-y-4">
+                    <button 
+                      onClick={() => setShowPaymentModal(true)}
+                      className="bg-primary hover:bg-primary/90 text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto"
+                    >
+                      Purchase PPV Access - $5.00
+                    </button>
+                    <div className="text-sm text-gray-300 drop-shadow">
+                      Get instant access when the event starts
+                    </div>
+                  </div>
+
+                  {/* Event Details */}
+                  <div className="mt-8 pt-8 border-t border-gray-700/50 backdrop-blur-sm bg-black/20 rounded-lg p-4">
+                    <p className="text-gray-200 text-sm drop-shadow">
+                      <span className="font-semibold text-white">Event:</span> Havoc at Hilton<br />
+                      <span className="font-semibold text-white">Date:</span> November 8, 2025 at 6:00 PM EST
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
