@@ -9,7 +9,7 @@ export default function Hero() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const carouselImages = [
-    '/event-posters/fight-announcement.png',
+    '/event-posters/fight-announcement.jpg',
     '/event-posters/rumble-3.jpg',
     '/event-posters/evo.jpg'
   ];
