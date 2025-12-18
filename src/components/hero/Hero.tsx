@@ -11,7 +11,14 @@ export default function Hero() {
   const carouselImages = [
     '/event-posters/fight-announcement.jpg',
     '/event-posters/rumble-3.jpg',
-    '/event-posters/evo.jpg'
+    '/event-posters/evo.jpg',
+    '/new-event-posters-Dec/Black and Gold Bold Boxing Match Poster (1).png',
+    '/new-event-posters-Dec/Black and Gold Bold Boxing Match Poster.png',
+    '/new-event-posters-Dec/MAINE (1).png',
+    '/new-event-posters-Dec/MAINE (3).png',
+    '/new-event-posters-Dec/RITZ THEATER SANFORD, FLA.png',
+    '/new-event-posters-Dec/SKIPPY ANDRADE (4).png',
+    '/new-event-posters-Dec/SKIPPY ANDRADE (8).png'
   ];
 
   useEffect(() => {
