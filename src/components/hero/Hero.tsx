@@ -110,7 +110,7 @@ export default function Hero() {
                     <h3 className="text-white font-bold mb-1">{event.title}</h3>
                     <p className="text-sm text-gray-400">{event.date}</p>
                     <p className="text-xs text-accent mt-2">
-                      {selectedVideo === event.videoUrl ? '▶ Playing Now' : 'Watch Replay →'}
+                      {selectedVideo === event.videoUrl ? '▶ Playing Now' : 'Watch Highlights →'}
                     </p>
                   </div>
                 ))}
