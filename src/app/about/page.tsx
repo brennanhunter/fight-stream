@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export default function SlidingScalePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary via-black to-secondary/90 py-16">
@@ -17,6 +19,20 @@ export default function SlidingScalePage() {
               <p className="text-lg text-gray-300 mb-6">
                 That&apos;s where we come in. Founded by <span className="text-white font-semibold">Ryan Ross</span> (sports video production pro with years in the game) and <span className="text-white font-semibold">Hunter Coleman</span> (full-stack developer and tech wizard), Box Stream TV offers a solution that&apos;s a win-win for everyone.
               </p>
+
+              {/* Team Photo */}
+              <div className="my-8 flex justify-center">
+                <div className="relative w-full max-w-2xl rounded-lg overflow-hidden border-2 border-accent/30">
+                  <Image
+                    src="/about-image.PNG"
+                    alt="Ryan Ross and Hunter Coleman - Box Stream TV founders"
+                    width={800}
+                    height={600}
+                    className="w-full h-auto"
+                    priority
+                  />
+                </div>
+              </div>
               
               <h2 className="text-2xl font-bold text-accent mb-4">Here&apos;s how it works:</h2>
               <p className="text-lg text-gray-300 mb-6">
