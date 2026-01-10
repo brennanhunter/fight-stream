@@ -12,6 +12,10 @@ export default function SlidingScalePage() {
           
           <div className="bg-black/40 backdrop-blur-sm border-2 border-accent/20 rounded-xl p-8 md:p-12 max-w-4xl mx-auto">
             <div className="prose prose-invert max-w-none">
+              <p className="text-xl text-white font-semibold mb-6">
+                Box Stream TV is a streaming platform that hosts Pay-Per-View events for professional, amateur and youth boxing.
+              </p>
+              
               <p className="text-lg text-gray-300 mb-6">
                 Box Stream TV was born from a simple observation: boxing promoters are great at packing the house, but what about all the fans who can&apos;t make it to the venue? And let&apos;s be honest—getting quality event footage shouldn&apos;t cost an arm and a leg.
               </p>
@@ -36,7 +40,7 @@ export default function SlidingScalePage() {
               
               <h2 className="text-2xl font-bold text-accent mb-4">Here&apos;s how it works:</h2>
               <p className="text-lg text-gray-300 mb-6">
-                Instead of paying big upfront fees for production, we stream your event live and split the PPV revenue with you. You get professional, multi-camera coverage, we capture high-quality footage you can use to promote future events, and fans around the world get to watch the action—everyone wins.
+                We stream your event live and split the PPV revenue with you. You get professional, multi-camera coverage, we capture high-quality footage you can use to promote future events, and fans around the world get to watch the action—everyone wins.
               </p>
               
               <p className="text-lg text-gray-300 mb-6">
