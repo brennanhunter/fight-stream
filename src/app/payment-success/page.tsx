@@ -115,7 +115,7 @@ function PaymentSuccessContent() {
             </div>
             <div>
               <p className="text-gray-400 text-sm">Amount Paid</p>
-              <p className="text-accent font-bold text-lg">$21.99</p>
+              <p className="text-accent font-bold text-lg">$4.99</p>
             </div>
             <div>
               <p className="text-gray-400 text-sm">Access Until</p>

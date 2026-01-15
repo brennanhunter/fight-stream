@@ -14,7 +14,7 @@ export async function POST() {
 
     // Create a PaymentIntent with the event details
     const paymentIntent = await stripeServer.paymentIntents.create({
-      amount: 2199, // $21.99 in cents
+      amount: 499, // $4.99 in cents
       currency: 'usd',
       automatic_payment_methods: {
         enabled: true,

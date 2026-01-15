@@ -120,7 +120,7 @@ export default function SlidingScalePage() {
             </div>
 
             <div className="mt-6 pt-6 border-t border-accent/20">
-              <h3 className="text-lg font-bold text-white mb-4">Revenue Examples (at $21.99/PPV)</h3>
+              <h3 className="text-lg font-bold text-white mb-4">Revenue Examples (at $4.99/PPV)</h3>
               <ul className="space-y-2 text-gray-300">
                 <li>• 1,001 purchases = $6,604 for you (30% of $22,012)</li>
                 <li>• 2,001 purchases = $17,601 for you (40% of $44,002)</li>
