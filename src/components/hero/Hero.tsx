@@ -15,7 +15,11 @@ export default function Hero() {
     '/new-event-posters-Dec/MAINE (3).png',
     '/new-event-posters-Dec/RITZ THEATER SANFORD, FLA.png',
     '/new-event-posters-Dec/SKIPPY ANDRADE (4).png',
-    '/new-event-posters-Dec/SKIPPY ANDRADE (8).png'
+    '/new-event-posters-Dec/SKIPPY ANDRADE (8).png',
+    '/new-event-posters-Dec/Black and Gold Bold Boxing Match Poster (40).png',
+    '/new-event-posters-Dec/Daniel.png',
+    '/new-event-posters-Dec/King219.png',
+    '/new-event-posters-Dec/Skippy.png'
   ];
 
   useEffect(() => {
