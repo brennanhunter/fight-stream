@@ -158,7 +158,7 @@ export default function Hero() {
           {/* Right Column - Video Player or Empty Space (order-1 on mobile, order-2 on desktop) */}
           <div className="lg:col-span-2 order-1 lg:order-2">
             {/* Purchase Button - Shows when no video selected */}
-            {!selectedVideo && (
+            {/* {!selectedVideo && (
               <div className="flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
                 <div className="text-center space-y-6 px-6 bg-black/40 backdrop-blur-sm rounded-xl p-8 border border-accent/20">
                   <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -175,7 +175,7 @@ export default function Hero() {
                   </button>
                 </div>
               </div>
-            )}
+            )} */}
             
             {selectedVideo ? (
               /* Video Player */

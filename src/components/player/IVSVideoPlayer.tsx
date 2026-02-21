@@ -368,11 +368,11 @@ export default function IVSVideoPlayer() {
 
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">Stream Offline</h2>
                   <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-4 sm:mb-6 md:mb-8 drop-shadow-md px-2">
-                    The live event hasn&apos;t started yet. Purchase PPV access to watch when we go live!
+                    Stream offline, stay tuned for latest VoDs
                   </p>
 
                   {/* Purchase CTA */}
-                  <div className="space-y-2 sm:space-y-4">
+                  {/* <div className="space-y-2 sm:space-y-4">
                     <button 
                       onClick={() => setShowPaymentModal(true)}
                       className="bg-primary hover:bg-primary/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto"
@@ -382,7 +382,7 @@ export default function IVSVideoPlayer() {
                     <div className="text-xs sm:text-sm text-gray-300 drop-shadow">
                       Get instant access when the event starts
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Event Details */}
                   <div className="mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 md:pt-8 border-t border-gray-700/50 backdrop-blur-sm bg-black/20 rounded-lg p-3 sm:p-4">
