@@ -29,6 +29,20 @@ export default function Footer() {
             </svg>
           </a>
         </div>
+        
+        {/* Xtremery Credit */}
+        <div className="mt-8 text-center">
+          <p className="text-xs">
+            <a
+              href="https://xtremery.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 bg-clip-text text-transparent animate-pulse hover:animate-shimmer"
+            >
+              fight ready and pixel-polished by Xtremery · Deland, FL
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   );
