@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import Image from 'next/image';
 import Footer from '@/components/layout/Footer';
 import VodBuyButton from './VodBuyButton';
+import ResumeWatchingBanner from '@/components/ResumeWatchingBanner';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -25,6 +26,9 @@ export default async function VodPage() {
     <>
       <section className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          <div className="mb-10">
+            <ResumeWatchingBanner />
+          </div>
           <div className="flex flex-col lg:flex-row gap-10 items-center">
             {/* Product Image */}
             {product.image && (
