@@ -46,7 +46,6 @@ export default function VodPlayer({ src }: VodPlayerProps) {
     <video
       ref={videoRef}
       src={src}
-      crossOrigin="anonymous"
       playsInline
     />
   );
