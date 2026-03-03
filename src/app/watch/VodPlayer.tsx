@@ -37,7 +37,22 @@ export default function VodPlayer({ src }: VodPlayerProps) {
       seekTime: 10,
     });
 
+    // Auto-fullscreen on landscape rotation
+    const handleOrientation = () => {
+      const isLandscape = screen.orientation?.type?.includes('landscape');
+      if (playerRef.current) {
+        if (isLandscape) {
+          playerRef.current.fullscreen.enter();
+        } else {
+          playerRef.current.fullscreen.exit();
+        }
+      }
+    };
+
+    screen.orientation?.addEventListener('change', handleOrientation);
+
     return () => {
+      screen.orientation?.removeEventListener('change', handleOrientation);
       playerRef.current?.destroy();
     };
   }, []);
