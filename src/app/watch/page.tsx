@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import Stripe from 'stripe';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
@@ -19,13 +20,24 @@ export default async function WatchPage({
   searchParams: Promise<{ session_id?: string }>;
 }) {
   const params = await searchParams;
-  if (!params.session_id) redirect('/vod');
+  const cookieStore = await cookies();
 
-  const session = await stripe.checkout.sessions.retrieve(
-    params.session_id
-  );
+  // Get session_id from URL or from saved cookie
+  const sessionId = params.session_id || cookieStore.get('vod_session')?.value;
+
+  if (!sessionId) redirect('/vod');
+
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
 
   if (session.payment_status !== 'paid') redirect('/vod');
+
+  // Save session_id in a cookie so user can come back (48 hours)
+  cookieStore.set('vod_session', sessionId, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 48, // 48 hours
+  });
 
   const command = new GetObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET_NAME!,
