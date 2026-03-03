@@ -19,6 +19,12 @@ export async function POST(req: NextRequest) {
     sessionIds = [];
   }
 
+  // Migrate the legacy single-value cookie so older purchases aren't lost
+  const legacy = cookieStore.get('vod_session')?.value;
+  if (legacy && !sessionIds.includes(legacy)) {
+    sessionIds.push(legacy);
+  }
+
   // Append the new ID if it isn't already saved
   if (!sessionIds.includes(sessionId)) {
     sessionIds.push(sessionId);
