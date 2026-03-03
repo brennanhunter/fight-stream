@@ -16,12 +16,13 @@ const s3 = new S3Client({
 export default async function WatchPage({
   searchParams,
 }: {
-  searchParams: { session_id: string };
+  searchParams: Promise<{ session_id?: string }>;
 }) {
-  if (!searchParams.session_id) redirect('/vod');
+  const params = await searchParams;
+  if (!params.session_id) redirect('/vod');
 
   const session = await stripe.checkout.sessions.retrieve(
-    searchParams.session_id
+    params.session_id
   );
 
   if (session.payment_status !== 'paid') redirect('/vod');
