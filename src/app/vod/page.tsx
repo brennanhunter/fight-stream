@@ -73,6 +73,12 @@ export default async function VodPage() {
               <p className="text-sm text-gray-500 mt-4">
                 Instant access after purchase. Watch anytime within 1 hour of starting.
               </p>
+
+              <div className="mt-6 p-4 bg-yellow-900/20 border border-accent/30 rounded-lg">
+                <p className="text-sm text-gray-300">
+                  <span className="text-accent font-semibold">Note:</span> The Davis/Mora and Langer/Maggi fights were not recorded due to technical difficulties. We apologize for the inconvenience.
+                </p>
+              </div>
             </div>
           </div>
         </div>
