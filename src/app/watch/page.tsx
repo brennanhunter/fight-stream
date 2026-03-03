@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import Stripe from 'stripe';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import SaveSession from './SaveSession';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -31,14 +32,6 @@ export default async function WatchPage({
 
   if (session.payment_status !== 'paid') redirect('/vod');
 
-  // Save session_id in a cookie so user can come back (48 hours)
-  cookieStore.set('vod_session', sessionId, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 48, // 48 hours
-  });
-
   const command = new GetObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET_NAME!,
     Key: 'Fix Robinson final.mov',
@@ -48,6 +41,7 @@ export default async function WatchPage({
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
+      <SaveSession sessionId={sessionId} />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 flex flex-col items-center">
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 text-center">
           Now Playing
