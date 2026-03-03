@@ -20,6 +20,8 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.548.0",
     "next": "^15.5.9",
+    "plyr": "^3.8.4",
+    "plyr-react": "^6.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "stripe": "^19.3.0"

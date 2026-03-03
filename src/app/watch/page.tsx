@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import SaveSession from './SaveSession';
+import VodPlayer from './VodPlayer';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -51,12 +52,7 @@ export default async function WatchPage({
         </p>
 
         <div className="w-full rounded-2xl overflow-hidden border-2 border-accent/30 shadow-2xl shadow-accent/10">
-          <video
-            src={videoUrl}
-            controls
-            autoPlay
-            className="w-full"
-          />
+          <VodPlayer src={videoUrl} />
         </div>
 
         <p className="text-sm text-gray-500 mt-6 text-center">
