@@ -29,13 +29,22 @@ export default async function WatchPage({
 
   if (!sessionId) redirect('/vod');
 
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    expand: ['line_items.data.price.product'],
+  });
 
   if (session.payment_status !== 'paid') redirect('/vod');
 
+  // Get the S3 key from the product metadata
+  const lineItem = session.line_items?.data[0];
+  const product = lineItem?.price?.product as import('stripe').Stripe.Product;
+  const s3Key = product?.metadata?.s3_key;
+
+  if (!s3Key) redirect('/vod');
+
   const command = new GetObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET_NAME!,
-    Key: 'Fix Robinson final.mov',
+    Key: s3Key,
   });
 
   const videoUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });

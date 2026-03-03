@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 
-export default function VodBuyButton() {
+export default function VodBuyButton({ priceId }: { priceId: string }) {
   const [loading, setLoading] = useState(false);
 
   const handlePurchase = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/checkout', { method: 'POST' });
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId }),
+      });
       const data = await res.json();
 
       if (data.url) {
