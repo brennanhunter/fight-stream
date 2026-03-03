@@ -4,6 +4,8 @@ import Footer from '@/components/layout/Footer';
 import VodBuyButton from './VodBuyButton';
 import ResumeWatchingBanner from '@/components/ResumeWatchingBanner';
 
+export const dynamic = 'force-dynamic';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 async function getProduct() {

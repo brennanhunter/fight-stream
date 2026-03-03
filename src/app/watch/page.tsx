@@ -47,13 +47,28 @@ export default async function WatchPage({
   const videoUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
 
   return (
-    <main>
-      <video
-        src={videoUrl}
-        controls
-        autoPlay
-        style={{ width: '100%', maxWidth: '1280px' }}
-      />
+    <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 flex flex-col items-center">
+        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 text-center">
+          Now Playing
+        </h1>
+        <p className="text-gray-400 mb-8 text-center">
+          Enjoy your replay. Your access is valid for 48 hours.
+        </p>
+
+        <div className="w-full rounded-2xl overflow-hidden border-2 border-accent/30 shadow-2xl shadow-accent/10">
+          <video
+            src={videoUrl}
+            controls
+            autoPlay
+            className="w-full"
+          />
+        </div>
+
+        <p className="text-sm text-gray-500 mt-6 text-center">
+          Having trouble? Try refreshing the page or contact support.
+        </p>
+      </div>
     </main>
   );
 }
