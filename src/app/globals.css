@@ -68,10 +68,45 @@
   --color-popover-foreground: #f9fafb;
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: 'Alliance No.2', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* VOD fullscreen mode — triggered by landscape rotation or manual fullscreen */
+html.vod-fullscreen header {
+  display: none !important;
+}
+
+html.vod-fullscreen .vod-watch-page {
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+html.vod-fullscreen .vod-watch-page h1,
+html.vod-fullscreen .vod-watch-page p {
+  display: none !important;
+}
+
+html.vod-fullscreen .vod-player-wrapper {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+html.vod-fullscreen .vod-player-wrapper video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
 }
 
 /* Plyr custom theme */

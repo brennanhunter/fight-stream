@@ -52,7 +52,7 @@ export default async function WatchPage({
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
       <SaveSession sessionId={sessionId} />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 flex flex-col items-center">
+      <div className="vod-watch-page max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-24 flex flex-col items-center">
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 text-center">
           Now Playing
         </h1>
@@ -60,7 +60,7 @@ export default async function WatchPage({
           Enjoy your replay. Your access is valid for 48 hours.
         </p>
 
-        <div className="w-full rounded-2xl overflow-hidden border-2 border-accent/30 shadow-2xl shadow-accent/10">
+        <div className="vod-player-wrapper w-full rounded-2xl overflow-hidden border-2 border-accent/30 shadow-2xl shadow-accent/10">
           <VodPlayer src={videoUrl} />
         </div>
 

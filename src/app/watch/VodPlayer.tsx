@@ -37,15 +37,32 @@ export default function VodPlayer({ src }: VodPlayerProps) {
       seekTime: 10,
     });
 
+    // Sync CSS fullscreen class with native Plyr fullscreen
+    playerRef.current.on('enterfullscreen', () => {
+      document.documentElement.classList.add('vod-fullscreen');
+    });
+    playerRef.current.on('exitfullscreen', () => {
+      // Only remove if not in landscape (landscape keeps the CSS class)
+      if (!screen.orientation?.type?.includes('landscape')) {
+        document.documentElement.classList.remove('vod-fullscreen');
+      }
+    });
+
     // Auto-fullscreen on landscape rotation
     const handleOrientation = () => {
       const isLandscape = screen.orientation?.type?.includes('landscape');
-      if (playerRef.current) {
-        if (isLandscape) {
-          playerRef.current.fullscreen.enter();
-        } else {
-          playerRef.current.fullscreen.exit();
-        }
+      if (isLandscape) {
+        // Add CSS-based fullscreen immediately (works without user gesture)
+        document.documentElement.classList.add('vod-fullscreen');
+        // Also try native fullscreen (may fail without user gesture)
+        try { playerRef.current?.fullscreen.enter(); } catch {}
+      } else {
+        document.documentElement.classList.remove('vod-fullscreen');
+        try {
+          if (playerRef.current?.fullscreen.active) {
+            playerRef.current.fullscreen.exit();
+          }
+        } catch {}
       }
     };
 
@@ -53,6 +70,7 @@ export default function VodPlayer({ src }: VodPlayerProps) {
 
     return () => {
       screen.orientation?.removeEventListener('change', handleOrientation);
+      document.documentElement.classList.remove('vod-fullscreen');
       playerRef.current?.destroy();
     };
   }, []);

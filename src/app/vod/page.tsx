@@ -36,8 +36,8 @@ export default async function VodPage() {
 
   return (
     <>
-      <section className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+      <section className="min-h-screen bg-gradient-to-b from-black via-secondary to-black overflow-x-hidden">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
           <div className="mb-10">
             <ResumeWatchingBanner />
           </div>
@@ -58,8 +58,8 @@ export default async function VodPage() {
               >
                 {/* Featured Badge */}
                 {product.featured && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 lg:left-8 lg:translate-x-0 z-10">
-                    <span className="bg-gradient-to-r from-accent via-yellow-400 to-accent text-black text-sm font-bold px-4 py-1.5 rounded-full shadow-lg shadow-accent/30 uppercase tracking-wider">
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 lg:left-8 lg:translate-x-0 z-10 max-w-[calc(100%-2rem)]">
+                    <span className="bg-gradient-to-r from-accent via-yellow-400 to-accent text-black text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 rounded-full shadow-lg shadow-accent/30 uppercase tracking-wider whitespace-nowrap">
                       🏆 Featured Event
                     </span>
                   </div>
@@ -85,8 +85,8 @@ export default async function VodPage() {
 
                 {/* Product Info */}
                 <div className="w-full lg:w-1/2 text-center lg:text-left">
-                  <h2 className={`font-bold text-white mb-4 ${
-                    product.featured ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'
+                  <h2 className={`font-bold text-white mb-4 break-words ${
+                    product.featured ? 'text-2xl sm:text-4xl lg:text-5xl' : 'text-xl sm:text-3xl lg:text-4xl'
                   }`}>
                     {product.name}
                   </h2>
@@ -99,7 +99,7 @@ export default async function VodPage() {
 
                   <div className="mb-6">
                     <span className={`font-bold text-accent ${
-                      product.featured ? 'text-5xl' : 'text-4xl'
+                      product.featured ? 'text-3xl sm:text-5xl' : 'text-2xl sm:text-4xl'
                     }`}>
                       ${product.price}
                     </span>
