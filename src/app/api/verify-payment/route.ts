@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
     const sessionData = {
       purchaseId: paymentIntent.id,
       email: customerEmail,
-      eventId: 'havoc-hilton-2025',
-      eventName: 'Havoc at Hilton',
+      eventId: 'havoc-hilton-3-2026',
+      eventName: 'Havoc at the Hilton 3',
       purchasedAt: new Date().toISOString(),
       expiresAt: getEventExpirationDate(),
     };

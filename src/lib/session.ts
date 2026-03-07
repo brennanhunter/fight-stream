@@ -113,7 +113,7 @@ export async function deleteSession(): Promise<void> {
 }
 
 /**
- * Helper to create session data for Havoc at Hilton event
+ * Helper to create session data for Havoc at the Hilton 3 event
  */
 export function createHavocAtHiltonSession(
   purchaseId: string,
@@ -122,8 +122,8 @@ export function createHavocAtHiltonSession(
   return {
     purchaseId,
     email,
-    eventId: 'havoc-hilton-2025',
-    eventName: 'Havoc at Hilton',
+    eventId: 'havoc-hilton-3-2026',
+    eventName: 'Havoc at the Hilton 3',
   };
 }
 
@@ -131,7 +131,7 @@ export function createHavocAtHiltonSession(
  * Get expiration date for event access (day after event)
  */
 export function getEventExpirationDate(): string {
-  // Event is Nov 8, 2025 at 6 PM EST
-  // Access expires Nov 9, 2025 at 11:59 PM EST
-  return new Date('2025-11-09T23:59:59-05:00').toISOString();
+  // Event is Mar 7, 2026 at 7 PM EST
+  // Access expires Mar 8, 2026 at 11:59 PM EST
+  return new Date('2026-03-08T23:59:59-05:00').toISOString();
 }

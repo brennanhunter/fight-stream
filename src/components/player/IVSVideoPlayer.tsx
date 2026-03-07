@@ -45,6 +45,10 @@ export default function IVSVideoPlayer() {
   const [showControls, setShowControls] = useState(true);
   const [playerLoaded, setPlayerLoaded] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [needsPurchase, setNeedsPurchase] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
 
   // Load IVS Player script
   useEffect(() => {
@@ -87,8 +91,14 @@ export default function IVSVideoPlayer() {
         });
 
         if (!response.ok) {
+          if (response.status === 403) {
+            setNeedsPurchase(true);
+          }
           throw new Error('Failed to get access token');
         }
+
+        // Token succeeded — user has access
+        setNeedsPurchase(false);
 
         const data = await response.json();
         setToken(data.token);
@@ -102,6 +112,31 @@ export default function IVSVideoPlayer() {
 
     fetchToken();
   }, []);
+
+  // Redeem promo code
+  const handleRedeemPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const res = await fetch('/api/redeem-promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPromoError(data.error || 'Invalid promo code');
+      } else {
+        // Access granted — reload to pick up the session cookie
+        window.location.reload();
+      }
+    } catch {
+      setPromoError('Something went wrong. Try again.');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   // Initialize IVS player when everything is ready
   useEffect(() => {
@@ -304,10 +339,10 @@ export default function IVSVideoPlayer() {
     <>
       <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} />
       
-      <div className="w-full mx-auto">
-        <div className="relative bg-black rounded-lg overflow-hidden shadow-2xl">
+      <div className="w-full h-full flex flex-col">
+        <div className="relative bg-black overflow-hidden shadow-2xl flex-1">
           {/* Video Element */}
-          <div className="relative aspect-video bg-black">
+          <div className="relative h-full bg-black">
           <video 
             ref={videoRef}
             playsInline
@@ -366,28 +401,59 @@ export default function IVSVideoPlayer() {
                     </div>
                   </div>
 
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">Stream Offline</h2>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">
+                    {needsPurchase ? 'Get Access to Tonight\'s Event' : 'Stream Offline'}
+                  </h2>
                   <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-4 sm:mb-6 md:mb-8 drop-shadow-md px-2">
-                    Stream offline, stay tuned for latest VoDs
+                    {needsPurchase
+                      ? 'Purchase pay-per-view access to watch the live stream'
+                      : 'Stream offline, stay tuned for latest VoDs'}
                   </p>
 
                   {/* Purchase CTA */}
-                  {/* <div className="space-y-2 sm:space-y-4">
-                    <button 
-                      onClick={() => setShowPaymentModal(true)}
-                      className="bg-primary hover:bg-primary/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto"
-                    >
-                      Purchase PPV Access - $4.99
-                    </button>
-                    <div className="text-xs sm:text-sm text-gray-300 drop-shadow">
-                      Get instant access when the event starts
+                  {needsPurchase && (
+                    <div className="space-y-2 sm:space-y-4">
+                      <button 
+                        onClick={() => setShowPaymentModal(true)}
+                        className="bg-primary hover:bg-primary/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto"
+                      >
+                        Purchase PPV Access - $19.99
+                      </button>
+                      <div className="text-xs sm:text-sm text-gray-300 drop-shadow">
+                        Get instant access when the event starts
+                      </div>
+
+                      {/* Promo Code */}
+                      <div className="pt-2 sm:pt-3">
+                        <p className="text-xs text-gray-400 mb-2">Have a promo code?</p>
+                        <div className="flex items-center justify-center gap-2 max-w-xs mx-auto">
+                          <input
+                            type="text"
+                            value={promoCode}
+                            onChange={(e) => { setPromoCode(e.target.value); setPromoError(null); }}
+                            onKeyDown={(e) => e.key === 'Enter' && handleRedeemPromo()}
+                            placeholder="Enter code"
+                            className="flex-1 px-3 py-2 bg-black/50 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-accent"
+                          />
+                          <button
+                            onClick={handleRedeemPromo}
+                            disabled={promoLoading || !promoCode.trim()}
+                            className="px-4 py-2 bg-accent hover:bg-accent/80 text-black font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {promoLoading ? '...' : 'Apply'}
+                          </button>
+                        </div>
+                        {promoError && (
+                          <p className="text-red-400 text-xs mt-1">{promoError}</p>
+                        )}
+                      </div>
                     </div>
-                  </div> */}
+                  )}
 
                   {/* Event Details */}
                   <div className="mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 md:pt-8 border-t border-gray-700/50 backdrop-blur-sm bg-black/20 rounded-lg p-3 sm:p-4">
                     <p className="text-gray-200 text-xs sm:text-sm drop-shadow">
-                      <span className="font-semibold text-white">Event:</span> TBD - Check back soon
+                      <span className="font-semibold text-white">Event:</span> Live Tonight
                     </p>
                   </div>
                 </div>

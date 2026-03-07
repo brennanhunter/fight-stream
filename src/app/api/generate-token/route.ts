@@ -5,7 +5,7 @@ import { hasEventAccess } from '@/lib/session';
 export async function POST() {
   try {
     // Verify user has purchased access to the event
-    const hasPurchased = await hasEventAccess('havoc-hilton-2025');
+    const hasPurchased = await hasEventAccess('havoc-hilton-3-2026');
     
     if (!hasPurchased) {
       return NextResponse.json(

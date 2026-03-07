@@ -14,15 +14,15 @@ export async function POST() {
 
     // Create a PaymentIntent with the event details
     const paymentIntent = await stripeServer.paymentIntents.create({
-      amount: 499, // $4.99 in cents
+      amount: 1999, // $19.99 in cents
       currency: 'usd',
       automatic_payment_methods: {
         enabled: true,
       },
       metadata: {
-        event_id: 'havoc-hilton-2025',
-        event_name: 'Havoc at Hilton',
-        event_date: '2025-11-08T18:00:00-05:00',
+        event_id: 'havoc-hilton-3-2026',
+        event_name: 'Havoc at the Hilton 3',
+        event_date: '2026-03-07T19:00:00-05:00',
         product_id: process.env.STRIPE_PRODUCT_ID || '',
         price_id: process.env.STRIPE_PRICE_ID || '',
       },

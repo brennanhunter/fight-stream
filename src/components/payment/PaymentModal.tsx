@@ -81,7 +81,7 @@ export default function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Purchase PPV Access</h2>
-              <p className="text-white/90 text-sm mt-1">Testing Only</p>
+              <p className="text-white/90 text-sm mt-1">Havoc at the Hilton 3</p>
             </div>
             <button
               onClick={onClose}
@@ -99,11 +99,11 @@ export default function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
           <div className="flex items-center justify-between text-sm">
             <div className="space-y-1">
               <p className="text-gray-400">Event Date</p>
-              <p className="text-white font-semibold">TBA</p>
+              <p className="text-white font-semibold">March 7, 2026</p>
             </div>
             <div className="text-right space-y-1">
               <p className="text-gray-400">Price</p>
-              <p className="text-accent font-bold text-2xl">$4.99</p>
+              <p className="text-accent font-bold text-2xl">$19.99</p>
             </div>
           </div>
         </div>

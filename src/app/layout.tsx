@@ -73,9 +73,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <div className="min-h-screen flex flex-col">
-          <main className="flex-1">
-            <Header />
+        <div className="h-screen flex flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 flex flex-col overflow-hidden">
             {children}
           </main>
         </div>

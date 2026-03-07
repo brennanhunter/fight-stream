@@ -99,7 +99,7 @@ function PaymentSuccessContent() {
           Payment Successful! 🥊
         </h1>
         <p className="text-xl text-gray-300 mb-6">
-          You now have access to <span className="text-accent font-bold">Havoc at Hilton</span>
+          You now have access to <span className="text-accent font-bold">Havoc at the Hilton 3</span>
         </p>
 
         {/* Event Details */}
@@ -107,19 +107,19 @@ function PaymentSuccessContent() {
           <div className="grid grid-cols-2 gap-4 text-left">
             <div>
               <p className="text-gray-400 text-sm">Event</p>
-              <p className="text-white font-semibold">Havoc at Hilton</p>
+              <p className="text-white font-semibold">Havoc at the Hilton 3</p>
             </div>
             <div>
               <p className="text-gray-400 text-sm">Date</p>
-              <p className="text-white font-semibold">Nov 8, 2025 at 6 PM EST</p>
+              <p className="text-white font-semibold">Mar 7, 2026 at 7 PM EST</p>
             </div>
             <div>
               <p className="text-gray-400 text-sm">Amount Paid</p>
-              <p className="text-accent font-bold text-lg">$4.99</p>
+              <p className="text-accent font-bold text-lg">$19.99</p>
             </div>
             <div>
               <p className="text-gray-400 text-sm">Access Until</p>
-              <p className="text-white font-semibold">Nov 9, 2025</p>
+              <p className="text-white font-semibold">Mar 8, 2026</p>
             </div>
           </div>
         </div>
