@@ -45,8 +45,8 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-black to-secondary/90 py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-secondary via-black to-secondary/90 pt-24 pb-16 px-4">
+      <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 text-center">
           Contact Us
         </h1>

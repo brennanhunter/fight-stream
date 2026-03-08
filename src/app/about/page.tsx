@@ -2,8 +2,8 @@ import Image from 'next/image';
 
 export default function SlidingScalePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-black to-secondary/90 py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-secondary via-black to-secondary/90 pt-24 pb-16 px-4">
+      <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         {/* About Us Section */}
         <div className="mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-8 text-center">
@@ -120,11 +120,11 @@ export default function SlidingScalePage() {
             </div>
 
             <div className="mt-6 pt-6 border-t border-accent/20">
-              <h3 className="text-lg font-bold text-white mb-4">Revenue Examples (at $4.99/PPV)</h3>
+              <h3 className="text-lg font-bold text-white mb-4">Revenue Examples (at $19.99/PPV)</h3>
               <ul className="space-y-2 text-gray-300">
-                <li>• 1,001 purchases = $6,604 for you (30% of $22,012)</li>
-                <li>• 2,001 purchases = $17,601 for you (40% of $44,002)</li>
-                <li>• 5,001 purchases = $76,980 for you (70% of $109,972)</li>
+                <li>• 1,001 purchases = $6,003 for you (30% of $20,010)</li>
+                <li>• 2,001 purchases = $16,000 for you (40% of $40,000)</li>
+                <li>• 5,001 purchases = $69,979 for you (70% of $99,970)</li>
               </ul>
             </div>
           </div>
