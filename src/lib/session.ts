@@ -111,27 +111,3 @@ export async function deleteSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
 }
-
-/**
- * Helper to create session data for Havoc at the Hilton 3 event
- */
-export function createHavocAtHiltonSession(
-  purchaseId: string,
-  email: string
-): Omit<SessionData, 'purchasedAt' | 'expiresAt'> {
-  return {
-    purchaseId,
-    email,
-    eventId: 'havoc-hilton-3-2026',
-    eventName: 'Havoc at the Hilton 3',
-  };
-}
-
-/**
- * Get expiration date for event access (day after event)
- */
-export function getEventExpirationDate(): string {
-  // Event is Mar 7, 2026 at 7 PM EST
-  // Access expires Mar 8, 2026 at 11:59 PM EST
-  return new Date('2026-03-08T23:59:59-05:00').toISOString();
-}

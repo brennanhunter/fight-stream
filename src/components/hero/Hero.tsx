@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import PaymentModal from '@/components/payment/PaymentModal';
 
 export default function Hero() {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const carouselImages = [
@@ -50,8 +48,6 @@ export default function Hero() {
 
   return (
     <>
-      <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} />
-      
       <div className="relative bg-gradient-to-r from-secondary via-secondary/90 to-primary/20 py-8 md:py-12 overflow-hidden min-h-0 lg:min-h-[80vh] flex flex-col justify-center">
         {/* Carousel Background - Full Section (visible on desktop) */}
         <div className="absolute inset-0 z-0 hidden lg:block">

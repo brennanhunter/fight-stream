@@ -5,6 +5,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import SaveSession from './SaveSession';
 import VodPlayer from './VodPlayer';
+import { createServerClient } from '@/lib/supabase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -19,26 +20,49 @@ const s3 = new S3Client({
 export default async function WatchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; purchase_id?: string }>;
 }) {
   const params = await searchParams;
   const cookieStore = await cookies();
 
-  // Get session_id from URL or from saved cookie
-  const sessionId = params.session_id || cookieStore.get('vod_session')?.value;
+  let s3Key: string | null = null;
+  let sessionId: string | null = null;
 
-  if (!sessionId) redirect('/vod');
+  // 1. Try Supabase lookup by purchase_id
+  if (params.purchase_id) {
+    try {
+      const supabase = createServerClient();
+      const { data: purchase } = await supabase
+        .from('purchases')
+        .select('s3_key, stripe_session_id')
+        .eq('id', params.purchase_id)
+        .maybeSingle();
 
-  const session = await stripe.checkout.sessions.retrieve(sessionId, {
-    expand: ['line_items.data.price.product'],
-  });
+      if (purchase?.s3_key) {
+        s3Key = purchase.s3_key;
+        sessionId = purchase.stripe_session_id;
+      }
+    } catch (err) {
+      console.error('Supabase lookup error:', err);
+    }
+  }
 
-  if (session.payment_status !== 'paid') redirect('/vod');
+  // 2. Fall back to Stripe session_id (from URL or cookie)
+  if (!s3Key) {
+    sessionId = params.session_id || cookieStore.get('vod_session')?.value || null;
 
-  // Get the S3 key from the product metadata
-  const lineItem = session.line_items?.data[0];
-  const product = lineItem?.price?.product as import('stripe').Stripe.Product;
-  const s3Key = product?.metadata?.s3_key;
+    if (!sessionId) redirect('/vod');
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['line_items.data.price.product'],
+    });
+
+    if (session.payment_status !== 'paid') redirect('/vod');
+
+    const lineItem = session.line_items?.data[0];
+    const product = lineItem?.price?.product as import('stripe').Stripe.Product;
+    s3Key = product?.metadata?.s3_key || null;
+  }
 
   if (!s3Key) redirect('/vod');
 
@@ -51,7 +75,7 @@ export default async function WatchPage({
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
-      <SaveSession sessionId={sessionId} />
+      {sessionId && <SaveSession sessionId={sessionId} />}
       <div className="vod-watch-page max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-24 flex flex-col items-center">
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 text-center">
           Now Playing

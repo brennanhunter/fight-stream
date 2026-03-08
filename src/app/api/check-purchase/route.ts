@@ -1,13 +1,40 @@
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createServerClient } from '@/lib/supabase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // Check for email query param (for logged-in / email-based lookup)
+  const email = req.nextUrl.searchParams.get('email');
+
+  // 1. Try Supabase first
+  if (email) {
+    try {
+      const supabase = createServerClient();
+      const { data: purchases } = await supabase
+        .from('purchases')
+        .select('id, stripe_session_id, product_name, product_image, s3_key, purchase_type')
+        .eq('email', email)
+        .eq('purchase_type', 'vod');
+
+      if (purchases && purchases.length > 0) {
+        const products = purchases.map((p) => ({
+          sessionId: p.stripe_session_id || p.id,
+          name: p.product_name,
+          image: p.product_image,
+        }));
+        return NextResponse.json({ purchased: true, products });
+      }
+    } catch (err) {
+      console.error('Supabase lookup error:', err);
+    }
+  }
+
+  // 2. Fall back to cookie-based lookup (backward compatibility)
   const cookieStore = await cookies();
 
-  // Read the JSON array of session IDs
   const raw = cookieStore.get('vod_sessions')?.value;
   let sessionIds: string[] = [];
   try {
@@ -16,7 +43,6 @@ export async function GET() {
     sessionIds = [];
   }
 
-  // Fall back to the legacy single-value cookie so existing customers aren't lost
   if (sessionIds.length === 0) {
     const legacy = cookieStore.get('vod_session')?.value;
     if (legacy) sessionIds = [legacy];
@@ -48,7 +74,6 @@ export async function GET() {
             image: product.images?.[0] || null,
           };
         } catch {
-          // Session may have been deleted or be invalid – skip it
           return null;
         }
       }),

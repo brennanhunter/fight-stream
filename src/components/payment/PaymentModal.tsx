@@ -8,12 +8,25 @@ import CheckoutForm from './CheckoutForm';
 // Load Stripe outside component to avoid recreating on every render
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
+interface EventData {
+  id: string;
+  name: string;
+  date: string;
+  price_cents: number;
+  currency: string;
+  poster_image: string | null;
+  stripe_price_id: string | null;
+  expires_at: string | null;
+}
+
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  event: EventData;
 }
 
-export default function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
+export default function PaymentModal({ isOpen, onClose, event }: PaymentModalProps) {
+  const priceDisplay = `$${(event.price_cents / 100).toFixed(2)}`;
   const [clientSecret, setClientSecret] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +94,7 @@ export default function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">Purchase PPV Access</h2>
-              <p className="text-white/90 text-sm mt-1">Havoc at the Hilton 3</p>
+              <p className="text-white/90 text-sm mt-1">{event.name}</p>
             </div>
             <button
               onClick={onClose}
@@ -99,11 +112,11 @@ export default function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
           <div className="flex items-center justify-between text-sm">
             <div className="space-y-1">
               <p className="text-gray-400">Event Date</p>
-              <p className="text-white font-semibold">March 7, 2026</p>
+              <p className="text-white font-semibold">{new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
             </div>
             <div className="text-right space-y-1">
               <p className="text-gray-400">Price</p>
-              <p className="text-accent font-bold text-2xl">$19.99</p>
+              <p className="text-accent font-bold text-2xl">{priceDisplay}</p>
             </div>
           </div>
         </div>
@@ -136,7 +149,7 @@ export default function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
 
           {clientSecret && !isLoading && (
             <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-              <CheckoutForm onSuccess={onClose} />
+              <CheckoutForm onSuccess={onClose} priceDisplay={priceDisplay} />
             </Elements>
           )}
         </div>

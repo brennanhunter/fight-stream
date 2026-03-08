@@ -1,11 +1,27 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { hasEventAccess } from '@/lib/session';
+import { createServerClient } from '@/lib/supabase';
 
 export async function POST() {
   try {
-    // Verify user has purchased access to the event
-    const hasPurchased = await hasEventAccess('havoc-hilton-3-2026');
+    // Find the active event
+    const supabase = createServerClient();
+    const { data: activeEvent } = await supabase
+      .from('events')
+      .select('id')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!activeEvent) {
+      return NextResponse.json(
+        { error: 'No active event.' },
+        { status: 404 }
+      );
+    }
+
+    // Verify user has purchased access to the active event
+    const hasPurchased = await hasEventAccess(activeEvent.id);
     
     if (!hasPurchased) {
       return NextResponse.json(

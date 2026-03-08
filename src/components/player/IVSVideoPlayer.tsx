@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import PaymentModal from '@/components/payment/PaymentModal';
 
 // Declare IVS Player types
 declare global {
@@ -31,7 +30,19 @@ interface IVSPlayerInstance {
   delete: () => void;
 }
 
-export default function IVSVideoPlayer() {
+interface EventData {
+  id: string;
+  name: string;
+  date: string;
+  price_cents: number;
+  currency: string;
+  poster_image: string | null;
+  stripe_price_id: string | null;
+  expires_at: string | null;
+}
+
+export default function IVSVideoPlayer({ event }: { event?: EventData }) {
+  const priceDisplay = event ? `$${(event.price_cents / 100).toFixed(2)}` : '';
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<IVSPlayerInstance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,11 +55,12 @@ export default function IVSVideoPlayer() {
   const [volume, setVolume] = useState(75);
   const [showControls, setShowControls] = useState(true);
   const [playerLoaded, setPlayerLoaded] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [needsPurchase, setNeedsPurchase] = useState(false);
-  const [promoCode, setPromoCode] = useState('');
-  const [promoError, setPromoError] = useState<string | null>(null);
-  const [promoLoading, setPromoLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   // Load IVS Player script
   useEffect(() => {
@@ -113,28 +125,51 @@ export default function IVSVideoPlayer() {
     fetchToken();
   }, []);
 
-  // Redeem promo code
-  const handleRedeemPromo = async () => {
-    if (!promoCode.trim()) return;
-    setPromoLoading(true);
-    setPromoError(null);
+  // Redirect to Stripe Checkout for PPV purchase
+  const handlePurchase = async () => {
+    if (!event?.stripe_price_id) return;
+    setCheckoutLoading(true);
     try {
-      const res = await fetch('/api/redeem-promo', {
+      const res = await fetch('/api/ppv-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: promoCode.trim() }),
+        body: JSON.stringify({ priceId: event!.stripe_price_id }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setPromoError(data.error || 'Invalid promo code');
+        console.error('Checkout error:', data.error);
+        setCheckoutLoading(false);
+        return;
+      }
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setCheckoutLoading(false);
+    }
+  };
+
+  // Recover access by email
+  const handleRecoverAccess = async () => {
+    if (!recoveryEmail.trim()) return;
+    setRecoveryLoading(true);
+    setRecoveryError(null);
+    try {
+      const res = await fetch('/api/recover-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: recoveryEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRecoveryError(data.error || 'Could not recover access');
       } else {
-        // Access granted — reload to pick up the session cookie
         window.location.reload();
       }
     } catch {
-      setPromoError('Something went wrong. Try again.');
+      setRecoveryError('Something went wrong. Try again.');
     } finally {
-      setPromoLoading(false);
+      setRecoveryLoading(false);
     }
   };
 
@@ -337,8 +372,6 @@ export default function IVSVideoPlayer() {
 
   return (
     <>
-      <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} />
-      
       <div className="w-full h-full flex flex-col">
         <div className="relative bg-black overflow-hidden shadow-2xl flex-1">
           {/* Video Element */}
@@ -402,7 +435,7 @@ export default function IVSVideoPlayer() {
                   </div>
 
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">
-                    {needsPurchase ? 'Get Access to Tonight\'s Event' : 'Stream Offline'}
+                    {needsPurchase ? `Get Access to ${event?.name || 'This Event'}` : 'Stream Offline'}
                   </h2>
                   <p className="text-sm sm:text-base md:text-lg text-gray-200 mb-4 sm:mb-6 md:mb-8 drop-shadow-md px-2">
                     {needsPurchase
@@ -414,46 +447,59 @@ export default function IVSVideoPlayer() {
                   {needsPurchase && (
                     <div className="space-y-2 sm:space-y-4">
                       <button 
-                        onClick={() => setShowPaymentModal(true)}
-                        className="bg-primary hover:bg-primary/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto"
+                        onClick={handlePurchase}
+                        disabled={checkoutLoading}
+                        className="bg-primary hover:bg-primary/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Purchase PPV Access - $19.99
+                        {checkoutLoading ? 'Redirecting...' : `Purchase PPV Access - ${priceDisplay}`}
                       </button>
                       <div className="text-xs sm:text-sm text-gray-300 drop-shadow">
                         Get instant access when the event starts
                       </div>
 
-                      {/* Promo Code */}
+                      {/* Already Purchased / Recovery */}
                       <div className="pt-2 sm:pt-3">
-                        <p className="text-xs text-gray-400 mb-2">Have a promo code?</p>
-                        <div className="flex items-center justify-center gap-2 max-w-xs mx-auto">
-                          <input
-                            type="text"
-                            value={promoCode}
-                            onChange={(e) => { setPromoCode(e.target.value); setPromoError(null); }}
-                            onKeyDown={(e) => e.key === 'Enter' && handleRedeemPromo()}
-                            placeholder="Enter code"
-                            className="flex-1 px-3 py-2 bg-black/50 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-accent"
-                          />
+                        {!showRecovery ? (
                           <button
-                            onClick={handleRedeemPromo}
-                            disabled={promoLoading || !promoCode.trim()}
-                            className="px-4 py-2 bg-accent hover:bg-accent/80 text-black font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={() => setShowRecovery(true)}
+                            className="text-xs text-accent hover:text-accent/80 underline underline-offset-2 transition-colors"
                           >
-                            {promoLoading ? '...' : 'Apply'}
+                            Already purchased? Recover access
                           </button>
-                        </div>
-                        {promoError && (
-                          <p className="text-red-400 text-xs mt-1">{promoError}</p>
+                        ) : (
+                          <div>
+                            <p className="text-xs text-gray-400 mb-2">Enter the email you used at checkout</p>
+                            <div className="flex items-center justify-center gap-2 max-w-xs mx-auto">
+                              <input
+                                type="email"
+                                value={recoveryEmail}
+                                onChange={(e) => { setRecoveryEmail(e.target.value); setRecoveryError(null); }}
+                                onKeyDown={(e) => e.key === 'Enter' && handleRecoverAccess()}
+                                placeholder="your@email.com"
+                                className="flex-1 px-3 py-2 bg-black/50 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-accent"
+                              />
+                              <button
+                                onClick={handleRecoverAccess}
+                                disabled={recoveryLoading || !recoveryEmail.trim()}
+                                className="px-4 py-2 bg-accent hover:bg-accent/80 text-black font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {recoveryLoading ? '...' : 'Recover'}
+                              </button>
+                            </div>
+                            {recoveryError && (
+                              <p className="text-red-400 text-xs mt-1">{recoveryError}</p>
+                            )}
+                          </div>
                         )}
                       </div>
+
                     </div>
                   )}
 
                   {/* Event Details */}
                   <div className="mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 md:pt-8 border-t border-gray-700/50 backdrop-blur-sm bg-black/20 rounded-lg p-3 sm:p-4">
                     <p className="text-gray-200 text-xs sm:text-sm drop-shadow">
-                      <span className="font-semibold text-white">Event:</span> Live Tonight
+                      {event && <><span className="font-semibold text-white">Event:</span> {event.name} — {new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</>}
                     </p>
                   </div>
                 </div>

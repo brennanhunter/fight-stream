@@ -9,24 +9,25 @@ function PaymentSuccessContent() {
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [eventInfo, setEventInfo] = useState<{ eventName: string; expiresAt: string } | null>(null);
 
   useEffect(() => {
-    const paymentIntent = searchParams.get('payment_intent');
+    const sessionId = searchParams.get('session_id');
     
-    if (!paymentIntent) {
+    if (!sessionId) {
       setStatus('error');
       setErrorMessage('No payment information found');
       return;
     }
 
-    const verifyPayment = async (paymentIntentId: string) => {
+    const verifyPayment = async (checkoutSessionId: string) => {
       try {
         const response = await fetch('/api/verify-payment', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ paymentIntentId }),
+          body: JSON.stringify({ sessionId: checkoutSessionId }),
         });
 
         const data = await response.json();
@@ -35,6 +36,7 @@ function PaymentSuccessContent() {
           throw new Error(data.error || data.details || 'Payment verification failed');
         }
 
+        setEventInfo(data.eventAccess ? { eventName: data.eventAccess.eventName, expiresAt: data.eventAccess.expiresAt } : null);
         setStatus('success');
         
         // Redirect to home page after 3 seconds
@@ -49,7 +51,7 @@ function PaymentSuccessContent() {
     };
 
     // Verify payment and create session
-    verifyPayment(paymentIntent);
+    verifyPayment(sessionId);
   }, [searchParams, router]);
 
   if (status === 'loading') {
@@ -99,35 +101,31 @@ function PaymentSuccessContent() {
           Payment Successful! 🥊
         </h1>
         <p className="text-xl text-gray-300 mb-6">
-          You now have access to <span className="text-accent font-bold">Havoc at the Hilton 3</span>
+          {eventInfo
+            ? <>You now have access to <span className="text-accent font-bold">{eventInfo.eventName}</span></>
+            : 'Your purchase has been confirmed!'}
         </p>
 
         {/* Event Details */}
-        <div className="bg-black/40 rounded-xl p-6 mb-6">
-          <div className="grid grid-cols-2 gap-4 text-left">
-            <div>
-              <p className="text-gray-400 text-sm">Event</p>
-              <p className="text-white font-semibold">Havoc at the Hilton 3</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Date</p>
-              <p className="text-white font-semibold">Mar 7, 2026 at 7 PM EST</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Amount Paid</p>
-              <p className="text-accent font-bold text-lg">$19.99</p>
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Access Until</p>
-              <p className="text-white font-semibold">Mar 8, 2026</p>
+        {eventInfo && (
+          <div className="bg-black/40 rounded-xl p-6 mb-6">
+            <div className="grid grid-cols-2 gap-4 text-left">
+              <div>
+                <p className="text-gray-400 text-sm">Event</p>
+                <p className="text-white font-semibold">{eventInfo.eventName}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Access Until</p>
+                <p className="text-white font-semibold">{new Date(eventInfo.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Next Steps */}
         <div className="bg-black/40 rounded-xl p-4 mb-6">
           <p className="text-white text-sm">
-            ✅ A confirmation email has been sent to your inbox
+            ✅ Your purchase has been confirmed
             <br />
             ✅ You can now watch the live stream when it starts
             <br />

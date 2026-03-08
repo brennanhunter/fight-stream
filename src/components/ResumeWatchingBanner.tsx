@@ -10,11 +10,22 @@ interface PurchasedProduct {
   image: string | null;
 }
 
+function getEmailFromCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)customer_email=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export default function ResumeWatchingBanner() {
   const [products, setProducts] = useState<PurchasedProduct[]>([]);
 
   useEffect(() => {
-    fetch('/api/check-purchase')
+    const email = getEmailFromCookie();
+    const url = email
+      ? `/api/check-purchase?email=${encodeURIComponent(email)}`
+      : '/api/check-purchase';
+
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
         if (data.products?.length) setProducts(data.products);

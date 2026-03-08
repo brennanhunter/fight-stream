@@ -5,9 +5,10 @@ import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js'
 
 interface CheckoutFormProps {
   onSuccess: () => void;
+  priceDisplay?: string;
 }
 
-export default function CheckoutForm({ onSuccess }: CheckoutFormProps) {
+export default function CheckoutForm({ onSuccess, priceDisplay = '$19.99' }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -109,7 +110,7 @@ export default function CheckoutForm({ onSuccess }: CheckoutFormProps) {
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
-            Pay $19.99 - Complete Purchase
+            Pay {priceDisplay} - Complete Purchase
           </span>
         )}
       </button>

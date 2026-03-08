@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripeServer } from '@/lib/stripe';
+import { createServerClient } from '@/lib/supabase';
 
 export async function POST() {
   try {
@@ -12,19 +13,33 @@ export async function POST() {
       );
     }
 
+    // Get the active event from Supabase
+    const supabase = createServerClient();
+    const { data: activeEvent } = await supabase
+      .from('events')
+      .select('id, name, date, price_cents, stripe_price_id')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!activeEvent) {
+      return NextResponse.json(
+        { error: 'No active event found.' },
+        { status: 404 }
+      );
+    }
+
     // Create a PaymentIntent with the event details
     const paymentIntent = await stripeServer.paymentIntents.create({
-      amount: 1999, // $19.99 in cents
+      amount: activeEvent.price_cents,
       currency: 'usd',
       automatic_payment_methods: {
         enabled: true,
       },
       metadata: {
-        event_id: 'havoc-hilton-3-2026',
-        event_name: 'Havoc at the Hilton 3',
-        event_date: '2026-03-07T19:00:00-05:00',
-        product_id: process.env.STRIPE_PRODUCT_ID || '',
-        price_id: process.env.STRIPE_PRICE_ID || '',
+        event_id: activeEvent.id,
+        event_name: activeEvent.name,
+        event_date: activeEvent.date,
+        price_id: activeEvent.stripe_price_id || '',
       },
     });
 
