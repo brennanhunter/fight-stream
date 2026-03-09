@@ -22,7 +22,6 @@ export default function VodPlayer({ src, title }: VodPlayerProps) {
       streamType="on-demand"
       playsInline
       title={title || 'Fight Replay'}
-      crossOrigin
       className="vod-player"
     >
       <MediaProvider />
