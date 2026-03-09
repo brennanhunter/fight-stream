@@ -11,7 +11,7 @@ async function getProducts(): Promise<VodProduct[]> {
   const products = await stripe.products.list({ active: true, expand: ['data.default_price'] });
 
   return products.data
-    .filter((p) => p.metadata.s3_key && p.metadata.site === 'boxstreamtv')
+    .filter((p) => p.metadata.site === 'boxstreamtv' && (p.metadata.s3_key || p.metadata.available === 'false'))
     .map((p) => {
       const price = p.default_price as Stripe.Price;
       return {
@@ -23,6 +23,7 @@ async function getProducts(): Promise<VodProduct[]> {
         currency: price?.currency || 'usd',
         priceId: price?.id,
         note: p.metadata.note || null,
+        available: p.metadata.available !== 'false',
         featured: p.metadata.featured || null,
         sortOrder: parseInt(p.metadata.sort_order || '99', 10),
         eventSlug: p.metadata.event_slug || 'uncategorized',

@@ -13,6 +13,7 @@ export interface VodProduct {
   currency: string;
   priceId: string | undefined;
   note: string | null;
+  available: boolean;
   featured: string | null; // 'true' = featured fight, 'full-event' = full event replay, null = regular
   sortOrder: number;
   eventSlug: string;
@@ -174,7 +175,13 @@ export default function VodContent({ events }: { events: EventGroup[] }) {
                   ${product.price}
                   <span className="text-gray-400 text-base ml-2 uppercase">{product.currency}</span>
                 </span>
-                {product.priceId && <VodBuyButton priceId={product.priceId} />}
+                {product.available && product.priceId ? (
+                  <VodBuyButton priceId={product.priceId} />
+                ) : !product.available ? (
+                  <span className="px-6 py-3 bg-gray-700 text-gray-300 text-sm font-bold rounded-xl border border-gray-600 uppercase tracking-wider cursor-default">
+                    Coming Soon
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -231,7 +238,16 @@ export default function VodContent({ events }: { events: EventGroup[] }) {
                   <span className="text-xs text-gray-500 uppercase">{product.currency}</span>
                 </div>
 
-                {product.priceId && <VodBuyButton priceId={product.priceId} />}
+                {product.available && product.priceId ? (
+                  <VodBuyButton priceId={product.priceId} />
+                ) : !product.available ? (
+                  <button
+                    disabled
+                    className="w-full px-6 py-3 bg-gray-700 text-gray-300 text-sm font-bold rounded-xl border border-gray-600 uppercase tracking-wider cursor-default"
+                  >
+                    Coming Soon
+                  </button>
+                ) : null}
 
                 {product.note && (
                   <div className="mt-3 p-3 bg-yellow-900/20 border border-accent/30 rounded-lg">
