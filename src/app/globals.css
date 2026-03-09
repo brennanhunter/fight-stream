@@ -109,15 +109,10 @@ html.vod-fullscreen .vod-player-wrapper video {
   object-fit: contain !important;
 }
 
-/* Plyr custom theme */
-.plyr {
-  --plyr-color-main: #dc2626;
-  --plyr-video-control-color: #ffffff;
-  --plyr-video-control-color-hover: #fbbf24;
-  --plyr-video-control-background-hover: rgba(220, 38, 38, 0.8);
-  --plyr-range-fill-background: #dc2626;
-  --plyr-badge-background: #dc2626;
-  --plyr-tooltip-background: #1a1a1a;
-  --plyr-tooltip-color: #ffffff;
-  --plyr-font-family: 'Alliance No.2', ui-sans-serif, system-ui, sans-serif;
+/* Vidstack player custom theme */
+.vod-player {
+  --media-brand: #dc2626;
+  --media-focus-ring-color: #dc2626;
+  --media-focus-ring: 0 0 0 3px var(--media-focus-ring-color);
+  --media-font-family: 'Alliance No.2', ui-sans-serif, system-ui, sans-serif;
 }
