@@ -1,14 +1,13 @@
 import Stripe from 'stripe';
-import Image from 'next/image';
 import Footer from '@/components/layout/Footer';
-import VodBuyButton from './VodBuyButton';
 import ResumeWatchingBanner from '@/components/ResumeWatchingBanner';
+import VodContent, { type VodProduct, type EventGroup } from './VodContent';
 
 export const dynamic = 'force-dynamic';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-async function getProducts() {
+async function getProducts(): Promise<VodProduct[]> {
   const products = await stripe.products.list({ active: true, expand: ['data.default_price'] });
 
   return products.data
@@ -24,20 +23,67 @@ async function getProducts() {
         currency: price?.currency || 'usd',
         priceId: price?.id,
         note: p.metadata.note || null,
-        featured: p.metadata.featured === 'true',
+        featured: p.metadata.featured || null,
         sortOrder: parseInt(p.metadata.sort_order || '99', 10),
+        eventSlug: p.metadata.event_slug || 'uncategorized',
+        eventName: p.metadata.event_name || 'Other Fights',
+        eventDate: p.metadata.event_date || '2020-01-01',
+        eventImage: p.metadata.event_image
+          ? p.metadata.event_image.startsWith('/') || p.metadata.event_image.startsWith('http')
+            ? p.metadata.event_image
+            : `/${p.metadata.event_image}`
+          : null,
       };
     })
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
+function groupByEvent(products: VodProduct[]): EventGroup[] {
+  const groups: Record<string, EventGroup> = {};
+
+  for (const product of products) {
+    if (!groups[product.eventSlug]) {
+      groups[product.eventSlug] = {
+        slug: product.eventSlug,
+        name: product.eventName,
+        date: product.eventDate,
+        image: product.eventImage,
+        hasFeaturedFight: false,
+        hasFullEvent: false,
+        fightCount: 0,
+        products: [],
+      };
+    }
+    groups[product.eventSlug].products.push(product);
+    groups[product.eventSlug].fightCount++;
+    // Use explicit event_image if any product provides one, else fall back to first product image
+    if (product.eventImage) {
+      groups[product.eventSlug].image = product.eventImage;
+    } else if (!groups[product.eventSlug].image && product.image) {
+      groups[product.eventSlug].image = product.image;
+    }
+    // Track featured status by type
+    if (product.featured === 'full-event') {
+      groups[product.eventSlug].hasFullEvent = true;
+    } else if (product.featured === 'true') {
+      groups[product.eventSlug].hasFeaturedFight = true;
+    }
+  }
+
+  // Sort events by date, newest first
+  return Object.values(groups).sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+}
+
 export default async function VodPage() {
   const products = await getProducts();
+  const events = groupByEvent(products);
 
   return (
     <>
       <section className="min-h-screen bg-gradient-to-b from-black via-secondary to-black overflow-x-hidden pt-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
           <div className="mb-10">
             <ResumeWatchingBanner />
           </div>
@@ -46,85 +92,7 @@ export default async function VodPage() {
             Video on Demand
           </h1>
 
-          <div className="space-y-16">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className={`flex flex-col lg:flex-row gap-10 items-center rounded-2xl p-6 sm:p-8 ${
-                  product.featured
-                    ? 'bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 border-2 border-accent/50 shadow-2xl shadow-accent/20 relative'
-                    : ''
-                }`}
-              >
-                {/* Featured Badge */}
-                {product.featured && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 lg:left-8 lg:translate-x-0 z-10 max-w-[calc(100%-2rem)]">
-                    <span className="bg-gradient-to-r from-accent via-yellow-400 to-accent text-black text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 rounded-full shadow-lg shadow-accent/30 uppercase tracking-wider whitespace-nowrap">
-                      🏆 Featured Event
-                    </span>
-                  </div>
-                )}
-
-                {/* Product Image */}
-                {product.image && (
-                  <div className="w-full lg:w-1/2 flex-shrink-0">
-                    <div className={`relative aspect-video rounded-2xl overflow-hidden shadow-2xl ${
-                      product.featured
-                        ? 'border-2 border-accent shadow-accent/30'
-                        : 'border-2 border-accent/30 shadow-accent/10'
-                    }`}>
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Product Info */}
-                <div className="w-full lg:w-1/2 text-center lg:text-left">
-                  <h2 className={`font-bold text-white mb-4 break-words ${
-                    product.featured ? 'text-2xl sm:text-4xl lg:text-5xl' : 'text-xl sm:text-3xl lg:text-4xl'
-                  }`}>
-                    {product.name}
-                  </h2>
-
-                  {product.description && (
-                    <p className="text-lg text-gray-300 mb-6 leading-relaxed">
-                      {product.description}
-                    </p>
-                  )}
-
-                  <div className="mb-6">
-                    <span className={`font-bold text-accent ${
-                      product.featured ? 'text-3xl sm:text-5xl' : 'text-2xl sm:text-4xl'
-                    }`}>
-                      ${product.price}
-                    </span>
-                    <span className="text-gray-400 text-lg ml-2 uppercase">
-                      {product.currency}
-                    </span>
-                  </div>
-
-                  {product.priceId && <VodBuyButton priceId={product.priceId} />}
-
-                  <p className="text-sm text-gray-500 mt-4">
-                    Instant access after purchase.
-                  </p>
-
-                  {product.note && (
-                    <div className="mt-4 p-4 bg-yellow-900/20 border border-accent/30 rounded-lg">
-                      <p className="text-sm text-gray-300">
-                        <span className="text-accent font-semibold">Note:</span> {product.note}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <VodContent events={events} />
         </div>
       </section>
       <Footer />
