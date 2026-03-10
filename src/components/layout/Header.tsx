@@ -28,7 +28,7 @@ export default function Header() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
+        scrolled || isMobileMenuOpen
           ? 'bg-black/90 backdrop-blur-md border-b border-white/10 shadow-[0_1px_20px_rgba(0,0,0,0.5)]'
           : 'bg-transparent'
       }`}
@@ -109,7 +109,7 @@ export default function Header() {
             isMobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="py-6 border-t border-white/10 flex flex-col gap-1">
+          <div className="py-6 border-t border-white/10 flex flex-col gap-1 bg-black">
             {navItems.map((item) => (
               <Link
                 key={item.name}

@@ -91,11 +91,12 @@ html.vod-fullscreen .vod-player-wrapper video {
 
 /* ═══════ Marquee animation ═══════ */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-33.33%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-25%, 0, 0); }
 }
 .animate-marquee {
-  animation: marquee 25s linear infinite;
+  animation: marquee 20s linear infinite;
+  will-change: transform;
 }
 
 /* ═══════ Ring rope lines ═══════ */
