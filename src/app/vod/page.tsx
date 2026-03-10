@@ -1,7 +1,9 @@
 import Stripe from 'stripe';
+import { cookies } from 'next/headers';
 import Footer from '@/components/layout/Footer';
 import ResumeWatchingBanner from '@/components/ResumeWatchingBanner';
 import VodContent, { type VodProduct, type EventGroup } from './VodContent';
+import { createServerClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,8 +79,39 @@ function groupByEvent(products: VodProduct[]): EventGroup[] {
   );
 }
 
+// Get map of productId -> purchaseId for owned products
+async function getOwnedProducts(): Promise<Record<string, string>> {
+  try {
+    const cookieStore = await cookies();
+    const email = cookieStore.get('customer_email')?.value;
+    if (!email) return {};
+
+    const supabase = createServerClient();
+    const { data: purchases } = await supabase
+      .from('purchases')
+      .select('id, stripe_product_id, stripe_session_id')
+      .eq('email', decodeURIComponent(email))
+      .eq('purchase_type', 'vod');
+
+    if (!purchases?.length) return {};
+
+    const owned: Record<string, string> = {};
+    for (const p of purchases) {
+      if (p.stripe_product_id) {
+        owned[p.stripe_product_id] = p.id || p.stripe_session_id;
+      }
+    }
+    return owned;
+  } catch {
+    return {};
+  }
+}
+
 export default async function VodPage() {
-  const products = await getProducts();
+  const [products, ownedProducts] = await Promise.all([
+    getProducts(),
+    getOwnedProducts(),
+  ]);
   const events = groupByEvent(products);
 
   return (
@@ -93,7 +126,7 @@ export default async function VodPage() {
             Video on Demand
           </h1>
 
-          <VodContent events={events} />
+          <VodContent events={events} ownedProducts={ownedProducts} />
         </div>
       </section>
       <Footer />

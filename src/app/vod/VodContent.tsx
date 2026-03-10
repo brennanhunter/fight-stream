@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import VodBuyButton from './VodBuyButton';
 
 export interface VodProduct {
@@ -33,7 +34,7 @@ export interface EventGroup {
   products: VodProduct[];
 }
 
-export default function VodContent({ events }: { events: EventGroup[] }) {
+export default function VodContent({ events, ownedProducts }: { events: EventGroup[]; ownedProducts: Record<string, string> }) {
   const [selectedEvent, setSelectedEvent] = useState<EventGroup | null>(null);
 
   // Event Grid View
@@ -175,7 +176,14 @@ export default function VodContent({ events }: { events: EventGroup[] }) {
                   ${product.price}
                   <span className="text-gray-400 text-base ml-2 uppercase">{product.currency}</span>
                 </span>
-                {product.available && product.priceId ? (
+                {ownedProducts[product.id] ? (
+                  <Link
+                    href={`/watch?purchase_id=${ownedProducts[product.id]}`}
+                    className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xl font-bold rounded-xl hover:from-green-500 hover:to-emerald-500 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-600/30 border border-green-500/20 inline-flex items-center gap-2"
+                  >
+                    ▶ Watch
+                  </Link>
+                ) : product.available && product.priceId ? (
                   <VodBuyButton priceId={product.priceId} />
                 ) : !product.available ? (
                   <span className="px-6 py-3 bg-gray-700 text-gray-300 text-sm font-bold rounded-xl border border-gray-600 uppercase tracking-wider cursor-default">
@@ -238,7 +246,14 @@ export default function VodContent({ events }: { events: EventGroup[] }) {
                   <span className="text-xs text-gray-500 uppercase">{product.currency}</span>
                 </div>
 
-                {product.available && product.priceId ? (
+                {ownedProducts[product.id] ? (
+                  <Link
+                    href={`/watch?purchase_id=${ownedProducts[product.id]}`}
+                    className="w-full text-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-base font-bold rounded-xl hover:from-green-500 hover:to-emerald-500 transition-all duration-300 shadow-lg shadow-green-600/30 border border-green-500/20 inline-flex items-center justify-center gap-2"
+                  >
+                    ▶ Watch Now
+                  </Link>
+                ) : product.available && product.priceId ? (
                   <VodBuyButton priceId={product.priceId} />
                 ) : !product.available ? (
                   <button
