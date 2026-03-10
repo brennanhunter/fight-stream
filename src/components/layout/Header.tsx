@@ -83,19 +83,19 @@ export default function Header() {
             className="md:hidden text-white hover:text-gray-300 transition-colors p-2"
             aria-label="Toggle menu"
           >
-            <div className="w-5 flex flex-col gap-[5px]">
+            <div className="w-5 flex flex-col gap-[5px] overflow-visible">
               <span
-                className={`block h-px bg-white transition-all duration-300 ${
+                className={`block h-px bg-white transition-all duration-300 origin-center ${
                   isMobileMenuOpen ? 'rotate-45 translate-y-[3px]' : ''
                 }`}
               />
               <span
-                className={`block h-px bg-white transition-all duration-300 ${
+                className={`block h-px bg-white transition-all duration-300 origin-center ${
                   isMobileMenuOpen ? 'opacity-0' : ''
                 }`}
               />
               <span
-                className={`block h-px bg-white transition-all duration-300 ${
+                className={`block h-px bg-white transition-all duration-300 origin-center ${
                   isMobileMenuOpen ? '-rotate-45 -translate-y-[3px]' : ''
                 }`}
               />
