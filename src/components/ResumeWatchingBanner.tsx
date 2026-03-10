@@ -37,16 +37,18 @@ export default function ResumeWatchingBanner() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-white">Your Purchases</h2>
+      <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-1">Continue</p>
+      <h2 className="text-xl font-bold text-white tracking-tight">Your Purchases</h2>
+      <div className="w-12 h-px bg-white/20 mb-2" />
 
       <div className="grid gap-4 sm:grid-cols-2">
         {products.map((product) => (
           <div
             key={product.sessionId}
-            className="bg-gradient-to-r from-accent/20 via-accent/10 to-accent/20 border border-accent/30 rounded-xl p-4 flex items-center gap-4"
+            className="border border-white/10 p-4 flex items-center gap-4 hover:border-white/30 transition-colors"
           >
             {product.image && (
-              <div className="relative w-24 h-14 flex-shrink-0 rounded-lg overflow-hidden border border-accent/20">
+              <div className="relative w-24 h-14 flex-shrink-0 overflow-hidden border border-white/10">
                 <Image
                   src={product.image}
                   alt={product.name}
@@ -62,10 +64,8 @@ export default function ResumeWatchingBanner() {
 
             <Link
               href={`/watch?session_id=${product.sessionId}`}
-              className="flex-shrink-0 px-4 py-2 bg-gradient-to-r from-primary via-red-600 to-primary text-white text-sm font-bold rounded-lg
-                hover:from-red-700 hover:via-red-500 hover:to-red-700
-                transition-all duration-300 transform hover:scale-105
-                shadow-lg shadow-primary/30 whitespace-nowrap"
+              className="flex-shrink-0 px-5 py-2 bg-white text-black text-xs font-bold tracking-[0.1em] uppercase
+                hover:bg-gray-200 transition-colors whitespace-nowrap"
             >
               ▶ Resume
             </Link>

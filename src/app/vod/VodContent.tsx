@@ -47,14 +47,21 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
             <button
               key={event.slug}
               onClick={() => setSelectedEvent(event)}
-              className={`group relative rounded-2xl overflow-hidden text-left transition-all duration-300 transform hover:scale-[1.03] hover:shadow-2xl bg-gray-900/50 ${
-                event.hasFullEvent
-                  ? 'border-2 border-purple-500/50 shadow-xl shadow-purple-500/20'
-                  : event.hasFeaturedFight
-                    ? 'border-2 border-accent/50 shadow-xl shadow-accent/20'
-                    : 'border border-gray-800 hover:border-accent/40 shadow-lg'
+              className={`group relative overflow-visible text-left transition-all duration-300 transform hover:scale-[1.03] bg-black ${
+                !event.hasFullEvent && !event.hasFeaturedFight
+                  ? 'border border-white/10 hover:border-white/30 shadow-lg'
+                  : ''
               }`}
             >
+              {/* Glow overlay for full-event cards */}
+              {event.hasFullEvent && (
+                <div className="absolute inset-0 border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5),0_0_30px_rgba(168,85,247,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(168,85,247,0.8),0_0_60px_rgba(168,85,247,0.5),0_0_100px_rgba(168,85,247,0.3)]" />
+              )}
+              {/* Glow overlay for featured cards */}
+              {!event.hasFullEvent && event.hasFeaturedFight && (
+                <div className="absolute inset-0 border-2 border-accent shadow-[0_0_15px_rgba(251,191,36,0.5),0_0_30px_rgba(251,191,36,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(251,191,36,0.8),0_0_60px_rgba(251,191,36,0.5),0_0_100px_rgba(251,191,36,0.3)]" />
+              )}
+
               {/* Full Event Badge */}
               {event.hasFullEvent && (
                 <div className="absolute top-4 left-4 z-10">
@@ -74,7 +81,7 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
               )}
 
               {/* Event Poster - Full display, no cropping */}
-              <div className="relative bg-black">
+              <div className="relative bg-black overflow-hidden">
                 {event.image ? (
                   <Image
                     src={event.image}
@@ -84,8 +91,8 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
                     className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="aspect-[3/4] bg-gradient-to-br from-primary/30 to-accent/10 flex items-center justify-center">
-                    <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="aspect-[3/4] bg-white/[0.03] flex items-center justify-center">
+                    <svg className="w-16 h-16 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -94,12 +101,12 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
 
               {/* Event Info - Below poster */}
               <div className="p-4">
-                <h3 className="font-bold text-white text-lg mb-1 group-hover:text-accent transition-colors">
+                <h3 className="font-bold text-white text-lg mb-1 group-hover:text-gray-300 transition-colors">
                   {event.name}
                 </h3>
-                <div className="flex items-center justify-between text-sm text-gray-400">
+                <div className="flex items-center justify-between text-sm text-gray-500">
                   <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                  <span className="text-accent font-semibold">{event.fightCount} {event.fightCount === 1 ? 'fight' : 'fights'}</span>
+                  <span className="text-white font-semibold">{event.fightCount} {event.fightCount === 1 ? 'fight' : 'fights'}</span>
                 </div>
               </div>
             </button>
@@ -115,7 +122,7 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
       {/* Back Button */}
       <button
         onClick={() => setSelectedEvent(null)}
-        className="inline-flex items-center gap-2 text-accent hover:text-accent/80 mb-8 transition-colors group"
+        className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors group"
       >
         <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -139,8 +146,10 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
         .map((product) => (
           <div
             key={product.id}
-            className="relative mb-12 rounded-2xl overflow-hidden bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-purple-900/30 border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20"
+            className="group relative mb-12 overflow-visible bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-purple-900/30"
           >
+            <div className="absolute inset-0 border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5),0_0_30px_rgba(168,85,247,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(168,85,247,0.8),0_0_60px_rgba(168,85,247,0.5),0_0_100px_rgba(168,85,247,0.3)]" />
+
             {/* Badge */}
             <div className="absolute top-4 left-4 z-10">
               <span className="bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-500 text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 rounded-full shadow-lg shadow-purple-500/30 uppercase tracking-wider">
@@ -179,14 +188,14 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
                 {ownedProducts[product.id] ? (
                   <Link
                     href={`/watch?purchase_id=${ownedProducts[product.id]}`}
-                    className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xl font-bold rounded-xl hover:from-green-500 hover:to-emerald-500 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-green-600/30 border border-green-500/20 inline-flex items-center gap-2"
+                    className="px-8 py-4 bg-white text-black text-xl font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center gap-2 tracking-wide"
                   >
                     ▶ Watch
                   </Link>
                 ) : product.available && product.priceId ? (
                   <VodBuyButton priceId={product.priceId} />
                 ) : !product.available ? (
-                  <span className="px-6 py-3 bg-gray-700 text-gray-300 text-sm font-bold rounded-xl border border-gray-600 uppercase tracking-wider cursor-default">
+                  <span className="px-6 py-3 bg-transparent text-gray-500 text-sm font-bold border border-white/20 uppercase tracking-wider cursor-default">
                     Coming Soon
                   </span>
                 ) : null}
@@ -202,12 +211,17 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
           .map((product) => (
             <div
               key={product.id}
-              className={`relative rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl ${
+              className={`group relative overflow-visible transition-all duration-300 hover:scale-[1.03] ${
                 product.featured === 'true'
-                  ? 'bg-gradient-to-b from-accent/10 to-primary/10 border-2 border-accent/50 shadow-xl shadow-accent/20'
-                  : 'bg-gray-900/50 border border-gray-800 hover:border-accent/40 shadow-lg'
+                  ? 'bg-gradient-to-b from-accent/10 to-primary/10'
+                  : 'bg-black border border-white/10 hover:border-white/30 shadow-lg'
               }`}
             >
+              {/* Glow overlay for featured fight cards */}
+              {product.featured === 'true' && (
+                <div className="absolute inset-0 border-2 border-accent shadow-[0_0_15px_rgba(251,191,36,0.5),0_0_30px_rgba(251,191,36,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(251,191,36,0.8),0_0_60px_rgba(251,191,36,0.5),0_0_100px_rgba(251,191,36,0.3)]" />
+              )}
+
               {/* Featured Fight Badge */}
               {product.featured === 'true' && (
                 <div className="absolute top-3 left-3 z-10">
@@ -242,14 +256,14 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
                 )}
 
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xl font-bold text-accent">${product.price}</span>
+                  <span className="text-xl font-bold text-white">${product.price}</span>
                   <span className="text-xs text-gray-500 uppercase">{product.currency}</span>
                 </div>
 
                 {ownedProducts[product.id] ? (
                   <Link
                     href={`/watch?purchase_id=${ownedProducts[product.id]}`}
-                    className="w-full text-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-base font-bold rounded-xl hover:from-green-500 hover:to-emerald-500 transition-all duration-300 shadow-lg shadow-green-600/30 border border-green-500/20 inline-flex items-center justify-center gap-2"
+                    className="w-full text-center px-6 py-3 bg-white text-black text-base font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center justify-center gap-2 tracking-wide"
                   >
                     ▶ Watch Now
                   </Link>
@@ -258,16 +272,16 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
                 ) : !product.available ? (
                   <button
                     disabled
-                    className="w-full px-6 py-3 bg-gray-700 text-gray-300 text-sm font-bold rounded-xl border border-gray-600 uppercase tracking-wider cursor-default"
+                    className="w-full px-6 py-3 bg-transparent text-gray-500 text-sm font-bold border border-white/20 uppercase tracking-wider cursor-default"
                   >
                     Coming Soon
                   </button>
                 ) : null}
 
                 {product.note && (
-                  <div className="mt-3 p-3 bg-yellow-900/20 border border-accent/30 rounded-lg">
-                    <p className="text-xs text-gray-300">
-                      <span className="text-accent font-semibold">Note:</span> {product.note}
+                  <div className="mt-3 p-3 bg-white/[0.03] border border-white/10">
+                    <p className="text-xs text-gray-400">
+                      <span className="text-white font-semibold">Note:</span> {product.note}
                     </p>
                   </div>
                 )}
@@ -280,7 +294,7 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
       <div className="mt-12 text-center">
         <button
           onClick={() => setSelectedEvent(null)}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors border border-gray-700"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-bold text-sm tracking-[0.15em] uppercase hover:bg-gray-200 transition-colors border border-white"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

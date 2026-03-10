@@ -116,15 +116,21 @@ export default async function VodPage() {
 
   return (
     <>
-      <section className="min-h-screen bg-gradient-to-b from-black via-secondary to-black overflow-x-hidden pt-20">
+      <section className="min-h-screen bg-black overflow-x-hidden pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
           <div className="mb-10">
             <ResumeWatchingBanner />
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-12 text-center">
-            Video on Demand
-          </h1>
+          <div className="mb-12">
+            <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">
+              Library
+            </p>
+            <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight">
+              Video on Demand
+            </h1>
+            <div className="w-16 h-[2px] bg-white mt-6" />
+          </div>
 
           <VodContent events={events} ownedProducts={ownedProducts} />
         </div>

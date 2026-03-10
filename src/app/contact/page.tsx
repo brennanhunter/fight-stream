@@ -45,38 +45,45 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-black to-secondary/90 pt-24 pb-16 px-4">
+    <div className="min-h-screen bg-black pt-24 pb-16 px-4">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 text-center">
-          Contact Us
-        </h1>
-        <p className="text-xl text-gray-300 mb-12 text-center max-w-2xl mx-auto">
-          Ready to stream your next boxing event? Get in touch with us today.
-        </p>
+        <div className="mb-12">
+          <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">
+            Get Started
+          </p>
+          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+            Contact Us
+          </h1>
+          <div className="w-16 h-[2px] bg-white mt-6" />
+          <p className="text-lg text-gray-400 mt-6 max-w-2xl leading-relaxed">
+            Ready to stream your next boxing event? Get in touch with us today.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Contact Information */}
           <div className="space-y-6">
-            <div className="bg-black/40 backdrop-blur-sm border-2 border-accent/20 rounded-xl p-8">
+            <div className="group relative overflow-visible p-8">
+              <div className="absolute inset-0 border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.5),0_0_30px_rgba(255,255,255,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.8),0_0_60px_rgba(255,255,255,0.5),0_0_100px_rgba(255,255,255,0.3)]" />
               <h2 className="text-2xl font-bold text-white mb-6">Get In Touch</h2>
-              
+
               {/* Ryan Ross */}
-              <div className="mb-8 pb-8 border-b border-gray-700">
-                <h3 className="text-xl font-bold text-accent mb-4">Ryan Ross</h3>
+              <div className="mb-8 pb-8 border-b border-white/10">
+                <h3 className="text-lg font-bold text-white mb-4">Ryan Ross</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <a href="mailto:ryanmiross@gmail.com" className="hover:text-accent transition-colors">
+                    <a href="mailto:ryanmiross@gmail.com" className="hover:text-white transition-colors">
                       ryanmiross@gmail.com
                     </a>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <a href="tel:386-747-8250" className="hover:text-accent transition-colors">
+                    <a href="tel:386-747-8250" className="hover:text-white transition-colors">
                       386-747-8250
                     </a>
                   </div>
@@ -85,21 +92,21 @@ export default function ContactPage() {
 
               {/* Hunter Coleman */}
               <div>
-                <h3 className="text-xl font-bold text-accent mb-4">Hunter Coleman</h3>
+                <h3 className="text-lg font-bold text-white mb-4">Hunter Coleman</h3>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <a href="mailto:hunter@xtremery.com" className="hover:text-accent transition-colors">
+                    <a href="mailto:hunter@xtremery.com" className="hover:text-white transition-colors">
                       hunter@xtremery.com
                     </a>
                   </div>
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <a href="tel:406-868-5850" className="hover:text-accent transition-colors">
+                    <a href="tel:406-868-5850" className="hover:text-white transition-colors">
                       406-868-5850
                     </a>
                   </div>
@@ -108,48 +115,45 @@ export default function ContactPage() {
             </div>
 
             {/* Additional Info */}
-            <div className="bg-black/40 backdrop-blur-sm border-2 border-primary/20 rounded-xl p-8">
-              <h3 className="text-xl font-bold text-white mb-4">Why Choose Box Stream TV?</h3>
-              <ul className="space-y-3 text-gray-300">
-                <li className="flex items-start gap-2">
-                  <span className="text-accent mt-1">✓</span>
-                  <span>No upfront production costs</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent mt-1">✓</span>
-                  <span>Professional multi-camera coverage</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent mt-1">✓</span>
-                  <span>Revenue sharing model</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent mt-1">✓</span>
-                  <span>High-quality footage for promotion</span>
-                </li>
+            <div className="group relative overflow-visible p-8">
+              <div className="absolute inset-0 border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.5),0_0_30px_rgba(255,255,255,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.8),0_0_60px_rgba(255,255,255,0.5),0_0_100px_rgba(255,255,255,0.3)]" />
+              <h3 className="text-lg font-bold text-white mb-4">Why Choose Box Stream TV?</h3>
+              <ul className="space-y-3 text-gray-400">
+                {[
+                  'No upfront production costs',
+                  'Professional multi-camera coverage',
+                  'Revenue sharing model',
+                  'High-quality footage for promotion',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="text-white mt-0.5">&mdash;</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
 
           {/* Contact Form */}
-          <div className="bg-black/40 backdrop-blur-sm border-2 border-accent/20 rounded-xl p-8">
+          <div className="group relative overflow-visible p-8">
+            <div className="absolute inset-0 border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.5),0_0_30px_rgba(255,255,255,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.8),0_0_60px_rgba(255,255,255,0.5),0_0_100px_rgba(255,255,255,0.3)]" />
             <h2 className="text-2xl font-bold text-white mb-6">Send Us a Message</h2>
-            
+
             {status === 'success' && (
-              <div className="mb-6 p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-300">
+              <div className="mb-6 p-4 border border-white/30 bg-white/5 text-white">
                 Thank you! We&apos;ll get back to you soon.
               </div>
             )}
 
             {status === 'error' && (
-              <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-300">
+              <div className="mb-6 p-4 border border-red-500/50 bg-red-500/10 text-red-300">
                 Something went wrong. Please try again or contact us directly.
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="name" className="block text-white font-medium mb-2">
+                <label htmlFor="name" className="block text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">
                   Name *
                 </label>
                 <input
@@ -159,13 +163,13 @@ export default function ContactPage() {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full bg-secondary/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-accent transition-colors"
+                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors"
                   placeholder="Your name"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-white font-medium mb-2">
+                <label htmlFor="email" className="block text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">
                   Email *
                 </label>
                 <input
@@ -175,13 +179,13 @@ export default function ContactPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full bg-secondary/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-accent transition-colors"
+                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors"
                   placeholder="your@email.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-white font-medium mb-2">
+                <label htmlFor="phone" className="block text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">
                   Phone
                 </label>
                 <input
@@ -190,13 +194,13 @@ export default function ContactPage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full bg-secondary/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-accent transition-colors"
+                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors"
                   placeholder="(555) 123-4567"
                 />
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-white font-medium mb-2">
+                <label htmlFor="subject" className="block text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">
                   Subject *
                 </label>
                 <input
@@ -206,13 +210,13 @@ export default function ContactPage() {
                   value={formData.subject}
                   onChange={handleChange}
                   required
-                  className="w-full bg-secondary/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-accent transition-colors"
+                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors"
                   placeholder="What can we help you with?"
                 />
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-white font-medium mb-2">
+                <label htmlFor="message" className="block text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">
                   Message *
                 </label>
                 <textarea
@@ -222,7 +226,7 @@ export default function ContactPage() {
                   onChange={handleChange}
                   required
                   rows={6}
-                  className="w-full bg-secondary/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-accent transition-colors resize-none"
+                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors resize-none"
                   placeholder="Tell us about your event..."
                 />
               </div>
@@ -230,7 +234,7 @@ export default function ContactPage() {
               <button
                 type="submit"
                 disabled={status === 'submitting'}
-                className="w-full bg-gradient-to-r from-primary to-red-600 hover:from-red-600 hover:to-primary text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-white text-black font-bold py-4 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {status === 'submitting' ? 'Sending...' : 'Send Message'}
               </button>

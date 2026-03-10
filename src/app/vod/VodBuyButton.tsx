@@ -31,12 +31,12 @@ export default function VodBuyButton({ priceId }: { priceId: string }) {
     <button
       onClick={handlePurchase}
       disabled={loading}
-      className="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-primary via-red-600 to-primary text-white text-xl font-bold rounded-xl 
-        hover:from-red-700 hover:via-red-500 hover:to-red-700 
+      className="w-full sm:w-auto px-10 py-4 bg-white text-black text-xl font-bold 
+        hover:bg-gray-200 
         disabled:opacity-50 disabled:cursor-not-allowed
-        transition-all duration-300 transform hover:scale-105 
-        shadow-lg shadow-primary/30 hover:shadow-primary/50
-        border border-accent/20"
+        transition-all duration-300 
+        tracking-wide
+        border border-white"
     >
       {loading ? 'Redirecting to checkout...' : '🥊 Buy Now'}
     </button>

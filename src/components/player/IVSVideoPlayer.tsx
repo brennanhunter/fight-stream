@@ -388,8 +388,8 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
           {isLoading && !error && (
             <div className="absolute inset-0 bg-black flex items-center justify-center">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent mx-auto mb-4"></div>
-                <p className="text-white text-lg">Loading stream...</p>
+                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mx-auto mb-4"></div>
+                <p className="text-white text-lg tracking-wide">Loading stream...</p>
               </div>
             </div>
           )}
@@ -427,7 +427,7 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                 <div className="text-center max-w-2xl z-10 w-full">
                   {/* Stream Offline Icon */}
                   <div className="mb-3 sm:mb-6">
-                    <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-gray-800/80 border-2 border-gray-700 backdrop-blur-sm">
+                    <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-black/80 border border-white/20 backdrop-blur-sm">
                       <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
@@ -449,7 +449,7 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                       <button 
                         onClick={handlePurchase}
                         disabled={checkoutLoading}
-                        className="bg-primary hover:bg-primary/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-lg w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-white text-black font-bold py-3 sm:py-4 px-6 sm:px-8 text-base sm:text-lg tracking-wide transition-all duration-300 hover:bg-gray-200 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {checkoutLoading ? 'Redirecting...' : `Purchase PPV Access - ${priceDisplay}`}
                       </button>
@@ -462,7 +462,7 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                         {!showRecovery ? (
                           <button
                             onClick={() => setShowRecovery(true)}
-                            className="text-xs text-accent hover:text-accent/80 underline underline-offset-2 transition-colors"
+                            className="text-xs text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
                           >
                             Already purchased? Recover access
                           </button>
@@ -476,12 +476,12 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                                 onChange={(e) => { setRecoveryEmail(e.target.value); setRecoveryError(null); }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleRecoverAccess()}
                                 placeholder="your@email.com"
-                                className="flex-1 px-3 py-2 bg-black/50 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-accent"
+                                className="flex-1 px-3 py-2 bg-black/50 border border-white/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-white"
                               />
                               <button
                                 onClick={handleRecoverAccess}
                                 disabled={recoveryLoading || !recoveryEmail.trim()}
-                                className="px-4 py-2 bg-accent hover:bg-accent/80 text-black font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2 bg-white hover:bg-gray-200 text-black font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 {recoveryLoading ? '...' : 'Recover'}
                               </button>
@@ -497,7 +497,7 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                   )}
 
                   {/* Event Details */}
-                  <div className="mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 md:pt-8 border-t border-gray-700/50 backdrop-blur-sm bg-black/20 rounded-lg p-3 sm:p-4">
+                  <div className="mt-4 sm:mt-6 md:mt-8 pt-4 sm:pt-6 md:pt-8 border-t border-white/10 bg-black/20 p-3 sm:p-4">
                     <p className="text-gray-200 text-xs sm:text-sm drop-shadow">
                       {event && <><span className="font-semibold text-white">Event:</span> {event.name} — {new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</>}
                     </p>
@@ -511,7 +511,7 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
           {isPlaying && (
             <div className="absolute top-4 left-4 z-10">
               <div className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg font-bold">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                <span className="w-2 h-2 bg-black rounded-full animate-pulse"></span>
                 LIVE
               </div>
             </div>
@@ -531,7 +531,7 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                     {/* Play/Pause */}
                     <button 
                       onClick={togglePlay}
-                      className="text-white hover:text-accent transition-colors p-2 hover:bg-white/10 rounded"
+                      className="text-white hover:text-gray-300 transition-colors p-2 hover:bg-white/10"
                       title={isPlaying ? "Pause" : "Play"}
                     >
                       {isPlaying ? (
@@ -549,7 +549,7 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={toggleMute} 
-                        className="text-white hover:text-accent transition-colors p-2 hover:bg-white/10 rounded"
+                        className="text-white hover:text-gray-300 transition-colors p-2 hover:bg-white/10"
                         title={isMuted ? "Unmute" : "Mute"}
                       >
                         {isMuted || volume === 0 ? (
@@ -568,9 +568,9 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                         max="100"
                         value={isMuted ? 0 : volume}
                         onChange={handleVolumeChange}
-                        className="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-accent"
+                        className="w-24 h-1 bg-gray-600 appearance-none cursor-pointer accent-white"
                         style={{
-                          background: `linear-gradient(to right, #fbbf24 0%, #fbbf24 ${isMuted ? 0 : volume}%, #4b5563 ${isMuted ? 0 : volume}%, #4b5563 100%)`
+                          background: `linear-gradient(to right, #ffffff 0%, #ffffff ${isMuted ? 0 : volume}%, #4b5563 ${isMuted ? 0 : volume}%, #4b5563 100%)`
                         }}
                       />
                     </div>
@@ -595,7 +595,7 @@ export default function IVSVideoPlayer({ event }: { event?: EventData }) {
                     {/* Fullscreen */}
                     <button 
                       onClick={toggleFullscreen}
-                      className="text-white hover:text-accent transition-colors p-2 hover:bg-white/10 rounded"
+                      className="text-white hover:text-gray-300 transition-colors p-2 hover:bg-white/10"
                       title="Fullscreen"
                     >
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

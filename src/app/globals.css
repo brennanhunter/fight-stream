@@ -12,28 +12,15 @@
   --color-background: #ffffff;
   --color-foreground: #171717;
   
-  /* Boxing-themed colors */
-  --color-primary: #dc2626;        /* Boxing red */
+  /* Core palette — black & white with functional accents */
+  --color-primary: #dc2626;        /* Action red (buttons, CTAs) */
   --color-primary-foreground: #ffffff;
-  --color-secondary: #1a1a1a;      /* Deep black */
+  --color-secondary: #1a1a1a;      /* Deep black (backgrounds) */
   --color-secondary-foreground: #ffffff;
-  --color-accent: #fbbf24;         /* Championship gold */
+  --color-accent: #fbbf24;         /* Highlight gold (interactive elements) */
   --color-accent-foreground: #1a1a1a;
-  --color-muted: #f3f4f6;          /* Light gray */
-  --color-muted-foreground: #6b7280;
-  --color-destructive: #ef4444;    /* Red for danger */
+  --color-destructive: #ef4444;    /* Error state */
   --color-destructive-foreground: #ffffff;
-  --color-success: #10b981;        /* Green for success */
-  --color-success-foreground: #ffffff;
-  --color-warning: #f59e0b;        /* Orange for warnings */
-  --color-warning-foreground: #1a1a1a;
-  --color-border: #e5e7eb;
-  --color-input: #f9fafb;
-  --color-ring: #dc2626;
-  --color-card: #ffffff;
-  --color-card-foreground: #171717;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #171717;
   
   /* Fonts */
   --font-sans: 'Alliance No.2', ui-sans-serif, system-ui, sans-serif;
@@ -43,29 +30,14 @@
 @theme dark {
   --color-background: #0a0a0a;
   --color-foreground: #ededed;
-  
-  /* Boxing-themed colors for dark mode */
-  --color-primary: #ef4444;        /* Brighter red for dark mode */
+  --color-primary: #ef4444;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #262626;      /* Dark gray */
+  --color-secondary: #262626;
   --color-secondary-foreground: #ffffff;
-  --color-accent: #fbbf24;         /* Championship gold */
+  --color-accent: #fbbf24;
   --color-accent-foreground: #1a1a1a;
-  --color-muted: #1f2937;          /* Dark muted */
-  --color-muted-foreground: #9ca3af;
-  --color-destructive: #f87171;    /* Lighter red for dark mode */
+  --color-destructive: #f87171;
   --color-destructive-foreground: #ffffff;
-  --color-success: #34d399;        /* Lighter green for dark mode */
-  --color-success-foreground: #1a1a1a;
-  --color-warning: #fbbf24;        /* Gold warning for dark mode */
-  --color-warning-foreground: #1a1a1a;
-  --color-border: #374151;
-  --color-input: #1f2937;
-  --color-ring: #ef4444;
-  --color-card: #111827;
-  --color-card-foreground: #f9fafb;
-  --color-popover: #111827;
-  --color-popover-foreground: #f9fafb;
 }
 
 html, body {
@@ -115,4 +87,50 @@ html.vod-fullscreen .vod-player-wrapper video {
   --media-focus-ring-color: #dc2626;
   --media-focus-ring: 0 0 0 3px var(--media-focus-ring-color);
   --media-font-family: 'Alliance No.2', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ═══════ Marquee animation ═══════ */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.33%); }
+}
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+/* ═══════ Ring rope lines ═══════ */
+.ring-ropes {
+  pointer-events: none;
+}
+.ring-ropes::before,
+.ring-ropes::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: white;
+  opacity: 0.07;
+}
+.ring-ropes::before { top: 33%; }
+.ring-ropes::after  { top: 66%; }
+
+/* ═══════ Fade-in on scroll ═══════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up {
+  animation: fadeInUp 0.7s ease-out both;
+}
+
+/* ═══════ Subtle noise texture ═══════ */
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
 }

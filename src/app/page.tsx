@@ -1,6 +1,5 @@
 import Hero from '@/components/hero/Hero';
 import Footer from '@/components/layout/Footer';
-import VideoSection from '@/components/video/VideoSection';
 import ResumeWatchingBanner from '@/components/ResumeWatchingBanner';
 import IVSVideoPlayer from '@/components/player/IVSVideoPlayer';
 import { createServerClient } from '@/lib/supabase';
@@ -52,10 +51,9 @@ export default async function Home() {
         /* No active event — normal homepage */
         <>
           <Hero />
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 bg-black">
             <ResumeWatchingBanner />
           </div>
-          <VideoSection />
           <Footer />
         </>
       )}
