@@ -233,12 +233,13 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
 
               {/* Product Image */}
               {product.image && (
-                <div className="relative aspect-video bg-black">
+                <div className="relative bg-black overflow-hidden">
                   <Image
                     src={product.image}
                     alt={product.name}
-                    fill
-                    className="object-cover"
+                    width={600}
+                    height={900}
+                    className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
               )}
