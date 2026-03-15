@@ -10,9 +10,12 @@ export const dynamic = 'force-dynamic';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 async function getProducts(): Promise<VodProduct[]> {
-  const products = await stripe.products.list({ active: true, expand: ['data.default_price'] });
+  const products: Stripe.Product[] = [];
+  for await (const product of stripe.products.list({ active: true, expand: ['data.default_price'], limit: 100 })) {
+    products.push(product);
+  }
 
-  return products.data
+  return products
     .filter((p) => p.metadata.site === 'boxstreamtv' && (p.metadata.s3_key || p.metadata.available === 'false'))
     .map((p) => {
       const price = p.default_price as Stripe.Price;
