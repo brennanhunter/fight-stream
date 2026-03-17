@@ -77,7 +77,7 @@ export async function checkGeoRestriction(
     if (!clientIp) return { blocked: false, distanceMiles: null };
 
     const res = await fetch(`https://ipapi.co/${encodeURIComponent(clientIp)}/json/`, {
-      next: { revalidate: 300 }, // cache for 5 minutes
+      cache: 'no-store',
     });
 
     if (!res.ok) return { blocked: false, distanceMiles: null };

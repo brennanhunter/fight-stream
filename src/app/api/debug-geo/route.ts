@@ -49,7 +49,7 @@ export async function GET() {
     clientIp: ip,
     event: event ? { venue_address: event.venue_address, blackout_radius_miles: event.blackout_radius_miles } : null,
     nominatim: nominatimResult,
-    ipApi: ipApiResult ? { latitude: ipApiResult.latitude, longitude: ipApiResult.longitude, city: ipApiResult.city, region: ipApiResult.region } : null,
+    ipApi: ipApiResult,
     geoResult,
   });
 }
