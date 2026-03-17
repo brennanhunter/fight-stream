@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const supabase = createServerClient();
     const { data: event } = await supabase
       .from('events')
-      .select('venue_address, blackout_radius_miles')
+      .select('id, name, venue_address, blackout_radius_miles')
       .eq('is_active', true)
       .maybeSingle();
 
@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       allow_promotion_codes: true,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'payment',
+      metadata: event ? { eventId: event.id, eventName: event.name } : {},
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
     });

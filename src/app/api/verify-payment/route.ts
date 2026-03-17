@@ -41,16 +41,37 @@ export async function POST(req: NextRequest) {
       .eq('is_active', true)
       .maybeSingle();
 
-    const eventId = activeEvent?.id || 'unknown';
-    const eventName = activeEvent?.name || 'Unknown Event';
-    const expiresAt = activeEvent?.expires_at
+    if (!activeEvent) {
+      return NextResponse.json(
+        { error: 'No active event configured. Please contact support.' },
+        { status: 400 }
+      );
+    }
+
+    const eventId = activeEvent.id;
+    const eventName = activeEvent.name;
+    const expiresAt = activeEvent.expires_at
       ? new Date(activeEvent.expires_at).toISOString()
       : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
-    const customerEmail = (checkoutSession.customer_details?.email || 'customer@example.com').toLowerCase().trim();
+    const customerEmail = checkoutSession.customer_details?.email?.toLowerCase().trim();
+    if (!customerEmail) {
+      console.warn('No customer email from Stripe for session:', sessionId);
+      return NextResponse.json(
+        { error: 'No email found on checkout session. Please contact support.' },
+        { status: 400 }
+      );
+    }
     const paymentIntentId = typeof checkoutSession.payment_intent === 'string'
       ? checkoutSession.payment_intent
       : checkoutSession.payment_intent?.id || sessionId;
+
+    // Prevent duplicate inserts on page refresh
+    const { data: existingPurchase } = await supabase
+      .from('purchases')
+      .select('id')
+      .eq('stripe_payment_intent_id', paymentIntentId)
+      .maybeSingle();
 
     const sessionData = {
       purchaseId: paymentIntentId,
@@ -66,32 +87,33 @@ export async function POST(req: NextRequest) {
     // Store customer email for future Supabase lookups
     const { cookies: getCookies } = await import('next/headers');
     const cookieStore = await getCookies();
-    if (customerEmail && customerEmail !== 'customer@example.com') {
-      cookieStore.set('customer_email', customerEmail, {
-        httpOnly: false,
-        secure: true,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 365,
-      });
-    }
-
-    // Save PPV purchase to Supabase
-    const { error: insertError } = await supabase.from('purchases').insert({
-      email: customerEmail,
-      purchase_type: 'ppv',
-      stripe_payment_intent_id: paymentIntentId,
-      stripe_product_id: null,
-      product_name: eventName,
-      event_id: eventId,
-      amount_paid: checkoutSession.amount_total || 0,
-      currency: checkoutSession.currency || 'usd',
-      expires_at: expiresAt,
+    cookieStore.set('customer_email', customerEmail, {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
     });
 
-    if (insertError) {
-      console.error('Supabase PPV save error:', insertError);
-    } else {
-      console.log('Supabase PPV purchase saved for:', customerEmail);
+    // Save PPV purchase to Supabase (skip if already saved)
+    if (!existingPurchase) {
+      const { error: insertError } = await supabase.from('purchases').insert({
+        email: customerEmail,
+        purchase_type: 'ppv',
+        stripe_payment_intent_id: paymentIntentId,
+        stripe_product_id: null,
+        product_name: eventName,
+        event_id: eventId,
+        amount_paid: checkoutSession.amount_total || 0,
+        currency: checkoutSession.currency || 'usd',
+        expires_at: expiresAt,
+      });
+
+      if (insertError) {
+        console.error('Supabase PPV save error:', insertError);
+      } else {
+        console.log('Supabase PPV purchase saved for:', customerEmail);
+      }
     }
 
     return NextResponse.json({

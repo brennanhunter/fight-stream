@@ -38,13 +38,36 @@ export async function POST(req: NextRequest) {
       .eq('is_active', true)
       .maybeSingle();
 
-    const eventId = activeEvent?.id || 'unknown';
-    const eventName = activeEvent?.name || 'Unknown Event';
-    const expiresAt = activeEvent?.expires_at
+    if (!activeEvent) {
+      return NextResponse.json(
+        { error: 'No active event configured.' },
+        { status: 400 }
+      );
+    }
+
+    const eventId = activeEvent.id;
+    const eventName = activeEvent.name;
+    const expiresAt = activeEvent.expires_at
       ? new Date(activeEvent.expires_at).toISOString()
       : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
-    const promoEmail = email || 'promo@boxstreamtv.com';
+    const promoEmail = (email || '').trim().toLowerCase() || 'promo@boxstreamtv.com';
+
+    // Prevent duplicate redemptions for the same email + event
+    const { data: existingPromo } = await supabase
+      .from('purchases')
+      .select('id')
+      .eq('email', promoEmail)
+      .eq('event_id', eventId)
+      .eq('amount_paid', 0)
+      .maybeSingle();
+
+    if (existingPromo) {
+      return NextResponse.json(
+        { error: 'This email has already redeemed a promo code for this event.' },
+        { status: 400 }
+      );
+    }
 
     // Code is valid — grant access by creating a session
     const sessionData = {

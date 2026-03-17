@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,6 +10,7 @@ function PaymentSuccessContent() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [eventInfo, setEventInfo] = useState<{ eventName: string; expiresAt: string } | null>(null);
+  const redirectTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
@@ -40,7 +41,7 @@ function PaymentSuccessContent() {
         setStatus('success');
         
         // Redirect to home page after 3 seconds
-        setTimeout(() => {
+        redirectTimer.current = setTimeout(() => {
           router.push('/');
         }, 3000);
       } catch (error) {
@@ -52,6 +53,10 @@ function PaymentSuccessContent() {
 
     // Verify payment and create session
     verifyPayment(sessionId);
+
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
   }, [searchParams, router]);
 
   if (status === 'loading') {

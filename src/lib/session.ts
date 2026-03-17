@@ -14,9 +14,10 @@ export interface SessionData {
 // Cookie name for the session
 const SESSION_COOKIE_NAME = 'ppv_session';
 
-// Secret key for signing JWTs (in production, use a proper secret from env)
+// Secret key for signing JWTs
 const getSecretKey = () => {
-  const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET environment variable is required');
   return new TextEncoder().encode(secret);
 };
 

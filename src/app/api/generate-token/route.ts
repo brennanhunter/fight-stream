@@ -9,7 +9,7 @@ export async function POST() {
     const supabase = createServerClient();
     const { data: activeEvent } = await supabase
       .from('events')
-      .select('id')
+      .select('id, ivs_channel_arn, ivs_playback_url')
       .eq('is_active', true)
       .maybeSingle();
 
@@ -39,10 +39,21 @@ export async function POST() {
       );
     }
 
+    // Use per-event IVS settings from DB, fall back to env vars
+    const channelArn = activeEvent.ivs_channel_arn || process.env.IVS_CHANNEL_ARN;
+    const playbackUrl = activeEvent.ivs_playback_url || process.env.IVS_PLAYBACK_URL;
+
+    if (!channelArn || !playbackUrl) {
+      return NextResponse.json(
+        { error: 'Stream not configured for this event' },
+        { status: 500 }
+      );
+    }
+
     // Generate IVS token
     const token = jwt.sign(
       {
-        'aws:channel-arn': process.env.IVS_CHANNEL_ARN,
+        'aws:channel-arn': channelArn,
         'aws:access-control-allow-origin': process.env.NEXT_PUBLIC_SITE_URL,
         exp: Math.floor(Date.now() / 1000) + (60 * 60 * 2) // 2 hour expiry
       },
@@ -55,7 +66,7 @@ export async function POST() {
 
     return NextResponse.json({ 
       token, 
-      playbackUrl: process.env.IVS_PLAYBACK_URL 
+      playbackUrl 
     });
   } catch (error) {
     console.error('Token generation error:', error);

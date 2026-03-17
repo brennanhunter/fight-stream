@@ -73,22 +73,30 @@ fight-stream/
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── create-payment-intent/  # Stripe payment creation
-│   │   │   ├── verify-payment/         # Payment verification & session creation
-│   │   │   └── generate-token/         # IVS token generation
+│   │   │   ├── ppv-checkout/           # Stripe Checkout session creation (with geo-restriction)
+│   │   │   ├── verify-payment/         # Payment verification & JWT session creation
+│   │   │   ├── generate-token/         # IVS token generation (per-event from DB)
+│   │   │   ├── recover-access/         # Email-based access recovery
+│   │   │   ├── check-purchase/         # Check existing purchase by email
+│   │   │   ├── redeem-promo/           # Promo code redemption
+│   │   │   ├── save-session/           # Save/resume session
+│   │   │   └── checkout/               # VOD checkout
 │   │   ├── payment-success/            # Post-payment confirmation page
-│   │   └── page.tsx                    # Homepage with hero
+│   │   ├── vod/                        # Video on demand page
+│   │   ├── about/                      # About page
+│   │   ├── contact/                    # Contact page
+│   │   └── page.tsx                    # Homepage — fetches event from Supabase + Stripe
 │   ├── components/
-│   │   ├── payment/
-│   │   │   ├── PaymentModal.tsx        # Stripe payment modal
-│   │   │   └── CheckoutForm.tsx        # Payment form with Stripe Elements
-│   │   ├── player/
-│   │   │   └── IVSVideoPlayer.tsx      # AWS IVS video player
-│   │   └── hero/
-│   │       └── Hero.tsx                # Event promotion & buy button
+│   │   ├── hero/
+│   │   │   └── Hero.tsx                # Default hero (no active event)
+│   │   │   └── EventHero.tsx           # Full PPV lifecycle: purchase, countdown, live stream, replay
+│   │   └── layout/
+│   │       ├── Header.tsx
+│   │       └── Footer.tsx
 │   └── lib/
-│       ├── stripe.ts                   # Stripe client/server initialization
-│       └── session.ts                  # JWT session management utilities
+│       ├── stripe.ts                   # Stripe server client
+│       ├── session.ts                  # JWT session management (create, verify, hasEventAccess)
+│       └── supabase.ts                 # Supabase server client
 └── .env.local                          # Environment variables (not committed)
 ```
 
@@ -96,23 +104,23 @@ fight-stream/
 
 ### Payment Flow
 
-1. User clicks "BUY PPV NOW" button
-2. Payment modal opens with Stripe Payment Element
-3. User enters email and card details
-4. Stripe processes payment ($21.99)
-5. User redirected to success page
-6. Backend verifies payment with Stripe API
-7. JWT session cookie created with event access
-8. User redirected to homepage
+1. User clicks "BUY PPV NOW" on EventHero
+2. Geo-restriction check runs server-side (blocks blackout radius around venue)
+3. Stripe Checkout session created via `/api/ppv-checkout`
+4. User completes payment on Stripe-hosted checkout
+5. Redirected to `/payment-success` page
+6. Backend verifies payment via `/api/verify-payment`
+7. JWT session cookie created with event access (expires at event's `expires_at`)
+8. User redirected to homepage with "Purchased" badge on poster
 
 ### Video Access Flow
 
-1. User loads video player
-2. Player checks JWT session cookie
-3. If valid, calls `/api/generate-token`
-4. Backend verifies session has access to event
-5. Generates AWS IVS token (2-hour expiry)
-6. Video player loads authenticated stream
+1. EventHero polls for live stream every 5 seconds after purchase
+2. Calls `/api/generate-token` which verifies JWT session cookie
+3. Backend fetches IVS channel ARN + playback URL from Supabase (per-event)
+4. Generates AWS IVS token (2-hour expiry, ES384)
+5. Full-width IVS player renders with live stream
+6. After event ends, replay URL can be set in DB for on-demand playback
 
 ## Environment Variables
 
@@ -134,9 +142,10 @@ fight-stream/
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS 4
-- **Payments**: Stripe Payment Element
+- **Payments**: Stripe Checkout
 - **Video**: AWS IVS with token authentication
 - **Session**: JWT with `jose` library
+- **Database**: Supabase (PostgreSQL)
 - **Deployment**: Vercel (recommended)
 
 ## Deployment

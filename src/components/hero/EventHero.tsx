@@ -89,7 +89,8 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
         if (res.status === 403) { setAccessState('needs-purchase'); return; }
         if (!res.ok) { setAccessState('needs-purchase'); return; }
         const data = await res.json();
-        setPlaybackUrl(data.playbackUrl);
+        const url = data.token ? `${data.playbackUrl}?token=${data.token}` : data.playbackUrl;
+        setPlaybackUrl(url);
         setAccessState('has-access');
       } catch {
         setAccessState('needs-purchase');
@@ -245,9 +246,11 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   };
 
   /* ── Purchase handler ── */
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const handlePurchase = async () => {
     if (!stripePriceId) return;
     setCheckoutLoading(true);
+    setCheckoutError(null);
     try {
       const res = await fetch('/api/ppv-checkout', {
         method: 'POST',
@@ -255,9 +258,14 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
         body: JSON.stringify({ priceId: stripePriceId }),
       });
       const data = await res.json();
-      if (!res.ok) { setCheckoutLoading(false); return; }
+      if (!res.ok) {
+        setCheckoutError(data.error || 'Could not start checkout. Please try again.');
+        setCheckoutLoading(false);
+        return;
+      }
       window.location.href = data.url;
     } catch {
+      setCheckoutError('Something went wrong. Please try again.');
       setCheckoutLoading(false);
     }
   };
@@ -487,6 +495,9 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                       </button>
                     )}
                   </div>
+                  {checkoutError && (
+                    <p className="text-sm text-red-400">{checkoutError}</p>
+                  )}
                   {!showRecovery ? (
                     <button
                       onClick={() => setShowRecovery(true)}

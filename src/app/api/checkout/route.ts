@@ -1,29 +1,10 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
-import { checkGeoRestriction } from '@/lib/geo';
-import { createServerClient } from '@/lib/supabase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: Request) {
   try {
-    const supabase = createServerClient();
-    const { data: event } = await supabase
-      .from('events')
-      .select('venue_address, blackout_radius_miles')
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (event?.venue_address) {
-      const geo = await checkGeoRestriction(event.venue_address, event.blackout_radius_miles ?? 90);
-      if (geo.blocked) {
-        return NextResponse.json(
-          { error: 'This event is blacked out in your area due to local broadcast restrictions.' },
-          { status: 403 }
-        );
-      }
-    }
-
     const { priceId } = await request.json();
 
     if (!priceId) {
