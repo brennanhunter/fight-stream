@@ -57,9 +57,9 @@ function PaymentSuccessContent() {
   if (status === 'loading') {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent mb-6"></div>
-        <h2 className="text-2xl font-bold text-white mb-2">Verifying Payment...</h2>
-        <p className="text-gray-400">Please wait while we confirm your purchase</p>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-6"></div>
+        <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Verifying Payment...</h2>
+        <p className="text-gray-500">Please wait while we confirm your purchase</p>
       </div>
     );
   }
@@ -67,17 +67,17 @@ function PaymentSuccessContent() {
   if (status === 'error') {
     return (
       <div className="max-w-2xl mx-auto text-center py-20">
-        <div className="bg-destructive/10 border-2 border-destructive rounded-2xl p-8">
-          <div className="w-16 h-16 bg-destructive/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-destructive" fill="currentColor" viewBox="0 0 20 20">
+        <div className="border border-white/10 p-8">
+          <div className="w-16 h-16 border border-red-500/30 flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Payment Verification Failed</h2>
-          <p className="text-gray-300 mb-6">{errorMessage}</p>
+          <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Payment Verification Failed</h2>
+          <p className="text-gray-400 mb-6">{errorMessage}</p>
           <Link 
             href="/"
-            className="inline-block bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-lg transition-colors"
+            className="inline-block bg-white text-black font-bold py-3 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
           >
             Return to Home
           </Link>
@@ -88,34 +88,35 @@ function PaymentSuccessContent() {
 
   return (
     <div className="max-w-2xl mx-auto text-center py-20">
-      <div className="bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-accent rounded-2xl p-8">
+      <div className="border border-white/10 p-8 sm:p-12">
         {/* Success Icon */}
-        <div className="w-20 h-20 bg-accent rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-          <svg className="w-10 h-10 text-black" fill="currentColor" viewBox="0 0 20 20">
+        <div className="w-20 h-20 border border-white/20 flex items-center justify-center mx-auto mb-8">
+          <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         </div>
 
         {/* Success Message */}
-        <h1 className="text-4xl font-bold text-white mb-4">
-          Payment Successful! 🥊
+        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4 tracking-tight">
+          Payment Successful
         </h1>
-        <p className="text-xl text-gray-300 mb-6">
+        <div className="w-16 h-[2px] bg-white mx-auto mb-6" />
+        <p className="text-lg text-gray-400 mb-8">
           {eventInfo
-            ? <>You now have access to <span className="text-accent font-bold">{eventInfo.eventName}</span></>
-            : 'Your purchase has been confirmed!'}
+            ? <>You now have access to <span className="text-white font-semibold">{eventInfo.eventName}</span></>
+            : 'Your purchase has been confirmed.'}
         </p>
 
         {/* Event Details */}
         {eventInfo && (
-          <div className="bg-black/40 rounded-xl p-6 mb-6">
-            <div className="grid grid-cols-2 gap-4 text-left">
+          <div className="border border-white/10 p-6 mb-8 text-left">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-gray-400 text-sm">Event</p>
+                <p className="text-xs font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Event</p>
                 <p className="text-white font-semibold">{eventInfo.eventName}</p>
               </div>
               <div>
-                <p className="text-gray-400 text-sm">Access Until</p>
+                <p className="text-xs font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Access Until</p>
                 <p className="text-white font-semibold">{new Date(eventInfo.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
               </div>
             </div>
@@ -123,25 +124,21 @@ function PaymentSuccessContent() {
         )}
 
         {/* Next Steps */}
-        <div className="bg-black/40 rounded-xl p-4 mb-6">
-          <p className="text-white text-sm">
-            ✅ Your purchase has been confirmed
-            <br />
-            ✅ You can now watch the live stream when it starts
-            <br />
-            ✅ Access is valid until the day after the event
-          </p>
+        <div className="border border-white/10 p-4 mb-8 text-sm text-gray-400 space-y-2">
+          <p>Your purchase has been confirmed</p>
+          <p>You can now watch the live stream when it starts</p>
+          <p>Access is valid until the day after the event</p>
         </div>
 
         {/* Redirect Message */}
-        <p className="text-gray-400 text-sm mb-6">
+        <p className="text-gray-500 text-sm mb-6 tracking-wide">
           Redirecting you to the stream in 3 seconds...
         </p>
 
         {/* CTA Button */}
         <Link 
           href="/"
-          className="inline-block bg-gradient-to-r from-primary to-red-600 hover:from-red-600 hover:to-primary text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+          className="inline-block bg-white text-black font-bold py-4 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
         >
           Go to Stream Now
         </Link>
@@ -152,7 +149,7 @@ function PaymentSuccessContent() {
 
 export default function PaymentSuccessPage() {
   return (
-    <div className="min-h-screen bg-secondary py-12 px-4">
+    <div className="min-h-screen bg-black py-12 px-4">
       <Suspense fallback={
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent"></div>

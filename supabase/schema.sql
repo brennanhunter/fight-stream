@@ -56,18 +56,18 @@ CREATE POLICY "Users can view own purchases"
   FOR SELECT
   USING (auth.jwt() ->> 'email' = email);
 
--- 3. Events table (optional but useful for managing PPV events)
---    Stores event config so you don't need to hardcode anything.
+-- 3. Events table
+--    Stores event config. Price, poster image, and currency are
+--    pulled from Stripe via stripe_price_id at runtime.
 CREATE TABLE IF NOT EXISTS events (
   id              text PRIMARY KEY,      -- e.g., 'havoc-hilton-3-2026'
   name            text NOT NULL,         -- 'Havoc at the Hilton 3'
   date            timestamptz NOT NULL,  -- event date/time
-  price_cents     integer NOT NULL,      -- price in cents (1999 = $19.99)
-  currency        text NOT NULL DEFAULT 'usd',
-  stripe_price_id text,                  -- Stripe Price ID for checkout
+  stripe_price_id text,                  -- Stripe Price ID (image + price pulled from here)
   ivs_channel_arn text,                  -- IVS channel ARN for this event
   ivs_playback_url text,                 -- IVS playback URL
-  poster_image    text,                  -- event poster URL
+  venue_address   text,                  -- full venue address for geo-restriction
+  blackout_radius_miles integer,         -- geo-restriction radius in miles
   expires_at      timestamptz,           -- when access expires
   is_active       boolean NOT NULL DEFAULT false, -- is this the current live event?
   created_at      timestamptz NOT NULL DEFAULT now()
@@ -89,12 +89,11 @@ CREATE POLICY "Service role manages events"
   WITH CHECK (true);
 
 -- 4. Seed the current event
-INSERT INTO events (id, name, date, price_cents, expires_at, is_active)
+INSERT INTO events (id, name, date, expires_at, is_active)
 VALUES (
   'havoc-hilton-3-2026',
   'Havoc at the Hilton 3',
   '2026-03-07T19:00:00-05:00',
-  1999,
   '2026-03-08T23:59:59-05:00',
   false  -- set to true when you're ready to go live
 );

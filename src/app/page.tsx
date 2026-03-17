@@ -1,3 +1,4 @@
+import Stripe from 'stripe';
 import Hero from '@/components/hero/Hero';
 import EventHero from '@/components/hero/EventHero';
 import HomeContent from '@/components/hero/HomeContent';
@@ -8,17 +9,20 @@ import { checkGeoRestriction } from '@/lib/geo';
 
 export const dynamic = 'force-dynamic';
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
 interface ActiveEvent {
   id: string;
   name: string;
   date: string;
-  price_cents: number;
-  currency: string;
-  poster_image: string | null;
   stripe_price_id: string | null;
   expires_at: string | null;
   venue_address: string | null;
   blackout_radius_miles: number | null;
+  // Populated from Stripe
+  posterImage: string | null;
+  priceCents: number;
+  currency: string;
 }
 
 async function getActiveEvent(): Promise<ActiveEvent | null> {
@@ -26,7 +30,7 @@ async function getActiveEvent(): Promise<ActiveEvent | null> {
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from('events')
-      .select('id, name, date, price_cents, currency, poster_image, stripe_price_id, expires_at, venue_address, blackout_radius_miles')
+      .select('id, name, date, stripe_price_id, expires_at, venue_address, blackout_radius_miles')
       .eq('is_active', true)
       .maybeSingle();
     
@@ -35,8 +39,33 @@ async function getActiveEvent(): Promise<ActiveEvent | null> {
       return null;
     }
     
-    console.log('Active event data:', JSON.stringify(data));
-    return data || null;
+    if (!data) return null;
+
+    // Pull image and price directly from Stripe (like VODs do)
+    let posterImage: string | null = null;
+    let priceCents = 0;
+    let currency = 'usd';
+
+    if (data.stripe_price_id) {
+      try {
+        const price = await stripe.prices.retrieve(data.stripe_price_id, {
+          expand: ['product'],
+        });
+        const product = price.product as Stripe.Product;
+        posterImage = product.images?.[0] || null;
+        priceCents = price.unit_amount ?? 0;
+        currency = price.currency || 'usd';
+      } catch (stripeErr) {
+        console.error('Failed to fetch Stripe price/product:', stripeErr);
+      }
+    }
+
+    return {
+      ...data,
+      posterImage,
+      priceCents,
+      currency,
+    };
   } catch (err) {
     console.error('getActiveEvent exception:', err);
     return null;
@@ -69,9 +98,8 @@ export default async function Home() {
         <EventHero
           eventName={activeEvent.name}
           eventDate={activeEvent.date}
-          posterImage={activeEvent.poster_image}
-          priceCents={activeEvent.price_cents}
-          currency={activeEvent.currency}
+          posterImage={activeEvent.posterImage}
+          priceCents={activeEvent.priceCents}
           stripePriceId={activeEvent.stripe_price_id}
         />
       ) : (
