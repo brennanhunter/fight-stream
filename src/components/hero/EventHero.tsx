@@ -69,6 +69,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   const videoRef = useRef<HTMLVideoElement>(null);
   const replayRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<IVSPlayerInstance | null>(null);
+  const attachedVideoEl = useRef<HTMLVideoElement | null>(null);
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [playerLoaded, setPlayerLoaded] = useState(false);
   const [isStreamLive, setIsStreamLive] = useState(false);
@@ -127,6 +128,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
 
       if (videoRef.current) {
         player.attachHTMLVideoElement(videoRef.current);
+        attachedVideoEl.current = videoRef.current;
         videoRef.current.volume = 0.75;
         videoRef.current.muted = false;
       }
@@ -189,6 +191,19 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
     }, 5000);
     return () => clearInterval(poll);
   }, [playbackUrl, isStreamLive]);
+
+  /* ── Re-attach player when video element changes (layout switch) ── */
+  useEffect(() => {
+    if (!playerRef.current || !videoRef.current || !playbackUrl) return;
+    if (videoRef.current !== attachedVideoEl.current) {
+      attachedVideoEl.current = videoRef.current;
+      playerRef.current.attachHTMLVideoElement(videoRef.current);
+      videoRef.current.volume = volume / 100;
+      videoRef.current.muted = isMuted;
+      playerRef.current.load(playbackUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStreamLive, isPlayingReplay, playbackUrl]);
 
   /* ── Player controls ── */
   /* ── Player controls (work for both IVS live + native replay) ── */
