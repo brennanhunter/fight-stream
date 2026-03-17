@@ -35,7 +35,7 @@ export async function GET() {
     // Test IP geolocation
     if (ip) {
       try {
-        const ipRes = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, { cache: 'no-store' });
+        const ipRes = await fetch(`http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,lat,lon,city,regionName`, { cache: 'no-store' });
         ipApiResult = await ipRes.json();
       } catch (e) {
         ipApiResult = { error: String(e) };

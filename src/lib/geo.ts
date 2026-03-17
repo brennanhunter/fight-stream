@@ -76,15 +76,16 @@ export async function checkGeoRestriction(
     const clientIp = ip ?? await getClientIp();
     if (!clientIp) return { blocked: false, distanceMiles: null };
 
-    const res = await fetch(`https://ipwho.is/${encodeURIComponent(clientIp)}`, {
+    const res = await fetch(`http://ip-api.com/json/${encodeURIComponent(clientIp)}?fields=status,lat,lon,city,regionName`, {
       cache: 'no-store',
     });
 
     if (!res.ok) return { blocked: false, distanceMiles: null };
 
     const data = await res.json();
-    if (!data.success) return { blocked: false, distanceMiles: null };
-    const { latitude, longitude } = data;
+    if (data.status !== 'success') return { blocked: false, distanceMiles: null };
+    const latitude = data.lat;
+    const longitude = data.lon;
 
     if (typeof latitude !== 'number' || typeof longitude !== 'number') {
       return { blocked: false, distanceMiles: null };
