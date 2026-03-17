@@ -32,6 +32,7 @@ interface EventHeroProps {
   posterImage: string | null;
   priceCents: number;
   stripePriceId: string | null;
+  replayUrl: string | null;
 }
 
 function getTimeRemaining(targetDate: string) {
@@ -44,7 +45,7 @@ function getTimeRemaining(targetDate: string) {
   return { days, hours, minutes, seconds };
 }
 
-export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId }: EventHeroProps) {
+export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl }: EventHeroProps) {
   const priceDisplay = `$${(priceCents / 100).toFixed(2)}`;
 
   /* ── Countdown ── */
@@ -66,6 +67,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
 
   /* ── IVS player state ── */
   const videoRef = useRef<HTMLVideoElement>(null);
+  const replayRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<IVSPlayerInstance | null>(null);
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
   const [playerLoaded, setPlayerLoaded] = useState(false);
@@ -74,6 +76,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(75);
   const [showControls, setShowControls] = useState(true);
+  const [isPlayingReplay, setIsPlayingReplay] = useState(false);
 
   /* ── Check access on mount ── */
   useEffect(() => {
@@ -187,20 +190,28 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   }, [playbackUrl, isStreamLive]);
 
   /* ── Player controls ── */
+  /* ── Player controls (work for both IVS live + native replay) ── */
+  const activeVideo = isStreamLive ? videoRef.current : replayRef.current;
+
   const togglePlay = () => {
-    if (!playerRef.current) return;
-    isPlaying ? playerRef.current.pause() : playerRef.current.play();
+    if (isStreamLive && playerRef.current) {
+      isPlaying ? playerRef.current.pause() : playerRef.current.play();
+    } else if (replayRef.current) {
+      if (replayRef.current.paused) { replayRef.current.play(); setIsPlaying(true); }
+      else { replayRef.current.pause(); setIsPlaying(false); }
+    }
   };
 
   const toggleMute = () => {
-    if (!playerRef.current || !videoRef.current) return;
+    const vid = activeVideo;
+    if (!vid) return;
     if (isMuted) {
-      playerRef.current.setVolume(volume / 100);
-      videoRef.current.muted = false;
+      if (playerRef.current && isStreamLive) playerRef.current.setVolume(volume / 100);
+      vid.muted = false;
       setIsMuted(false);
     } else {
-      playerRef.current.setVolume(0);
-      videoRef.current.muted = true;
+      if (playerRef.current && isStreamLive) playerRef.current.setVolume(0);
+      vid.muted = true;
       setIsMuted(true);
     }
   };
@@ -208,15 +219,29 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseInt(e.target.value);
     setVolume(v);
-    if (playerRef.current) playerRef.current.setVolume(v / 100);
-    if (videoRef.current) { videoRef.current.volume = v / 100; videoRef.current.muted = false; }
+    if (playerRef.current && isStreamLive) playerRef.current.setVolume(v / 100);
+    const vid = activeVideo;
+    if (vid) { vid.volume = v / 100; vid.muted = false; }
     if (v > 0) setIsMuted(false);
   };
 
   const toggleFullscreen = () => {
-    if (!videoRef.current) return;
-    if (!document.fullscreenElement) videoRef.current.parentElement?.requestFullscreen();
+    const vid = activeVideo;
+    if (!vid) return;
+    if (!document.fullscreenElement) vid.parentElement?.requestFullscreen();
     else document.exitFullscreen();
+  };
+
+  const handleWatchReplay = () => {
+    setIsPlayingReplay(true);
+    // Auto-play after state update renders the video element
+    setTimeout(() => {
+      if (replayRef.current) {
+        replayRef.current.volume = volume / 100;
+        replayRef.current.play().catch(() => {});
+        setIsPlaying(true);
+      }
+    }, 100);
   };
 
   /* ── Purchase handler ── */
@@ -259,9 +284,12 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   };
 
   /* ════════════════════════════════════════════
-     RENDER: Full-width live player
+     RENDER: Full-width player (live stream OR replay)
      ════════════════════════════════════════════ */
-  if (accessState === 'has-access' && isStreamLive) {
+  const showFullPlayer = accessState === 'has-access' && (isStreamLive || isPlayingReplay);
+
+  if (showFullPlayer) {
+    const isLive = isStreamLive;
     return (
       <section className="relative bg-black text-white">
         <div className="w-full">
@@ -271,13 +299,18 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
             onMouseEnter={() => setShowControls(true)}
             onMouseLeave={() => setShowControls(false)}
           >
-            <video ref={videoRef} playsInline className="w-full h-full" onClick={togglePlay} />
+            {/* IVS live video (hidden when playing replay) */}
+            <video ref={videoRef} playsInline className={`absolute inset-0 w-full h-full ${isLive ? '' : 'hidden'}`} onClick={togglePlay} />
+            {/* Replay video (hidden when live) */}
+            {isPlayingReplay && !isLive && (
+              <video ref={replayRef} playsInline className="w-full h-full" onClick={togglePlay} src={replayUrl!} />
+            )}
 
-            {/* LIVE badge */}
+            {/* Badge */}
             {isPlaying && (
-              <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-red-600 text-white px-4 py-2 font-bold text-sm tracking-[0.15em] uppercase">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                LIVE
+              <div className={`absolute top-4 left-4 z-10 flex items-center gap-2 ${isLive ? 'bg-red-600' : 'bg-white/10 backdrop-blur-sm border border-white/20'} text-white px-4 py-2 font-bold text-sm tracking-[0.15em] uppercase`}>
+                {isLive && <span className="w-2 h-2 bg-white rounded-full animate-pulse" />}
+                {isLive ? 'LIVE' : 'REPLAY'}
               </div>
             )}
 
@@ -320,10 +353,14 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
           {/* Info bar below player */}
           <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-sm font-bold tracking-[0.2em] uppercase text-red-400">Live Now</span>
-              </div>
+              {isLive ? (
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-sm font-bold tracking-[0.2em] uppercase text-red-400">Live Now</span>
+                </div>
+              ) : (
+                <span className="text-sm font-bold tracking-[0.2em] uppercase text-gray-400">Replay</span>
+              )}
               <div className="w-px h-6 bg-white/20" />
               <h2 className="text-white font-bold text-lg">{eventName}</h2>
             </div>
@@ -408,7 +445,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
             {/* CTA area — changes based on access state */}
             <div className="space-y-4 pt-2">
               {accessState === 'has-access' ? (
-                /* Purchased — waiting for stream */
+                /* Purchased — waiting for stream or replay available */
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -417,10 +454,20 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                     <span className="text-white font-bold text-sm tracking-[0.15em] uppercase">Access Confirmed</span>
                   </div>
                   <p className="text-gray-400 text-sm">
-                    {eventStarted
-                      ? 'The stream will begin shortly. Stay on this page.'
-                      : "You're all set. The stream will appear here when we go live."}
+                    {replayUrl
+                      ? 'The event has ended. Watch the full replay below.'
+                      : eventStarted
+                        ? 'The stream will begin shortly. Stay on this page.'
+                        : "You're all set. The stream will appear here when we go live."}
                   </p>
+                  {replayUrl && !isStreamLive && (
+                    <button
+                      onClick={handleWatchReplay}
+                      className="bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
+                    >
+                      Watch Replay
+                    </button>
+                  )}
                 </div>
               ) : accessState === 'needs-purchase' ? (
                 /* Not purchased — show buy button + recovery */
@@ -488,26 +535,41 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
             </div>
           </div>
 
-          {/* Right: Poster or waiting-for-stream video element */}
+          {/* Right: Poster or live stream */}
           <div className="relative h-[400px] md:h-[520px] lg:h-[600px]">
             <div className="relative h-full w-full overflow-hidden border border-white/10">
-              {accessState === 'has-access' ? (
-                /* User has access — show video element (stream renders here when live) */
-                <div className="relative w-full h-full bg-black">
-                  <video ref={videoRef} playsInline className="w-full h-full object-contain" />
-                  {!isStreamLive && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
-                      <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={200} height={200} className="opacity-20 mb-4" />
-                      <p className="text-gray-500 text-xs tracking-[0.2em] uppercase">Waiting for stream…</p>
+              {/* Hidden video element — IVS player attaches here, shown when stream is live */}
+              {accessState === 'has-access' && (
+                <video
+                  ref={videoRef}
+                  playsInline
+                  className={`absolute inset-0 w-full h-full object-contain ${isStreamLive ? 'z-10' : 'opacity-0 pointer-events-none'}`}
+                />
+              )}
+
+              {/* Poster (or logo fallback) — always visible unless stream is live */}
+              {!isStreamLive && (
+                <>
+                  {posterImage ? (
+                    <Image src={posterImage} alt={eventName} fill className="object-contain bg-black" priority />
+                  ) : (
+                    <div className="w-full h-full bg-white/[0.03] flex items-center justify-center">
+                      <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={300} height={300} className="opacity-30" />
                     </div>
                   )}
-                </div>
-              ) : posterImage ? (
-                <Image src={posterImage} alt={eventName} fill className="object-contain bg-black" priority />
-              ) : (
-                <div className="w-full h-full bg-white/[0.03] flex items-center justify-center">
-                  <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={300} height={300} className="opacity-30" />
-                </div>
+
+                  {/* "Purchased" overlay badge */}
+                  {accessState === 'has-access' && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2">
+                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-xs font-bold tracking-[0.2em] uppercase text-white">Purchased</span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS events (
   stripe_price_id text,                  -- Stripe Price ID (image + price pulled from here)
   ivs_channel_arn text,                  -- IVS channel ARN for this event
   ivs_playback_url text,                 -- IVS playback URL
+  replay_url      text,                  -- IVS recording URL for post-event replay
   venue_address   text,                  -- full venue address for geo-restriction
   blackout_radius_miles integer,         -- geo-restriction radius in miles
   expires_at      timestamptz,           -- when access expires

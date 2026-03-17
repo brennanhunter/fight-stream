@@ -16,6 +16,7 @@ interface ActiveEvent {
   name: string;
   date: string;
   stripe_price_id: string | null;
+  replay_url: string | null;
   expires_at: string | null;
   venue_address: string | null;
   blackout_radius_miles: number | null;
@@ -30,7 +31,7 @@ async function getActiveEvent(): Promise<ActiveEvent | null> {
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from('events')
-      .select('id, name, date, stripe_price_id, expires_at, venue_address, blackout_radius_miles')
+      .select('id, name, date, stripe_price_id, replay_url, expires_at, venue_address, blackout_radius_miles')
       .eq('is_active', true)
       .maybeSingle();
     
@@ -101,6 +102,7 @@ export default async function Home() {
           posterImage={activeEvent.posterImage}
           priceCents={activeEvent.priceCents}
           stripePriceId={activeEvent.stripe_price_id}
+          replayUrl={activeEvent.replay_url}
         />
       ) : (
         <Hero />
