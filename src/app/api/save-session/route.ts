@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
         const price = lineItem?.price;
 
         if (product?.metadata?.s3_key) {
+          const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
           await supabase.from('purchases').insert({
             email: session.customer_details?.email || 'unknown@boxstreamtv.com',
             purchase_type: 'vod',
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
             s3_key: product.metadata.s3_key,
             amount_paid: price?.unit_amount || 0,
             currency: price?.currency || 'usd',
+            expires_at: expiresAt,
           });
         }
       }

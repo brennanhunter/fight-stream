@@ -3,7 +3,6 @@ import Hero from '@/components/hero/Hero';
 import EventHero from '@/components/hero/EventHero';
 import HomeContent from '@/components/hero/HomeContent';
 import Footer from '@/components/layout/Footer';
-import ResumeWatchingBanner from '@/components/ResumeWatchingBanner';
 import { createServerClient } from '@/lib/supabase';
 import { checkGeoRestriction } from '@/lib/geo';
 
@@ -108,9 +107,6 @@ export default async function Home() {
         <Hero />
       )}
       <HomeContent />
-      <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 bg-black">
-        <ResumeWatchingBanner />
-      </div>
       <Footer />
     </>
   );

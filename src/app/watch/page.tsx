@@ -34,9 +34,13 @@ export default async function WatchPage({
       const supabase = createServerClient();
       const { data: purchase } = await supabase
         .from('purchases')
-        .select('s3_key, stripe_session_id')
+        .select('s3_key, stripe_session_id, expires_at')
         .eq('id', params.purchase_id)
         .maybeSingle();
+
+      if (purchase?.expires_at && new Date(purchase.expires_at) < new Date()) {
+        redirect('/vod');
+      }
 
       if (purchase?.s3_key) {
         s3Key = purchase.s3_key;

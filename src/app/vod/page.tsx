@@ -1,7 +1,6 @@
 import Stripe from 'stripe';
 import { cookies } from 'next/headers';
 import Footer from '@/components/layout/Footer';
-import ResumeWatchingBanner from '@/components/ResumeWatchingBanner';
 import VodContent, { type VodProduct, type EventGroup } from './VodContent';
 import { createServerClient } from '@/lib/supabase';
 
@@ -92,15 +91,18 @@ async function getOwnedProducts(): Promise<Record<string, string>> {
     const supabase = createServerClient();
     const { data: purchases } = await supabase
       .from('purchases')
-      .select('id, stripe_product_id, stripe_session_id')
+      .select('id, stripe_product_id, stripe_session_id, expires_at')
       .eq('email', decodeURIComponent(email))
       .eq('purchase_type', 'vod');
 
     if (!purchases?.length) return {};
 
+    const now = new Date();
     const owned: Record<string, string> = {};
     for (const p of purchases) {
       if (p.stripe_product_id) {
+        // Skip expired purchases
+        if (p.expires_at && new Date(p.expires_at) < now) continue;
         owned[p.stripe_product_id] = p.id || p.stripe_session_id;
       }
     }
@@ -121,10 +123,6 @@ export default async function VodPage() {
     <>
       <section className="min-h-screen bg-black overflow-x-hidden pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
-          <div className="mb-10">
-            <ResumeWatchingBanner />
-          </div>
-
           <div className="mb-12">
             <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">
               Library
