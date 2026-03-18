@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import type { Metadata } from 'next';
 import Hero from '@/components/hero/Hero';
 import EventHero from '@/components/hero/EventHero';
 import HomeContent from '@/components/hero/HomeContent';
@@ -7,6 +8,11 @@ import { createServerClient } from '@/lib/supabase';
 import { checkGeoRestriction } from '@/lib/geo';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'BoxStreamTV | Live Boxing Streaming & Pay-Per-View Events',
+  description: 'Watch live boxing matches, championship fights, and exclusive PPV events in HD. Stream boxing online with BoxStreamTV.',
+};
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 

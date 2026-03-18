@@ -1,10 +1,20 @@
 import Stripe from 'stripe';
 import { cookies } from 'next/headers';
+import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
 import VodContent, { type VodProduct, type EventGroup } from './VodContent';
 import { createServerClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Video on Demand | BoxStreamTV - Watch Boxing Replays',
+  description: 'Watch full boxing event replays and individual fight highlights on demand. Purchase and stream championship fights, knockouts, and more from BoxStreamTV.',
+  openGraph: {
+    title: 'Video on Demand | BoxStreamTV',
+    description: 'Watch full boxing event replays and individual fight highlights on demand.',
+  },
+};
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 

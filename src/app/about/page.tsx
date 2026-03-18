@@ -1,4 +1,14 @@
 import Image from 'next/image';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About Us | BoxStreamTV - Live Boxing Streaming',
+  description: 'BoxStreamTV brings professional and amateur boxing to fans everywhere. Learn about our mission to stream live fights and PPV events.',
+  openGraph: {
+    title: 'About Us | BoxStreamTV',
+    description: 'BoxStreamTV brings professional and amateur boxing to fans everywhere.',
+  },
+};
 
 export default function SlidingScalePage() {
   return (
