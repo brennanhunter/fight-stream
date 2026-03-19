@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 function PaymentSuccessContent() {
@@ -154,7 +155,12 @@ function PaymentSuccessContent() {
 
 export default function PaymentSuccessPage() {
   return (
-    <div className="min-h-screen bg-black py-12 px-4">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="min-h-screen bg-black py-12 px-4"
+    >
       <Suspense fallback={
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent"></div>
@@ -162,6 +168,6 @@ export default function PaymentSuccessPage() {
       }>
         <PaymentSuccessContent />
       </Suspense>
-    </div>
+    </motion.div>
   );
 }

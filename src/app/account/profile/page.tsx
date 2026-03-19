@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { createBrowserClient } from '@/lib/supabase';
 
 export default function ProfilePage() {
@@ -106,7 +107,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
       <h1 className="text-2xl font-bold text-white tracking-[0.15em] uppercase mb-8">
         Profile
       </h1>
@@ -179,6 +184,6 @@ export default function ProfilePage() {
           {saving ? 'Saving…' : 'Save Changes'}
         </button>
       </form>
-    </>
+    </motion.div>
   );
 }

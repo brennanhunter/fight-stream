@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FadeInView, StaggerContainer, StaggerItem } from '@/components/motion';
 
 const pastEvents = [
   {
@@ -53,6 +54,7 @@ export default function HomeContent() {
       <section id="past-events" className="bg-white text-black py-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Section header */}
+          <FadeInView>
           <div className="mb-14">
             <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-400 mb-3">
               Archive
@@ -62,6 +64,7 @@ export default function HomeContent() {
             </h2>
             <div className="w-16 h-[2px] bg-black mt-6" />
           </div>
+          </FadeInView>
 
           {/* Video Player */}
           {selectedVideo && (
@@ -87,8 +90,9 @@ export default function HomeContent() {
           )}
 
           {/* Event Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {pastEvents.filter((e) => e.videoUrl).map((event, index) => (
+              <StaggerItem key={index}>
               <button
                 key={index}
                 onClick={() => setSelectedVideo(event.videoUrl)}
@@ -133,31 +137,32 @@ export default function HomeContent() {
                     : 'Watch Highlights'}
                 </p>
               </button>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
       {/* ════════════════════ STATS ════════════════════ */}
       <section className="bg-black text-white py-16 border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <StaggerContainer staggerDelay={0.15} className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
               { number: 'Wireless', label: 'Multi-Camera Coverage' },
               { number: 'Simple', label: 'Watch Directly on Platform' },
               { number: 'HD', label: 'Stream Quality' },
               { number: '24/7', label: 'VOD Access' },
             ].map((stat, i) => (
-              <div key={i}>
+              <StaggerItem key={i}>
                 <div className="text-4xl md:text-5xl font-bold tracking-tight">
                   {stat.number}
                 </div>
                 <div className="text-xs font-bold tracking-[0.2em] uppercase text-gray-500 mt-2">
                   {stat.label}
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
     </>

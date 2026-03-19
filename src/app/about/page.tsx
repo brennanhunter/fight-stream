@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import type { Metadata } from 'next';
+import { PageTransition, FadeInView } from '@/components/motion';
 
 export const metadata: Metadata = {
   title: 'About Us | BoxStreamTV - Live Boxing Streaming',
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 
 export default function SlidingScalePage() {
   return (
+    <PageTransition>
     <div className="min-h-screen bg-black pt-24 pb-16 px-4">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         {/* About Us Section */}
@@ -73,6 +75,7 @@ export default function SlidingScalePage() {
         </div>
 
         {/* Revenue Sharing Section */}
+        <FadeInView>
         <div className="mb-12">
           <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">
             Partnership
@@ -82,9 +85,11 @@ export default function SlidingScalePage() {
           </h2>
           <div className="w-16 h-[2px] bg-white mt-6" />
         </div>
+        </FadeInView>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Left Side - Table */}
+          <FadeInView delay={0.1}>
           <div className="border border-white/10 p-6">
             <h2 className="text-2xl font-bold text-white mb-6">Revenue Split Table</h2>
 
@@ -128,7 +133,9 @@ export default function SlidingScalePage() {
             </div>
           </div>
 
+          </FadeInView>
           {/* Right Side - Bullet Points */}
+          <FadeInView delay={0.2}>
           <div className="border border-white/10 p-6">
             <h2 className="text-2xl font-bold text-white mb-6">Why This Works</h2>
 
@@ -160,8 +167,10 @@ export default function SlidingScalePage() {
               ))}
             </ul>
           </div>
+          </FadeInView>
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 }

@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
+import { PageTransition } from '@/components/motion';
 import VodContent, { type VodProduct, type EventGroup } from './VodContent';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
@@ -144,7 +145,7 @@ export default async function VodPage() {
   const events = groupByEvent(products);
 
   return (
-    <>
+    <PageTransition>
       <section className="min-h-screen bg-black overflow-x-hidden pt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
           <div className="mb-12">
@@ -176,6 +177,6 @@ export default async function VodPage() {
         </div>
       </section>
       <Footer />
-    </>
+    </PageTransition>
   );
 }

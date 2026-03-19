@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
 const STORAGE_KEY = 'fight_pass_prompt_seen';
@@ -35,8 +36,6 @@ export default function FightPassPrompt({ open, onClose, onContinue }: FightPass
     return () => window.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
 
-  if (!open) return null;
-
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) onClose();
   };
@@ -47,12 +46,24 @@ export default function FightPassPrompt({ open, onClose, onContinue }: FightPass
   };
 
   return (
-    <div
+    <AnimatePresence>
+    {open && (
+    <motion.div
       ref={backdropRef}
       onClick={handleBackdropClick}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
     >
-      <div className="relative bg-black border border-white/20 max-w-md w-full p-8 space-y-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="relative bg-black border border-white/20 max-w-md w-full p-8 space-y-6"
+      >
         {/* Close button */}
         <button
           onClick={onClose}
@@ -102,7 +113,9 @@ export default function FightPassPrompt({ open, onClose, onContinue }: FightPass
             Continue to Checkout
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+    )}
+    </AnimatePresence>
   );
 }

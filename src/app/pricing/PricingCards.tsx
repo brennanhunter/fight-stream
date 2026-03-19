@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
 
@@ -95,9 +96,12 @@ export default function PricingCards({ prices }: PricingProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-      {TIERS.map((plan) => (
-        <div
+      {TIERS.map((plan, index) => (
+        <motion.div
           key={plan.tier}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: index * 0.15, ease: 'easeOut' }}
           className={`relative flex flex-col p-8 ${
             plan.featured
               ? 'border-2 border-white shadow-[0_0_30px_rgba(255,255,255,0.1)]'
@@ -144,7 +148,7 @@ export default function PricingCards({ prices }: PricingProps) {
           >
             {loading === plan.tier ? 'Redirecting...' : plan.cta}
           </button>
-        </div>
+        </motion.div>
       ))}
 
       <div className="md:col-span-2 text-center mt-4">

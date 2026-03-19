@@ -1,5 +1,6 @@
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
+import { PageTransition } from '@/components/motion';
 import Link from 'next/link';
 
 export default async function AccountPage() {
@@ -29,7 +30,7 @@ export default async function AccountPage() {
     'Fighter';
 
   return (
-    <>
+    <PageTransition>
       <h1 className="text-2xl font-bold text-white tracking-[0.15em] uppercase mb-2">
         Welcome back, {displayName}
       </h1>
@@ -81,6 +82,6 @@ export default async function AccountPage() {
       ) : (
         <p className="text-sm text-gray-500">No purchases yet.</p>
       )}
-    </>
+    </PageTransition>
   );
 }

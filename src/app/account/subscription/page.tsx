@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
 
@@ -73,7 +74,11 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
       <div className="mb-8">
         <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">
           Account
@@ -158,6 +163,6 @@ export default function SubscriptionPage() {
           </Link>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

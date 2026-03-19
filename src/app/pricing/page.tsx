@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
+import { PageTransition, FadeInView } from '@/components/motion';
 import PricingCards from './PricingCards';
 
 export const dynamic = 'force-dynamic';
@@ -50,7 +51,7 @@ async function getStripePrices() {
 export default async function PricingPage() {
   const prices = await getStripePrices();
   return (
-    <>
+    <PageTransition>
       <section className="min-h-screen bg-black pt-24 pb-16 px-4">
         <div className="max-w-5xl mx-auto sm:px-6 lg:px-8">
           <div className="mb-16 text-center">
@@ -69,6 +70,7 @@ export default async function PricingPage() {
           <PricingCards prices={prices} />
 
           {/* FAQ / Details */}
+          <FadeInView>
           <div className="mt-20 max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-white mb-8 text-center">
               Frequently Asked Questions
@@ -92,9 +94,10 @@ export default async function PricingPage() {
               </div>
             </div>
           </div>
+          </FadeInView>
         </div>
       </section>
       <Footer />
-    </>
+    </PageTransition>
   );
 }

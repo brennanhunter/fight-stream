@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { FadeInView } from '@/components/motion';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -45,7 +47,12 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black pt-24 pb-16 px-4">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="min-h-screen bg-black pt-24 pb-16 px-4"
+    >
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div className="mb-12">
           <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">
@@ -62,6 +69,7 @@ export default function ContactPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Contact Information */}
+          <FadeInView delay={0.1}>
           <div className="space-y-6">
             <div className="group relative overflow-visible p-8">
               <div className="absolute inset-0 border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.5),0_0_30px_rgba(255,255,255,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.8),0_0_60px_rgba(255,255,255,0.5),0_0_100px_rgba(255,255,255,0.3)]" />
@@ -133,8 +141,10 @@ export default function ContactPage() {
               </ul>
             </div>
           </div>
+          </FadeInView>
 
           {/* Contact Form */}
+          <FadeInView delay={0.2}>
           <div className="group relative overflow-visible p-8">
             <div className="absolute inset-0 border-2 border-white shadow-[0_0_15px_rgba(255,255,255,0.5),0_0_30px_rgba(255,255,255,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.8),0_0_60px_rgba(255,255,255,0.5),0_0_100px_rgba(255,255,255,0.3)]" />
             <h2 className="text-2xl font-bold text-white mb-6">Send Us a Message</h2>
@@ -240,8 +250,9 @@ export default function ContactPage() {
               </button>
             </form>
           </div>
+          </FadeInView>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

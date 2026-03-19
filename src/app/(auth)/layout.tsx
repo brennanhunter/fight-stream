@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { PageTransition } from '@/components/motion';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,7 +15,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           priority
         />
       </Link>
-      <div className="w-full max-w-sm">{children}</div>
+      <PageTransition>
+        <div className="w-full max-w-sm">{children}</div>
+      </PageTransition>
     </div>
   );
 }

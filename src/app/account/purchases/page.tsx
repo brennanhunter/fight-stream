@@ -1,5 +1,6 @@
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
+import { PageTransition } from '@/components/motion';
 
 export default async function PurchasesPage() {
   const supabase = await createAuthServerClient();
@@ -17,7 +18,7 @@ export default async function PurchasesPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <>
+    <PageTransition>
       <h1 className="text-2xl font-bold text-white tracking-[0.15em] uppercase mb-8">
         Purchases
       </h1>
@@ -73,6 +74,6 @@ export default async function PurchasesPage() {
           </a>
         </div>
       )}
-    </>
+    </PageTransition>
   );
 }

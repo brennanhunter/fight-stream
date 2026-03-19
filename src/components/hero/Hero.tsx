@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 export default function Hero() {
@@ -47,7 +48,12 @@ export default function Hero() {
         <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-24 md:py-32 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* ── Left: Typography ── */}
-            <div className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="space-y-8"
+            >
               <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-bold leading-[0.9] tracking-[-0.03em]">
                 EVERY
                 <br />
@@ -82,10 +88,15 @@ export default function Hero() {
                   Learn More
                 </Link>
               </div>
-            </div>
+            </motion.div>
 
             {/* ── Right: Poster Carousel ── */}
-            <div className="relative h-[400px] md:h-[520px] lg:h-[600px]">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+              className="relative h-[400px] md:h-[520px] lg:h-[600px]"
+            >
               <div className="relative h-full w-full overflow-hidden border border-white/10">
                 {carouselImages.map((image, index) => (
                   <div
@@ -118,7 +129,7 @@ export default function Hero() {
                   />
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
