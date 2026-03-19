@@ -1,6 +1,11 @@
+import Stripe from 'stripe';
 import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
 import PricingCards from './PricingCards';
+
+export const dynamic = 'force-dynamic';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export const metadata: Metadata = {
   title: 'Fight Pass Pricing | BoxStreamTV',
@@ -11,7 +16,39 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PricingPage() {
+async function getStripePrices() {
+  const basicPriceId = process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID;
+  const premiumPriceId = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID;
+
+  const prices: { basic: string | null; premium: string | null; basicPriceId: string | null; premiumPriceId: string | null; basicInterval: string; premiumInterval: string } = {
+    basic: null,
+    premium: null,
+    basicPriceId: basicPriceId || null,
+    premiumPriceId: premiumPriceId || null,
+    basicInterval: 'month',
+    premiumInterval: 'month',
+  };
+
+  try {
+    if (basicPriceId) {
+      const price = await stripe.prices.retrieve(basicPriceId);
+      prices.basic = price.unit_amount ? `$${(price.unit_amount / 100).toFixed(2)}` : null;
+      prices.basicInterval = price.recurring?.interval || 'month';
+    }
+    if (premiumPriceId) {
+      const price = await stripe.prices.retrieve(premiumPriceId);
+      prices.premium = price.unit_amount ? `$${(price.unit_amount / 100).toFixed(2)}` : null;
+      prices.premiumInterval = price.recurring?.interval || 'month';
+    }
+  } catch (err) {
+    console.error('Failed to fetch Stripe prices:', err);
+  }
+
+  return prices;
+}
+
+export default async function PricingPage() {
+  const prices = await getStripePrices();
   return (
     <>
       <section className="min-h-screen bg-black pt-24 pb-16 px-4">
@@ -29,7 +66,7 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <PricingCards />
+          <PricingCards prices={prices} />
 
           {/* FAQ / Details */}
           <div className="mt-20 max-w-2xl mx-auto">
@@ -50,8 +87,8 @@ export default function PricingPage() {
                 <p className="text-gray-400 text-sm">Yes — upgrade or downgrade anytime from your account. Changes take effect on your next billing cycle.</p>
               </div>
               <div className="border border-white/10 p-6">
-                <h3 className="text-white font-semibold mb-2">How does the Premium PPV discount work?</h3>
-                <p className="text-gray-400 text-sm">Premium subscribers get 50% off all PPV events, applied automatically at checkout.</p>
+                <h3 className="text-white font-semibold mb-2">How do PPV perks work?</h3>
+                <p className="text-gray-400 text-sm">Basic subscribers get 25% off all PPV events. Premium subscribers get PPV events included free — no extra charge.</p>
               </div>
             </div>
           </div>

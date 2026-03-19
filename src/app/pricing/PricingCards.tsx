@@ -4,40 +4,52 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
 
-const TIERS = [
-  {
-    name: 'Fight Pass Basic',
-    tier: 'basic',
-    price: '$9.99',
-    interval: 'month',
-    description: 'Full VOD library access',
-    features: [
-      'Unlimited VOD replays',
-      'All events, all fights',
-      'Watch on any device',
-      'New content added regularly',
-    ],
-    cta: 'Get Basic',
-    featured: false,
-  },
-  {
-    name: 'Fight Pass Premium',
-    tier: 'premium',
-    price: '$19.99',
-    interval: 'month',
-    description: 'Everything in Basic + PPV perks',
-    features: [
-      'Everything in Basic',
-      '50% off all PPV events',
-      'Early access to new replays',
-      'Priority support',
-    ],
-    cta: 'Get Premium',
-    featured: true,
-  },
-];
+interface PricingProps {
+  prices: {
+    basic: string | null;
+    premium: string | null;
+    basicPriceId: string | null;
+    premiumPriceId: string | null;
+    basicInterval: string;
+    premiumInterval: string;
+  };
+}
 
-export default function PricingCards() {
+export default function PricingCards({ prices }: PricingProps) {
+  const TIERS = [
+    {
+      name: 'Fight Pass Basic',
+      tier: 'basic',
+      price: prices.basic || '$9.99',
+      priceId: prices.basicPriceId,
+      interval: prices.basicInterval,
+      description: 'VOD library + PPV savings',
+      features: [
+        'Unlimited VOD replays',
+        '25% off all PPV events',
+        'Watch on any device',
+        'New content added regularly',
+      ],
+      cta: 'Get Basic',
+      featured: false,
+    },
+    {
+      name: 'Fight Pass Premium',
+      tier: 'premium',
+      price: prices.premium || '$19.99',
+      priceId: prices.premiumPriceId,
+      interval: prices.premiumInterval,
+      description: 'The full experience',
+      features: [
+        'Unlimited VOD replays',
+        'Free PPV events included',
+        'Early access to new replays',
+        'Priority support',
+      ],
+      cta: 'Get Premium',
+      featured: true,
+    },
+  ];
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSubscribe = async (tier: string) => {
@@ -53,10 +65,8 @@ export default function PricingCards() {
         return;
       }
 
-      // Get the price ID from env based on tier
-      const priceId = tier === 'premium'
-        ? process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID
-        : process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID;
+      const plan = TIERS.find(t => t.tier === tier);
+      const priceId = plan?.priceId;
 
       if (!priceId) {
         alert('Subscription pricing is not configured yet. Please check back soon.');
