@@ -4,7 +4,6 @@ import Hero from '@/components/hero/Hero';
 import EventHero from '@/components/hero/EventHero';
 import HomeContent from '@/components/hero/HomeContent';
 import Footer from '@/components/layout/Footer';
-import { PageTransition } from '@/components/motion';
 import { createServerClient } from '@/lib/supabase';
 import { checkGeoRestriction } from '@/lib/geo';
 import { createAuthServerClient } from '@/lib/supabase-server';
@@ -100,7 +99,7 @@ export default async function Home() {
   }
 
   return (
-    <PageTransition>
+    <>
       {activeEvent && geo?.blocked ? (
         /* Geo-restricted — blackout message instead of event hero */
         <div className="min-h-screen flex items-center justify-center bg-black px-6">
@@ -130,6 +129,6 @@ export default async function Home() {
       )}
       <HomeContent />
       <Footer />
-    </PageTransition>
+    </>
   );
 }

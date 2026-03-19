@@ -1,7 +1,16 @@
+'use client';
+
+import { motion } from 'framer-motion';
+
 export default function Footer() {
   return (
-    <footer className="bg-black border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
+    <motion.footer
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+      className="bg-black border-t border-white/10"
+    >  <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
         {/* Divider line */}
         <div className="w-12 h-px bg-white/30 mx-auto mb-10" />
 
@@ -54,6 +63,6 @@ export default function Footer() {
           </p>
         </div>
       </div>
-    </footer>
+    </motion.footer>
   );
 }

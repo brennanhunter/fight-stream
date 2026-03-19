@@ -1,7 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { FadeInView, StaggerContainer, StaggerItem } from '@/components/motion';
+import { motion } from 'framer-motion';
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.12 } },
+} as const;
 
 const pastEvents = [
   {
@@ -32,7 +42,12 @@ export default function HomeContent() {
   return (
     <>
       {/* ════════════════════ MARQUEE ════════════════════ */}
-      <div className="bg-white text-black py-4 overflow-hidden select-none">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.6 }}
+        className="bg-white text-black py-4 overflow-hidden select-none"
+      >
         <div className="animate-marquee flex whitespace-nowrap">
           {[...Array(4)].map((_, i) => (
             <span key={i} className="flex items-center">
@@ -48,23 +63,34 @@ export default function HomeContent() {
             </span>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* ════════════════════ PAST EVENTS ════════════════════ */}
       <section id="past-events" className="bg-white text-black py-20">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Section header */}
-          <FadeInView>
-          <div className="mb-14">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            className="mb-14"
+          >
             <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-400 mb-3">
               Archive
             </p>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
               Past Events
             </h2>
-            <div className="w-16 h-[2px] bg-black mt-6" />
-          </div>
-          </FadeInView>
+            <motion.div
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+              style={{ originX: 0 }}
+              className="w-16 h-[2px] bg-black mt-6"
+            />
+          </motion.div>
 
           {/* Video Player */}
           {selectedVideo && (
@@ -90,9 +116,15 @@ export default function HomeContent() {
           )}
 
           {/* Event Cards */}
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
             {pastEvents.filter((e) => e.videoUrl).map((event, index) => (
-              <StaggerItem key={index}>
+              <motion.div key={index} variants={fadeUp}>
               <button
                 key={index}
                 onClick={() => setSelectedVideo(event.videoUrl)}
@@ -137,32 +169,38 @@ export default function HomeContent() {
                     : 'Watch Highlights'}
                 </p>
               </button>
-              </StaggerItem>
+              </motion.div>
             ))}
-          </StaggerContainer>
+          </motion.div>
         </div>
       </section>
 
       {/* ════════════════════ STATS ════════════════════ */}
       <section className="bg-black text-white py-16 border-t border-white/10">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <StaggerContainer staggerDelay={0.15} className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
+          >
             {[
               { number: 'Wireless', label: 'Multi-Camera Coverage' },
               { number: 'Simple', label: 'Watch Directly on Platform' },
               { number: 'HD', label: 'Stream Quality' },
               { number: '24/7', label: 'VOD Access' },
             ].map((stat, i) => (
-              <StaggerItem key={i}>
+              <motion.div key={i} variants={fadeUp}>
                 <div className="text-4xl md:text-5xl font-bold tracking-tight">
                   {stat.number}
                 </div>
                 <div className="text-xs font-bold tracking-[0.2em] uppercase text-gray-500 mt-2">
                   {stat.label}
                 </div>
-              </StaggerItem>
+              </motion.div>
             ))}
-          </StaggerContainer>
+          </motion.div>
         </div>
       </section>
     </>

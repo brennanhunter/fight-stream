@@ -4,6 +4,23 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
+const stagger = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.15, delayChildren: 0.1 },
+  },
+} as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' as const } },
+};
+
+const widthGrow = {
+  hidden: { scaleX: 0, originX: 0 },
+  visible: { scaleX: 1, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
+
 export default function Hero() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -49,29 +66,33 @@ export default function Hero() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* ── Left: Typography ── */}
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
+              variants={stagger}
+              initial="hidden"
+              animate="visible"
               className="space-y-8"
             >
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-bold leading-[0.9] tracking-[-0.03em]">
-                EVERY
-                <br />
-                FIGHT.
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-600">
+              <motion.h1
+                variants={fadeUp}
+                className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-bold leading-[0.9] tracking-[-0.03em]"
+              >
+                <motion.span className="block" variants={fadeUp}>EVERY</motion.span>
+                <motion.span className="block" variants={fadeUp}>FIGHT.</motion.span>
+                <motion.span
+                  className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-600"
+                  variants={fadeUp}
+                >
                   LIVE.
-                </span>
-              </h1>
+                </motion.span>
+              </motion.h1>
 
-              <div className="w-16 h-[2px] bg-white" />
+              <motion.div variants={widthGrow} className="w-16 h-[2px] bg-white" />
 
-              <p className="text-gray-400 text-lg max-w-md leading-relaxed">
+              <motion.p variants={fadeUp} className="text-gray-400 text-lg max-w-md leading-relaxed">
                 Professional boxing, streamed ringside to your screen.
                 Live PPV events and full-fight replays on demand.
-              </p>
+              </motion.p>
 
-              <div className="flex flex-wrap gap-4 pt-2">
+              <motion.div variants={fadeUp} className="flex flex-wrap gap-4 pt-2">
                 <Link
                   href="/vod"
                   className="group bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
@@ -87,14 +108,14 @@ export default function Hero() {
                 >
                   Learn More
                 </Link>
-              </div>
+              </motion.div>
             </motion.div>
 
             {/* ── Right: Poster Carousel ── */}
             <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
               className="relative h-[400px] md:h-[520px] lg:h-[600px]"
             >
               <div className="relative h-full w-full overflow-hidden border border-white/10">

@@ -1,8 +1,24 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import FightPassPrompt, { hasSeenFightPassPrompt, markFightPassPromptSeen } from '@/components/FightPassPrompt';
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15, delayChildren: 0.1 } },
+} as const;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' as const } },
+};
+
+const widthGrow = {
+  hidden: { scaleX: 0, originX: 0 },
+  visible: { scaleX: 1, transition: { duration: 0.6, ease: 'easeOut' as const } },
+};
 
 /* ── IVS Player types ── */
 declare global {
@@ -35,6 +51,108 @@ interface EventHeroProps {
   stripePriceId: string | null;
   replayUrl: string | null;
   subscriptionTier: 'basic' | 'premium' | null;
+}
+
+/* ── 3D Tilt + Float Poster Card ── */
+function PosterCard({
+  isStreamLive,
+  posterImage,
+  eventName,
+  accessState,
+  videoRef,
+}: {
+  isStreamLive: boolean;
+  posterImage: string | null;
+  eventName: string;
+  accessState: string;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Raw mouse position mapped to rotation degrees
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Spring-smoothed rotation for the tilt
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20 });
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20 });
+
+  // Shifting shadow for the "pop off screen" depth
+  const shadowX = useTransform(rotateY, [-8, 8], [20, -20]);
+  const shadowY = useTransform(rotateX, [-8, 8], [-20, 20]);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={cardRef}
+      className="relative h-[400px] md:h-[520px] lg:h-[600px]"
+      style={{ perspective: 900 }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' as const }}
+    >
+      <motion.div
+        className="relative h-full w-full overflow-hidden border border-white/10 will-change-transform"
+        style={{
+          rotateX,
+          rotateY,
+          boxShadow: useTransform(
+            [shadowX, shadowY],
+            ([sx, sy]) => `${sx}px ${sy}px 40px rgba(255,255,255,0.07)`,
+          ),
+        }}
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 4, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
+      >
+        {/* Hidden video element — IVS player attaches here */}
+        {accessState === 'has-access' && (
+          <video
+            ref={videoRef}
+            playsInline
+            className={`absolute inset-0 w-full h-full object-contain ${isStreamLive ? 'z-10' : 'opacity-0 pointer-events-none'}`}
+          />
+        )}
+
+        {/* Poster (or logo fallback) */}
+        {!isStreamLive && (
+          <>
+            {posterImage ? (
+              <Image src={posterImage} alt={eventName} fill className="object-contain bg-black" priority />
+            ) : (
+              <div className="w-full h-full bg-white/[0.03] flex items-center justify-center">
+                <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={300} height={300} className="opacity-30" />
+              </div>
+            )}
+
+            {/* "Purchased" overlay badge */}
+            {accessState === 'has-access' && (
+              <div className="absolute top-4 right-4 z-10">
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2">
+                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-xs font-bold tracking-[0.2em] uppercase text-white">Purchased</span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </motion.div>
+    </motion.div>
+  );
 }
 
 function getTimeRemaining(targetDate: string) {
@@ -444,26 +562,31 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-24 md:py-32 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left: Event Info + Countdown */}
-          <div className="space-y-8">
+          <motion.div
+            className="space-y-8"
+            variants={stagger}
+            initial="hidden"
+            animate="visible"
+          >
             {/* Logo */}
-            <div>
+            <motion.div variants={fadeUp}>
               <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={200} height={50} className="mb-6" />
               <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-400">Live Pay-Per-View</p>
-            </div>
+            </motion.div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] tracking-[-0.03em]">
+            <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] tracking-[-0.03em]">
               {eventName}
-            </h1>
+            </motion.h1>
 
-            <div className="w-16 h-[2px] bg-white" />
+            <motion.div variants={widthGrow} className="w-16 h-[2px] bg-white" />
 
-            <p className="text-gray-400 text-lg">
+            <motion.p variants={fadeUp} className="text-gray-400 text-lg">
               {new Date(eventDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-            </p>
+            </motion.p>
 
             {/* Countdown */}
             {timeLeft ? (
-              <div>
+              <motion.div variants={fadeUp}>
                 <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-4">Event Starts In</p>
                 <div className="flex gap-4">
                   {[
@@ -484,16 +607,16 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             ) : (
-              <div className="flex items-center gap-2">
+              <motion.div variants={fadeUp} className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                 <span className="text-sm font-bold tracking-[0.2em] uppercase text-red-400">Live Now</span>
-              </div>
+              </motion.div>
             )}
 
             {/* CTA area — changes based on access state */}
-            <div className="space-y-4 pt-2">
+            <motion.div variants={fadeUp} className="space-y-4 pt-2">
               {accessState === 'has-access' ? (
                 /* Purchased — waiting for stream or replay available */
                 <div className="space-y-3">
@@ -587,47 +710,17 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
               >
                 Past Events
               </a>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* Right: Poster or live stream */}
-          <div className="relative h-[400px] md:h-[520px] lg:h-[600px]">
-            <div className="relative h-full w-full overflow-hidden border border-white/10">
-              {/* Hidden video element — IVS player attaches here, shown when stream is live */}
-              {accessState === 'has-access' && (
-                <video
-                  ref={videoRef}
-                  playsInline
-                  className={`absolute inset-0 w-full h-full object-contain ${isStreamLive ? 'z-10' : 'opacity-0 pointer-events-none'}`}
-                />
-              )}
-
-              {/* Poster (or logo fallback) — always visible unless stream is live */}
-              {!isStreamLive && (
-                <>
-                  {posterImage ? (
-                    <Image src={posterImage} alt={eventName} fill className="object-contain bg-black" priority />
-                  ) : (
-                    <div className="w-full h-full bg-white/[0.03] flex items-center justify-center">
-                      <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={300} height={300} className="opacity-30" />
-                    </div>
-                  )}
-
-                  {/* "Purchased" overlay badge */}
-                  {accessState === 'has-access' && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2">
-                        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-xs font-bold tracking-[0.2em] uppercase text-white">Purchased</span>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
+          <PosterCard
+            isStreamLive={isStreamLive}
+            posterImage={posterImage}
+            eventName={eventName}
+            accessState={accessState}
+            videoRef={videoRef}
+          />
         </div>
       </div>
 
