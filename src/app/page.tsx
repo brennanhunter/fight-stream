@@ -6,6 +6,8 @@ import HomeContent from '@/components/hero/HomeContent';
 import Footer from '@/components/layout/Footer';
 import { createServerClient } from '@/lib/supabase';
 import { checkGeoRestriction } from '@/lib/geo';
+import { createAuthServerClient } from '@/lib/supabase-server';
+import { getSubscriptionTier } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,6 +86,18 @@ export default async function Home() {
     ? await checkGeoRestriction(activeEvent.venue_address, activeEvent.blackout_radius_miles ?? 90)
     : null;
 
+  // Get subscription tier for logged-in users
+  let subscriptionTier: 'basic' | 'premium' | null = null;
+  try {
+    const supabase = await createAuthServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      subscriptionTier = await getSubscriptionTier(user.id);
+    }
+  } catch {
+    // Not logged in — no discount
+  }
+
   return (
     <>
       {activeEvent && geo?.blocked ? (
@@ -108,6 +122,7 @@ export default async function Home() {
           priceCents={activeEvent.priceCents}
           stripePriceId={activeEvent.stripe_price_id}
           replayUrl={activeEvent.replay_url}
+          subscriptionTier={subscriptionTier}
         />
       ) : (
         <Hero />

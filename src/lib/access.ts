@@ -53,11 +53,10 @@ export async function hasVodAccess(userId: string, productId: string): Promise<{
   return { access: !!data, via: data ? 'purchase' : null };
 }
 
-/** Check if a Premium subscriber should get a PPV discount */
-export async function getPpvDiscount(userId: string): Promise<{ discount: boolean; tier: string | null }> {
+/** Get PPV discount info for a subscriber */
+export async function getPpvDiscount(userId: string): Promise<{ discountPercent: number; tier: string | null }> {
   const tier = await getSubscriptionTier(userId);
-  if (tier === 'premium') {
-    return { discount: true, tier };
-  }
-  return { discount: false, tier };
+  if (tier === 'premium') return { discountPercent: 100, tier };
+  if (tier === 'basic') return { discountPercent: 25, tier };
+  return { discountPercent: 0, tier: null };
 }

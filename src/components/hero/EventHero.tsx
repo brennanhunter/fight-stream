@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import FightPassPrompt, { hasSeenFightPassPrompt, markFightPassPromptSeen } from '@/components/FightPassPrompt';
 
 /* ── IVS Player types ── */
 declare global {
@@ -33,6 +34,7 @@ interface EventHeroProps {
   priceCents: number;
   stripePriceId: string | null;
   replayUrl: string | null;
+  subscriptionTier: 'basic' | 'premium' | null;
 }
 
 function getTimeRemaining(targetDate: string) {
@@ -45,8 +47,19 @@ function getTimeRemaining(targetDate: string) {
   return { days, hours, minutes, seconds };
 }
 
-export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl }: EventHeroProps) {
+export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier }: EventHeroProps) {
   const priceDisplay = `$${(priceCents / 100).toFixed(2)}`;
+
+  // Calculate discounted price display
+  let ppvLabel: string;
+  if (subscriptionTier === 'premium') {
+    ppvLabel = 'Included with Fight Pass';
+  } else if (subscriptionTier === 'basic') {
+    const discounted = (priceCents * 0.75) / 100;
+    ppvLabel = `$${discounted.toFixed(2)} (25% off with Fight Pass)`;
+  } else {
+    ppvLabel = priceDisplay;
+  }
 
   /* ── Countdown ── */
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(eventDate));
@@ -260,9 +273,13 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
     }, 100);
   };
 
+  /* ── Fight Pass prompt state ── */
+  const [showFightPassPrompt, setShowFightPassPrompt] = useState(false);
+
   /* ── Purchase handler ── */
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const handlePurchase = async () => {
+
+  const startCheckout = useCallback(async () => {
     if (!stripePriceId) return;
     setCheckoutLoading(true);
     setCheckoutError(null);
@@ -283,6 +300,16 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
       setCheckoutError('Something went wrong. Please try again.');
       setCheckoutLoading(false);
     }
+  }, [stripePriceId]);
+
+  const handlePurchase = () => {
+    if (!stripePriceId) return;
+    // Show Fight Pass prompt once for non-subscribers
+    if (!subscriptionTier && !hasSeenFightPassPrompt()) {
+      setShowFightPassPrompt(true);
+      return;
+    }
+    startCheckout();
   };
 
   /* ── Recover access handler ── */
@@ -504,9 +531,11 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                       >
                         {checkoutLoading
                           ? 'Redirecting...'
-                          : eventStarted
-                            ? `Watch Live — ${priceDisplay}`
-                            : `Get PPV Access — ${priceDisplay}`}
+                          : subscriptionTier === 'premium'
+                            ? eventStarted ? 'Watch Live — Free' : 'Get PPV Access — Free'
+                            : eventStarted
+                              ? `Watch Live — ${ppvLabel}`
+                              : `Get PPV Access — ${ppvLabel}`}
                       </button>
                     )}
                   </div>
@@ -601,6 +630,19 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
           </div>
         </div>
       </div>
+
+      {/* Fight Pass suggestion modal */}
+      <FightPassPrompt
+        open={showFightPassPrompt}
+        onClose={() => {
+          markFightPassPromptSeen();
+          setShowFightPassPrompt(false);
+        }}
+        onContinue={() => {
+          setShowFightPassPrompt(false);
+          startCheckout();
+        }}
+      />
     </section>
   );
 }
