@@ -4,11 +4,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { createBrowserClient } from '@/lib/supabase';
+import UserMenu from '@/components/auth/UserMenu';
+import type { User } from '@supabase/supabase-js';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const supabase = createBrowserClient();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -16,9 +21,22 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
+
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'VOD', href: '/vod' },
+    { name: 'Fight Pass', href: '/pricing' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];
@@ -67,14 +85,18 @@ export default function Header() {
             ))}
           </div>
 
-          {/* CTA Button - Desktop */}
+          {/* Auth / CTA - Desktop */}
           <div className="hidden md:block">
-            <Link
-              href="/contact"
-              className="text-[10px] font-bold tracking-[0.2em] uppercase px-5 py-2 border border-white text-white hover:bg-white hover:text-black transition-all duration-200"
-            >
-              Get Started
-            </Link>
+            {user ? (
+              <UserMenu user={user} />
+            ) : (
+              <Link
+                href="/login"
+                className="text-[10px] font-bold tracking-[0.2em] uppercase px-5 py-2 border border-white text-white hover:bg-white hover:text-black transition-all duration-200"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -116,13 +138,35 @@ export default function Header() {
                 {item.name}
               </Link>
             ))}
-            <Link
-              href="/contact"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-3 text-center text-[10px] font-bold tracking-[0.2em] uppercase px-5 py-3 border border-white text-white hover:bg-white hover:text-black transition-all duration-200"
-            >
-              Get Started
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/account"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-2 py-3 text-xs font-bold tracking-[0.2em] uppercase text-gray-500 hover:text-white transition-colors"
+                >
+                  My Account
+                </Link>
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setIsMobileMenuOpen(false);
+                    window.location.href = '/';
+                  }}
+                  className="mt-3 text-center text-[10px] font-bold tracking-[0.2em] uppercase px-5 py-3 border border-white/20 text-gray-400 hover:text-red-400 hover:border-red-400/30 transition-all duration-200"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mt-3 text-center text-[10px] font-bold tracking-[0.2em] uppercase px-5 py-3 border border-white text-white hover:bg-white hover:text-black transition-all duration-200"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </nav>

@@ -4,6 +4,8 @@ import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
 import VodContent, { type VodProduct, type EventGroup } from './VodContent';
 import { createServerClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
+import { getSubscriptionTier } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,10 +124,22 @@ async function getOwnedProducts(): Promise<Record<string, string>> {
   }
 }
 
+async function getSubscriptionInfo(): Promise<'basic' | 'premium' | null> {
+  try {
+    const supabase = await createAuthServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    return getSubscriptionTier(user.id);
+  } catch {
+    return null;
+  }
+}
+
 export default async function VodPage() {
-  const [products, ownedProducts] = await Promise.all([
+  const [products, ownedProducts, subscriptionTier] = await Promise.all([
     getProducts(),
     getOwnedProducts(),
+    getSubscriptionInfo(),
   ]);
   const events = groupByEvent(products);
 
@@ -143,7 +157,22 @@ export default async function VodPage() {
             <div className="w-16 h-[2px] bg-white mt-6" />
           </div>
 
-          <VodContent events={events} ownedProducts={ownedProducts} />
+          {!subscriptionTier && (
+            <div className="mb-10 border border-white/10 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-white mb-1">Unlock the entire library</h2>
+                <p className="text-sm text-gray-400">Get unlimited access to all VOD replays with Fight Pass.</p>
+              </div>
+              <a
+                href="/pricing"
+                className="flex-shrink-0 px-6 py-3 bg-white text-black text-sm font-bold tracking-[0.15em] uppercase hover:bg-gray-200 transition-colors border border-white"
+              >
+                View Plans
+              </a>
+            </div>
+          )}
+
+          <VodContent events={events} ownedProducts={ownedProducts} subscriptionTier={subscriptionTier} />
         </div>
       </section>
       <Footer />

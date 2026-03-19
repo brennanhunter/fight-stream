@@ -34,7 +34,7 @@ export interface EventGroup {
   products: VodProduct[];
 }
 
-export default function VodContent({ events, ownedProducts }: { events: EventGroup[]; ownedProducts: Record<string, string> }) {
+export default function VodContent({ events, ownedProducts, subscriptionTier }: { events: EventGroup[]; ownedProducts: Record<string, string>; subscriptionTier: 'basic' | 'premium' | null }) {
   const [selectedEvent, setSelectedEvent] = useState<EventGroup | null>(null);
 
   // Event Grid View
@@ -181,13 +181,17 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
                 )}
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
-                <span className="text-3xl sm:text-4xl font-bold text-purple-400">
-                  ${product.price}
-                  <span className="text-gray-400 text-base ml-2 uppercase">{product.currency}</span>
-                </span>
-                {ownedProducts[product.id] ? (
+                {subscriptionTier ? (
+                  <span className="text-sm text-gray-400 font-medium">Included with Fight Pass</span>
+                ) : (
+                  <span className="text-3xl sm:text-4xl font-bold text-purple-400">
+                    ${product.price}
+                    <span className="text-gray-400 text-base ml-2 uppercase">{product.currency}</span>
+                  </span>
+                )}
+                {ownedProducts[product.id] || subscriptionTier ? (
                   <Link
-                    href={`/watch?purchase_id=${ownedProducts[product.id]}`}
+                    href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id]}` : `/watch?product_id=${product.id}`}
                     className="px-8 py-4 bg-white text-black text-xl font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center gap-2 tracking-wide"
                   >
                     ▶ Watch
@@ -256,14 +260,20 @@ export default function VodContent({ events, ownedProducts }: { events: EventGro
                   <p className="text-sm text-gray-400 mb-3 line-clamp-2">{product.description}</p>
                 )}
 
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xl font-bold text-white">${product.price}</span>
-                  <span className="text-xs text-gray-500 uppercase">{product.currency}</span>
-                </div>
+                {subscriptionTier ? (
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-400 font-medium">Included with Fight Pass</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xl font-bold text-white">${product.price}</span>
+                    <span className="text-xs text-gray-500 uppercase">{product.currency}</span>
+                  </div>
+                )}
 
-                {ownedProducts[product.id] ? (
+                {ownedProducts[product.id] || subscriptionTier ? (
                   <Link
-                    href={`/watch?purchase_id=${ownedProducts[product.id]}`}
+                    href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id]}` : `/watch?product_id=${product.id}`}
                     className="w-full text-center px-6 py-3 bg-white text-black text-base font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center justify-center gap-2 tracking-wide"
                   >
                     ▶ Watch Now

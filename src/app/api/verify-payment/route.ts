@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
 
     // Save PPV purchase to Supabase (skip if already saved)
     if (!existingPurchase) {
+      const userId = checkoutSession.metadata?.user_id || null;
       const { error: insertError } = await supabase.from('purchases').insert({
         email: customerEmail,
         purchase_type: 'ppv',
@@ -107,6 +108,7 @@ export async function POST(req: NextRequest) {
         amount_paid: checkoutSession.amount_total || 0,
         currency: checkoutSession.currency || 'usd',
         expires_at: expiresAt,
+        user_id: userId,
       });
 
       if (insertError) {
