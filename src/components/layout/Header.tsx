@@ -99,12 +99,21 @@ export default function Header() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden text-white hover:text-gray-300 transition-colors p-2"
-            aria-label="Toggle menu"
-          >
+          {/* Mobile Auth + Menu Button */}
+          <div className="flex md:hidden items-center gap-3">
+            {!user && (
+              <Link
+                href="/login"
+                className="text-[10px] font-bold tracking-[0.2em] uppercase px-4 py-1.5 border border-white text-white hover:bg-white hover:text-black transition-all duration-200"
+              >
+                Sign In
+              </Link>
+            )}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-white hover:text-gray-300 transition-colors p-2"
+              aria-label="Toggle menu"
+            >
             {isMobileMenuOpen ? (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -120,7 +129,7 @@ export default function Header() {
         {/* Mobile Menu */}
         <div
           className={`md:hidden overflow-hidden transition-all duration-300 ${
-            isMobileMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+            isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
           <div className="py-6 border-t border-white/10 flex flex-col gap-1 bg-black">
@@ -158,15 +167,7 @@ export default function Header() {
                   Sign Out
                 </button>
               </>
-            ) : (
-              <Link
-                href="/login"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="mt-3 text-center text-[10px] font-bold tracking-[0.2em] uppercase px-5 py-3 border border-white text-white hover:bg-white hover:text-black transition-all duration-200"
-              >
-                Sign In
-              </Link>
-            )}
+            ) : null}
           </div>
         </div>
       </nav>
