@@ -101,7 +101,9 @@ export default function Header() {
 
           {/* Mobile Auth + Menu Button */}
           <div className="flex md:hidden items-center gap-3">
-            {!user && (
+            {user ? (
+              <UserMenu user={user} />
+            ) : (
               <Link
                 href="/login"
                 className="text-[10px] font-bold tracking-[0.2em] uppercase px-4 py-1.5 border border-white text-white hover:bg-white hover:text-black transition-all duration-200"
@@ -114,16 +116,17 @@ export default function Header() {
               className="text-white hover:text-gray-300 transition-colors p-2"
               aria-label="Toggle menu"
             >
-            {isMobileMenuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
+              {isMobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
