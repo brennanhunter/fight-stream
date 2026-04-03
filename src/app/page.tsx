@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import type { Metadata } from 'next';
 import Hero from '@/components/hero/Hero';
 import EventHero from '@/components/hero/EventHero';
+import UpcomingEventCard from '@/components/hero/UpcomingEventCard';
 import HomeContent from '@/components/hero/HomeContent';
 import Footer from '@/components/layout/Footer';
 import { createServerClient } from '@/lib/supabase';
@@ -80,8 +81,53 @@ async function getActiveEvent(): Promise<ActiveEvent | null> {
   }
 }
 
+interface NextUpEvent {
+  name: string;
+  date: string;
+  posterImage: string | null;
+}
+
+async function getNextUpEvent(): Promise<NextUpEvent | null> {
+  try {
+    const supabase = createServerClient();
+    const { data, error } = await supabase
+      .from('events')
+      .select('name, date, stripe_price_id')
+      .eq('is_active', false)
+      .gt('date', new Date().toISOString())
+      .order('date', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    let posterImage: string | null = null;
+    if (data.stripe_price_id) {
+      try {
+        const price = await stripe.prices.retrieve(data.stripe_price_id, {
+          expand: ['product'],
+        });
+        const product = price.product as Stripe.Product;
+        posterImage = product.images?.[0] || null;
+      } catch (stripeErr) {
+        console.error('Failed to fetch next-up Stripe product:', stripeErr);
+      }
+    }
+
+    return {
+      name: data.name,
+      date: data.date,
+      posterImage,
+    };
+  } catch (err) {
+    console.error('getNextUpEvent exception:', err);
+    return null;
+  }
+}
+
 export default async function Home() {
   const activeEvent = await getActiveEvent();
+  const nextUpEvent = await getNextUpEvent();
   const geo = activeEvent?.venue_address
     ? await checkGeoRestriction(activeEvent.venue_address, activeEvent.blackout_radius_miles ?? 90)
     : null;
@@ -126,6 +172,13 @@ export default async function Home() {
         />
       ) : (
         <Hero />
+      )}
+      {nextUpEvent && (
+        <UpcomingEventCard
+          eventName={nextUpEvent.name}
+          eventDate={nextUpEvent.date}
+          posterImage={nextUpEvent.posterImage}
+        />
       )}
       <HomeContent />
       <Footer />

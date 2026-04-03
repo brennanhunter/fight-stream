@@ -643,58 +643,12 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                   )}
                 </div>
               ) : accessState === 'needs-purchase' ? (
-                /* Not purchased — show buy button + recovery */
+                /* Not purchased — buy button commented out until Stripe is ready */
                 <div className="space-y-4">
-                  <div className="flex flex-wrap gap-4">
-                    {stripePriceId && (
-                      <button
-                        onClick={handlePurchase}
-                        disabled={checkoutLoading}
-                        className="group bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {checkoutLoading
-                          ? 'Redirecting...'
-                          : subscriptionTier === 'premium'
-                            ? eventStarted ? 'Watch Live — Free' : 'Get PPV Access — Free'
-                            : eventStarted
-                              ? `Watch Live — ${ppvLabel}`
-                              : `Get PPV Access — ${ppvLabel}`}
-                      </button>
-                    )}
-                  </div>
-                  {checkoutError && (
-                    <p className="text-sm text-red-400">{checkoutError}</p>
-                  )}
-                  {!showRecovery ? (
-                    <button
-                      onClick={() => setShowRecovery(true)}
-                      className="text-xs text-gray-500 hover:text-white underline underline-offset-2 transition-colors"
-                    >
-                      Already purchased? Recover access
-                    </button>
-                  ) : (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-2">Enter the email you used at checkout</p>
-                      <div className="flex items-center gap-2 max-w-sm">
-                        <input
-                          type="email"
-                          value={recoveryEmail}
-                          onChange={(e) => { setRecoveryEmail(e.target.value); setRecoveryError(null); }}
-                          onKeyDown={(e) => e.key === 'Enter' && handleRecoverAccess()}
-                          placeholder="your@email.com"
-                          className="flex-1 px-3 py-2 bg-black/50 border border-white/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-white"
-                        />
-                        <button
-                          onClick={handleRecoverAccess}
-                          disabled={recoveryLoading || !recoveryEmail.trim()}
-                          className="px-4 py-2 bg-white hover:bg-gray-200 text-black font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {recoveryLoading ? '...' : 'Recover'}
-                        </button>
-                      </div>
-                      {recoveryError && <p className="text-red-400 text-xs mt-1">{recoveryError}</p>}
-                    </div>
-                  )}
+                  <p className="text-sm text-gray-400 italic">Pre-buy tickets will be available again soon. Stay tuned!</p>
+                  {/* TODO: Restore purchase button when Stripe is ready
+                  <BuyButton /> <RecoverAccess /> etc.
+                  See git history for the original purchase UI */}
                 </div>
               ) : (
                 /* Checking access… */
@@ -704,12 +658,14 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                 </div>
               )}
 
+              {/* TODO: Restore Past Events link when needed
               <a
                 href="#past-events"
                 className="inline-block border border-white/30 text-white font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-all hover:border-white hover:bg-white/5"
               >
                 Past Events
               </a>
+              */}
             </motion.div>
           </motion.div>
 
