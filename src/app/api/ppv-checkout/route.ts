@@ -24,14 +24,14 @@ export async function POST(request: NextRequest) {
     if (clientEventId) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, venue_address, blackout_radius_miles')
+        .select('id, name, stripe_price_id, venue_address, blackout_radius_miles')
         .eq('id', clientEventId)
         .maybeSingle();
       event = data;
     } else {
       const { data } = await supabase
         .from('events')
-        .select('id, name, venue_address, blackout_radius_miles')
+        .select('id, name, stripe_price_id, venue_address, blackout_radius_miles')
         .eq('is_active', true)
         .maybeSingle();
       event = data;
@@ -41,6 +41,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Event not found. Please try again.' },
         { status: 404 }
+      );
+    }
+
+    // Validate that the priceId matches the event's actual Stripe price
+    if (!event.stripe_price_id) {
+      return NextResponse.json(
+        { error: 'This event is not yet available for purchase.' },
+        { status: 400 }
+      );
+    }
+    if (priceId !== event.stripe_price_id) {
+      return NextResponse.json(
+        { error: 'Invalid price for this event.' },
+        { status: 400 }
       );
     }
 
@@ -73,25 +87,21 @@ export async function POST(request: NextRequest) {
     if (user) {
       const { discountPercent, tier } = await getPpvDiscount(user.id);
 
-      if (discountPercent === 100) {
-        // Premium — free PPV. Create a 100% off coupon.
-        const coupon = await stripe.coupons.create({
-          percent_off: 100,
-          duration: 'once',
-          name: `Fight Pass Premium – Free PPV`,
-          max_redemptions: 1,
-        });
-        discounts = [{ coupon: coupon.id }];
-        metadata.subscription_tier = tier!;
-      } else if (discountPercent > 0) {
-        // Basic — 25% off PPV
-        const coupon = await stripe.coupons.create({
-          percent_off: discountPercent,
-          duration: 'once',
-          name: `Fight Pass Basic – ${discountPercent}% Off PPV`,
-          max_redemptions: 1,
-        });
-        discounts = [{ coupon: coupon.id }];
+      if (discountPercent > 0) {
+        // Use a stable reusable coupon per tier instead of creating single-use ones
+        const couponId = `fight-pass-${tier}-${discountPercent}pct`;
+        try {
+          await stripe.coupons.retrieve(couponId);
+        } catch {
+          // Coupon doesn't exist yet — create it
+          await stripe.coupons.create({
+            id: couponId,
+            percent_off: discountPercent,
+            duration: 'once',
+            name: `Fight Pass ${tier === 'premium' ? 'Premium' : 'Basic'} – ${discountPercent}% Off PPV`,
+          });
+        }
+        discounts = [{ coupon: couponId }];
         metadata.subscription_tier = tier!;
       }
     }
@@ -133,7 +143,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('PPV checkout error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Checkout failed' },
+      { error: 'Checkout failed. Please try again.' },
       { status: 500 }
     );
   }

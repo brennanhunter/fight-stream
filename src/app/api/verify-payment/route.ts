@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
       activeEvent = data;
     }
 
-    // Fall back to active event if metadata lookup failed
-    if (!activeEvent) {
+    // Fall back to active event only if no metadata eventId was specified
+    if (!activeEvent && !metadataEventId) {
       const { data } = await supabase
         .from('events')
         .select('id, name, expires_at')
@@ -89,9 +89,19 @@ export async function POST(req: NextRequest) {
     // Prevent duplicate inserts on page refresh
     const { data: existingPurchase } = await supabase
       .from('purchases')
-      .select('id')
+      .select('id, session_version')
       .eq('stripe_payment_intent_id', paymentIntentId)
       .maybeSingle();
+
+    // Bump session_version (invalidates any other active session for this purchase)
+    let sessionVersion = 1;
+    if (existingPurchase) {
+      sessionVersion = (existingPurchase.session_version || 0) + 1;
+      await supabase
+        .from('purchases')
+        .update({ session_version: sessionVersion })
+        .eq('id', existingPurchase.id);
+    }
 
     const sessionData = {
       purchaseId: paymentIntentId,
@@ -100,6 +110,7 @@ export async function POST(req: NextRequest) {
       eventName,
       purchasedAt: new Date().toISOString(),
       expiresAt,
+      sessionVersion,
     };
 
     await createSession(sessionData);
@@ -108,7 +119,7 @@ export async function POST(req: NextRequest) {
     const { cookies: getCookies } = await import('next/headers');
     const cookieStore = await getCookies();
     cookieStore.set('customer_email', customerEmail, {
-      httpOnly: false,
+      httpOnly: true,
       secure: true,
       sameSite: 'lax',
       path: '/',

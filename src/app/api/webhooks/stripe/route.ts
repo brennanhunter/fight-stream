@@ -29,7 +29,81 @@ export async function POST(request: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // Only handle subscription checkouts
+        // Handle PPV (one-time payment) checkouts
+        if (session.mode === 'payment') {
+          if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') break;
+
+          const customerEmail = session.customer_details?.email?.toLowerCase().trim();
+          if (!customerEmail) {
+            console.error('Webhook: No customer email on PPV checkout', session.id);
+            break;
+          }
+
+          const paymentIntentId = typeof session.payment_intent === 'string'
+            ? session.payment_intent
+            : session.payment_intent?.id || session.id;
+
+          // Prevent duplicate inserts (verify-payment may have already saved)
+          const { data: existing } = await supabase
+            .from('purchases')
+            .select('id')
+            .eq('stripe_payment_intent_id', paymentIntentId)
+            .maybeSingle();
+
+          if (!existing) {
+            const metadataEventId = session.metadata?.eventId;
+            let targetEvent;
+
+            if (metadataEventId) {
+              const { data } = await supabase
+                .from('events')
+                .select('id, name, expires_at')
+                .eq('id', metadataEventId)
+                .maybeSingle();
+              targetEvent = data;
+            }
+
+            if (!targetEvent && !metadataEventId) {
+              const { data } = await supabase
+                .from('events')
+                .select('id, name, expires_at')
+                .eq('is_active', true)
+                .maybeSingle();
+              targetEvent = data;
+            }
+
+            if (targetEvent) {
+              const expiresAt = targetEvent.expires_at
+                ? new Date(targetEvent.expires_at).toISOString()
+                : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+              const { error: insertError } = await supabase.from('purchases').insert({
+                email: customerEmail,
+                purchase_type: 'ppv',
+                stripe_payment_intent_id: paymentIntentId,
+                stripe_product_id: null,
+                product_name: targetEvent.name,
+                event_id: targetEvent.id,
+                amount_paid: session.amount_total || 0,
+                currency: session.currency || 'usd',
+                expires_at: expiresAt,
+                user_id: session.metadata?.user_id || null,
+              });
+
+              if (insertError) {
+                console.error('Webhook: PPV purchase save error:', insertError);
+              } else {
+                console.log('Webhook: PPV purchase saved for:', customerEmail);
+              }
+            } else {
+              console.error('Webhook: No event found for PPV checkout', session.id);
+            }
+          }
+
+          break;
+        }
+
+        // Handle subscription checkouts
         if (session.mode !== 'subscription' || !session.subscription) break;
 
         const subscriptionId = typeof session.subscription === 'string'

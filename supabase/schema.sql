@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS purchases (
   -- Timestamps
   purchased_at    timestamptz NOT NULL DEFAULT now(),
   expires_at      timestamptz,           -- PPV access expiration (null = never expires)
+  session_version integer NOT NULL DEFAULT 1, -- bumped on each session creation to enforce single active viewer
   created_at      timestamptz NOT NULL DEFAULT now()
 );
 

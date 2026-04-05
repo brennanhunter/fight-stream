@@ -54,6 +54,7 @@ interface EventHeroProps {
   isActive?: boolean;
   eventId?: string;
   onStreamLive?: (isLive: boolean) => void;
+  onInteraction?: (interacting: boolean) => void;
 }
 
 /* ── 3D Tilt + Float Poster Card ── */
@@ -168,7 +169,7 @@ function getTimeRemaining(targetDate: string) {
   return { days, hours, minutes, seconds };
 }
 
-export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, eventId, onStreamLive }: EventHeroProps) {
+export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, eventId, onStreamLive, onInteraction }: EventHeroProps) {
   const priceDisplay = `$${(priceCents / 100).toFixed(2)}`;
 
   // Calculate discounted price display
@@ -237,7 +238,11 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
 
   /* ── Check purchase for non-active events ── */
   useEffect(() => {
-    if (isActive || !eventId) return;
+    if (isActive) return;
+    if (!eventId) {
+      setAccessState('needs-purchase');
+      return;
+    }
     (async () => {
       try {
         const res = await fetch('/api/check-purchase', {
@@ -447,6 +452,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
     // Show Fight Pass prompt once for non-subscribers
     if (!subscriptionTier && !hasSeenFightPassPrompt()) {
       setShowFightPassPrompt(true);
+      onInteraction?.(true);
       return;
     }
     startCheckout();
@@ -461,7 +467,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
       const res = await fetch('/api/recover-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: recoveryEmail.trim() }),
+        body: JSON.stringify({ email: recoveryEmail.trim(), eventId }),
       });
       const data = await res.json();
       if (!res.ok) setRecoveryError(data.error || 'Could not recover access');
@@ -761,9 +767,11 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
         onClose={() => {
           markFightPassPromptSeen();
           setShowFightPassPrompt(false);
+          onInteraction?.(false);
         }}
         onContinue={() => {
           setShowFightPassPrompt(false);
+          onInteraction?.(false);
           startCheckout();
         }}
       />

@@ -4,8 +4,12 @@ import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
 import { getSession } from '@/lib/session';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, 'check-purchase', 30);
+  if (limited) return limited;
+
   try {
     const { eventId } = await req.json();
 

@@ -9,6 +9,7 @@ export interface SessionData {
   eventName: string;         // Human-readable event name
   purchasedAt: string;       // ISO timestamp of purchase
   expiresAt: string;         // ISO timestamp when access expires
+  sessionVersion?: number;   // Matches purchases.session_version — enforces single active viewer
 }
 
 // Cookie name for the session
@@ -86,23 +87,27 @@ export async function getSession(): Promise<SessionData | null> {
 /**
  * Check if user has access to a specific event
  */
-export async function hasEventAccess(eventId: string): Promise<boolean> {
+export async function hasEventAccess(eventId: string): Promise<{ valid: boolean; sessionVersion?: number }> {
   const session = await getSession();
   
   if (!session) {
-    return false;
+    return { valid: false };
   }
 
   // Check if the session is for the requested event
   if (session.eventId !== eventId) {
-    return false;
+    return { valid: false };
   }
 
   // Check if access hasn't expired
   const now = new Date();
   const expiresAt = new Date(session.expiresAt);
   
-  return now <= expiresAt;
+  if (now > expiresAt) {
+    return { valid: false };
+  }
+
+  return { valid: true, sessionVersion: session.sessionVersion };
 }
 
 /**

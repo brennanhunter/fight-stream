@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
-import { hasEventAccess } from '@/lib/session';
+import { hasEventAccess, getSession } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
@@ -28,44 +28,73 @@ export async function POST(request: NextRequest) {
     }
 
     // 1) Check session cookie
-    const hasCookieAccess = await hasEventAccess(activeEvent.id);
+    const cookieAccess = await hasEventAccess(activeEvent.id);
+    let hasCookieAccess = cookieAccess.valid;
 
-    // 2) Check purchases table (fallback when cookie expired)
+    // Validate session_version against the DB (prevents shared/stolen sessions)
+    if (hasCookieAccess && cookieAccess.sessionVersion != null) {
+      const session = await getSession();
+      if (session?.purchaseId) {
+        const { data: purchaseRow } = await supabase
+          .from('purchases')
+          .select('session_version')
+          .eq('stripe_payment_intent_id', session.purchaseId)
+          .maybeSingle();
+
+        if (purchaseRow && purchaseRow.session_version !== cookieAccess.sessionVersion) {
+          // Someone else has claimed this session — deny access
+          hasCookieAccess = false;
+        }
+      }
+    }
+
+    // 2) Check purchases table and premium subscription (fallback when cookie expired)
     let hasPurchaseRecord = false;
+    let hasPremium = false;
     if (!hasCookieAccess) {
-      // Check by logged-in user
+      // Get user once for both checks
+      let user = null;
       try {
         const authClient = await createAuthServerClient();
-        const { data: { user } } = await authClient.auth.getUser();
-        if (user) {
-          const { data: byId } = await supabase
-            .from('purchases')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('event_id', activeEvent.id)
-            .eq('purchase_type', 'ppv')
-            .limit(1)
-            .maybeSingle();
-          if (byId) hasPurchaseRecord = true;
-
-          if (!hasPurchaseRecord && user.email) {
-            const { data: byEmail } = await supabase
-              .from('purchases')
-              .select('id')
-              .eq('email', user.email.toLowerCase())
-              .eq('event_id', activeEvent.id)
-              .eq('purchase_type', 'ppv')
-              .limit(1)
-              .maybeSingle();
-            if (byEmail) hasPurchaseRecord = true;
-          }
-        }
+        const { data } = await authClient.auth.getUser();
+        user = data.user;
       } catch {
         // Not logged in — continue
       }
 
+      // Check by logged-in user
+      if (user) {
+        const { data: byId } = await supabase
+          .from('purchases')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('event_id', activeEvent.id)
+          .eq('purchase_type', 'ppv')
+          .limit(1)
+          .maybeSingle();
+        if (byId) hasPurchaseRecord = true;
+
+        if (!hasPurchaseRecord && user.email) {
+          const { data: byEmail } = await supabase
+            .from('purchases')
+            .select('id')
+            .eq('email', user.email.toLowerCase())
+            .eq('event_id', activeEvent.id)
+            .eq('purchase_type', 'ppv')
+            .limit(1)
+            .maybeSingle();
+          if (byEmail) hasPurchaseRecord = true;
+        }
+
+        // Check premium subscription
+        if (!hasPurchaseRecord) {
+          const tier = await getSubscriptionTier(user.id);
+          hasPremium = tier === 'premium';
+        }
+      }
+
       // Check by customer_email cookie
-      if (!hasPurchaseRecord) {
+      if (!hasPurchaseRecord && !hasPremium) {
         const cookieStore = await cookies();
         const customerEmail = cookieStore.get('customer_email')?.value;
         if (customerEmail) {
@@ -79,21 +108,6 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
           if (byCookie) hasPurchaseRecord = true;
         }
-      }
-    }
-
-    // 3) Check premium subscription
-    let hasPremium = false;
-    if (!hasCookieAccess && !hasPurchaseRecord) {
-      try {
-        const authClient = await createAuthServerClient();
-        const { data: { user } } = await authClient.auth.getUser();
-        if (user) {
-          const tier = await getSubscriptionTier(user.id);
-          hasPremium = tier === 'premium';
-        }
-      } catch {
-        // Not logged in or error — continue
       }
     }
 

@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   try {
-    const { email } = await req.json();
+    const { email, eventId: clientEventId } = await req.json();
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
@@ -21,16 +21,28 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServerClient();
 
-    // Find an active PPV event
-    const { data: activeEvent } = await supabase
-      .from('events')
-      .select('id, name, expires_at')
-      .eq('is_active', true)
-      .maybeSingle();
+    // Look up specific event or fall back to active event
+    let targetEvent;
+    if (clientEventId) {
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, expires_at')
+        .eq('id', clientEventId)
+        .maybeSingle();
+      targetEvent = data;
+    }
+    if (!targetEvent) {
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, expires_at')
+        .eq('is_active', true)
+        .maybeSingle();
+      targetEvent = data;
+    }
 
-    if (!activeEvent) {
+    if (!targetEvent) {
       return NextResponse.json(
-        { error: 'No active event found' },
+        { error: 'No event found' },
         { status: 404 }
       );
     }
@@ -38,9 +50,9 @@ export async function POST(req: NextRequest) {
     // Look up purchase by email + event (take the most recent one)
     const { data: purchases } = await supabase
       .from('purchases')
-      .select('id, email, event_id, product_name, expires_at')
+      .select('id, email, event_id, product_name, expires_at, session_version')
       .eq('email', trimmedEmail)
-      .eq('event_id', activeEvent.id)
+      .eq('event_id', targetEvent.id)
       .eq('purchase_type', 'ppv')
       .order('created_at', { ascending: false })
       .limit(1);
@@ -63,17 +75,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Re-create the JWT session cookie
-    const expiresAt = activeEvent.expires_at
-      ? new Date(activeEvent.expires_at).toISOString()
+    // Bump session_version to invalidate any other active session for this purchase
+    const newSessionVersion = (purchase.session_version || 0) + 1;
+    await supabase
+      .from('purchases')
+      .update({ session_version: newSessionVersion })
+      .eq('id', purchase.id);
+
+    const expiresAt = targetEvent.expires_at
+      ? new Date(targetEvent.expires_at).toISOString()
       : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
     const sessionData = {
       purchaseId: purchase.id,
       email: trimmedEmail,
-      eventId: activeEvent.id,
-      eventName: activeEvent.name,
+      eventId: targetEvent.id,
+      eventName: targetEvent.name,
       purchasedAt: new Date().toISOString(),
       expiresAt,
+      sessionVersion: newSessionVersion,
     };
 
     await createSession(sessionData);
@@ -82,7 +102,7 @@ export async function POST(req: NextRequest) {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     cookieStore.set('customer_email', trimmedEmail, {
-      httpOnly: false,
+      httpOnly: true,
       secure: true,
       sameSite: 'lax',
       path: '/',
@@ -92,7 +112,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Access restored! Reloading...',
-      eventName: activeEvent.name,
+      eventName: targetEvent.name,
     });
   } catch (error) {
     console.error('Access recovery error:', error);

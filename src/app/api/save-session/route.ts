@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     const email = session.customer_details?.email;
     if (email) {
       cookieStore.set('customer_email', email, {
-        httpOnly: false, // readable by client JS
+        httpOnly: true,
         secure: true,
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 365,
