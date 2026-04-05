@@ -105,14 +105,11 @@ export default function UpcomingEventCard({ eventName, eventDate, posterImage }:
 
             {/* Pre-buy message */}
             <motion.div variants={fadeUp}>
-              <p className="text-sm text-gray-400 italic">Pre-buy tickets will be available again soon. Stay tuned!</p>
-              {/* TODO: Uncomment when Stripe is ready
               <button
                 className="group bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
               >
                 Get PPV Access
               </button>
-              */}
             </motion.div>
           </motion.div>
 

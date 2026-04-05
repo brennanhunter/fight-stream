@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { hasEventAccess } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
+import { getSubscriptionTier } from '@/lib/access';
 
 export async function POST() {
   try {
@@ -22,8 +24,23 @@ export async function POST() {
 
     // Verify user has purchased access to the active event
     const hasPurchased = await hasEventAccess(activeEvent.id);
-    
+
+    // Also check if user has a premium subscription (grants free PPV)
+    let hasPremium = false;
     if (!hasPurchased) {
+      try {
+        const authClient = await createAuthServerClient();
+        const { data: { user } } = await authClient.auth.getUser();
+        if (user) {
+          const tier = await getSubscriptionTier(user.id);
+          hasPremium = tier === 'premium';
+        }
+      } catch {
+        // Not logged in or error — continue
+      }
+    }
+
+    if (!hasPurchased && !hasPremium) {
       return NextResponse.json(
         { error: 'Access denied. Please purchase the event to watch.' },
         { status: 403 }
