@@ -172,7 +172,14 @@ export default async function WatchPage({
         </div>
 
         <p className="text-sm text-gray-500 mt-6 text-center">
-          Having trouble? Try refreshing the page or contact support.
+          Having trouble? Try refreshing the page or{' '}
+          <a
+            href="mailto:hunter@boxstreamtv.com"
+            className="text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
+          >
+            contact support
+          </a>
+          .
         </p>
       </div>
     </main>

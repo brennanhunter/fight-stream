@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { ADMIN_COOKIE, verifyAdminCookie } from '@/lib/admin-auth';
 
 export async function middleware(request: NextRequest) {
   // CSRF protection: validate Origin on state-changing requests to API routes
@@ -49,6 +50,19 @@ export async function middleware(request: NextRequest) {
     user = data.user;
   } catch (err) {
     console.error('Middleware auth check failed:', err);
+  }
+
+  // Protect /admin routes — redirect to /admin/login if not authenticated
+  if (
+    request.nextUrl.pathname.startsWith('/admin') &&
+    request.nextUrl.pathname !== '/admin/login'
+  ) {
+    const adminCookie = request.cookies.get(ADMIN_COOKIE);
+    if (!await verifyAdminCookie(adminCookie?.value)) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/login';
+      return NextResponse.redirect(url);
+    }
   }
 
   // Protect /account routes — redirect to login if unauthenticated

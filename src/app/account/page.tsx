@@ -197,6 +197,20 @@ export default async function AccountPage() {
           </div>
         )}
       </div>
+
+      {/* Support */}
+      <div className="mt-10 border border-white/10 p-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold text-white mb-1">Need help?</p>
+          <p className="text-xs text-gray-500">Access issues, billing questions, or anything else — we read every email.</p>
+        </div>
+        <a
+          href="mailto:hunter@boxstreamtv.com"
+          className="flex-shrink-0 text-[10px] font-bold tracking-[0.2em] uppercase px-6 py-3 border border-white/20 text-gray-400 hover:border-white hover:text-white transition-all duration-200"
+        >
+          Contact Support
+        </a>
+      </div>
     </PageTransition>
   );
 }

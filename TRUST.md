@@ -20,7 +20,7 @@
 
 | # | Item | Description | Status |
 |---|------|-------------|--------|
-| 4 | Visible support contact everywhere | Not just in emails — on the watch page, purchase confirmation page, and account page. People trust platforms they know they can reach | ⬜ |
+| 4 | Visible support contact everywhere | Not just in emails — on the watch page, purchase confirmation page, and account page. People trust platforms they know they can reach | ✅ |
 | 5 | "Access expires" notice on watch page | Show users exactly when their access ends so there are no surprises | ⬜ |
 
 ---

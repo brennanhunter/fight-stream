@@ -177,12 +177,22 @@ function PaymentSuccessContent() {
         </p>
 
         {/* CTA Button */}
-        <Link 
+        <Link
           href="/"
           className="inline-block bg-white text-black font-bold py-4 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
         >
           Go to Stream Now
         </Link>
+
+        <p className="mt-8 text-xs text-gray-600">
+          Questions about your purchase?{' '}
+          <a
+            href="mailto:hunter@boxstreamtv.com"
+            className="text-gray-500 hover:text-white underline underline-offset-2 transition-colors"
+          >
+            hunter@boxstreamtv.com
+          </a>
+        </p>
       </div>
     </div>
   );
