@@ -3,8 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   // CSRF protection: validate Origin on state-changing requests to API routes
+  // Exempt /api/inngest — Inngest's servers send PUT requests without an Origin header
   if (
     request.nextUrl.pathname.startsWith('/api/') &&
+    !request.nextUrl.pathname.startsWith('/api/inngest') &&
     ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)
   ) {
     const origin = request.headers.get('origin');
