@@ -29,11 +29,6 @@ const pastEvents = [
     date: 'May 24, 2025',
     videoUrl: '/replays/apocolypto-the-new-beginning.mp4',
   },
-  {
-    title: 'Havoc at the Hilton 3',
-    date: '',
-    videoUrl: '',
-  },
 ];
 
 export default function HomeContent() {

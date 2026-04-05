@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
@@ -64,6 +65,10 @@ export async function POST(request: NextRequest) {
       customerId = customer.id;
     }
 
+    // Idempotency key: hash of user + priceId + minute window to prevent double-click duplicates
+    const idempotencySource = `${user.id}:${priceId}:${Math.floor(Date.now() / 60000)}`;
+    const idempotencyKey = crypto.createHash('sha256').update(idempotencySource).digest('hex');
+
     // Create Stripe Checkout Session in subscription mode
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -77,7 +82,7 @@ export async function POST(request: NextRequest) {
       },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/account/subscription?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing`,
-    });
+    }, { idempotencyKey });
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

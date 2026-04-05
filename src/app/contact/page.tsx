@@ -10,7 +10,8 @@ export default function ContactPage() {
     email: '',
     phone: '',
     subject: '',
-    message: ''
+    message: '',
+    _gotcha: '',
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
@@ -19,7 +20,7 @@ export default function ContactPage() {
     setStatus('submitting');
 
     try {
-      const response = await fetch('https://formspree.io/f/xwpolbjr', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,7 +30,7 @@ export default function ContactPage() {
 
       if (response.ok) {
         setStatus('success');
-        setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+        setFormData({ name: '', email: '', phone: '', subject: '', message: '', _gotcha: '' });
       } else {
         setStatus('error');
       }
@@ -162,6 +163,16 @@ export default function ContactPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Honeypot field — hidden from real users, bots fill it */}
+              <input
+                type="text"
+                name="_gotcha"
+                value={formData._gotcha}
+                onChange={handleChange}
+                style={{ display: 'none' }}
+                tabIndex={-1}
+                autoComplete="off"
+              />
               <div>
                 <label htmlFor="name" className="block text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">
                   Name *

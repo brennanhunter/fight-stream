@@ -58,17 +58,44 @@ export default async function WatchPage({
       const supabase = createServerClient();
       const { data: purchase } = await supabase
         .from('purchases')
-        .select('s3_key, stripe_session_id, expires_at')
+        .select('s3_key, stripe_session_id, expires_at, user_id, email')
         .eq('id', params.purchase_id)
         .maybeSingle();
 
-      if (purchase?.expires_at && new Date(purchase.expires_at) < new Date()) {
-        redirect('/vod');
-      }
+      if (purchase) {
+        // Verify ownership: must match authenticated user or customer_email cookie
+        let isOwner = false;
+        try {
+          const authClient = await createAuthServerClient();
+          const { data: { user } } = await authClient.auth.getUser();
+          if (user && purchase.user_id && user.id === purchase.user_id) {
+            isOwner = true;
+          } else if (user?.email && purchase.email && user.email.toLowerCase() === purchase.email.toLowerCase()) {
+            isOwner = true;
+          }
+        } catch {
+          // Not logged in — fall through to cookie check
+        }
 
-      if (purchase?.s3_key) {
-        s3Key = purchase.s3_key;
-        sessionId = purchase.stripe_session_id;
+        if (!isOwner) {
+          const customerEmail = cookieStore.get('customer_email')?.value;
+          if (customerEmail && purchase.email && decodeURIComponent(customerEmail).toLowerCase() === purchase.email.toLowerCase()) {
+            isOwner = true;
+          }
+        }
+
+        if (!isOwner) {
+          redirect('/vod');
+        }
+
+        if (purchase.expires_at && new Date(purchase.expires_at) < new Date()) {
+          redirect('/vod');
+        }
+
+        if (purchase.s3_key) {
+          s3Key = purchase.s3_key;
+          sessionId = purchase.stripe_session_id;
+        }
       }
     } catch (err) {
       console.error('Supabase lookup error:', err);
@@ -86,6 +113,26 @@ export default async function WatchPage({
     });
 
     if (session.payment_status !== 'paid') redirect('/vod');
+
+    // Verify ownership: session must belong to the current user or customer_email cookie
+    const sessionEmail = session.customer_details?.email?.toLowerCase() || session.customer_email?.toLowerCase();
+    let sessionOwner = false;
+    try {
+      const authClient = await createAuthServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user?.email && sessionEmail && user.email.toLowerCase() === sessionEmail) {
+        sessionOwner = true;
+      }
+    } catch {
+      // Not logged in — fall through to cookie check
+    }
+    if (!sessionOwner) {
+      const customerEmail = cookieStore.get('customer_email')?.value;
+      if (customerEmail && sessionEmail && decodeURIComponent(customerEmail).toLowerCase() === sessionEmail) {
+        sessionOwner = true;
+      }
+    }
+    if (!sessionOwner) redirect('/vod');
 
     const lineItem = session.line_items?.data[0];
     const product = lineItem?.price?.product as import('stripe').Stripe.Product;

@@ -41,10 +41,10 @@ function PaymentSuccessContent() {
         setEventInfo(data.eventAccess ? { eventName: data.eventAccess.eventName, expiresAt: data.eventAccess.expiresAt } : null);
         setStatus('success');
         
-        // Redirect to home page after 3 seconds
+        // Redirect to home page after 8 seconds
         redirectTimer.current = setTimeout(() => {
           router.push('/');
-        }, 3000);
+        }, 8000);
       } catch (error) {
         console.error('Payment verification error:', error);
         setStatus('error');

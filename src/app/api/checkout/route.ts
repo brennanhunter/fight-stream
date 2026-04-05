@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { rateLimit } from '@/lib/rate-limit';
@@ -24,6 +25,10 @@ export async function POST(request: NextRequest) {
       metadata.user_id = user.id;
     }
 
+    // Idempotency key: hash of user/IP + priceId + minute window to prevent double-click duplicates
+    const idempotencySource = `${user?.id || request.headers.get('x-forwarded-for') || 'anon'}:${priceId}:${Math.floor(Date.now() / 60000)}`;
+    const idempotencyKey = crypto.createHash('sha256').update(idempotencySource).digest('hex');
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       allow_promotion_codes: true,
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
       metadata,
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/watch?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/vod`,
-    });
+    }, { idempotencyKey });
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

@@ -17,6 +17,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return NextResponse.json(
+        { error: 'A valid email is required to redeem a promo code' },
+        { status: 400 }
+      );
+    }
+
     const validCode = process.env.PPV_PROMO_CODE;
 
     if (!validCode) {
@@ -55,7 +62,7 @@ export async function POST(req: NextRequest) {
       ? new Date(activeEvent.expires_at).toISOString()
       : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
-    const promoEmail = (email || '').trim().toLowerCase() || 'promo@boxstreamtv.com';
+    const promoEmail = email.trim().toLowerCase();
 
     // Prevent duplicate redemptions for the same email + event
     const { data: existingPromo } = await supabase

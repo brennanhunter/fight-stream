@@ -28,18 +28,20 @@ function getClientIp(req: NextRequest): string {
  * Returns null if allowed, or a 429 Response if blocked.
  *
  * @param req       - Incoming request (used to extract IP)
- * @param endpoint  - Unique identifier for the endpoint (e.g., 'recover-access')
- * @param limit     - Max requests allowed in the window
- * @param windowMs  - Window size in milliseconds (default: 60 000 = 1 min)
+ * @param endpoint   - Unique identifier for the endpoint (e.g., 'recover-access')
+ * @param limit      - Max requests allowed in the window
+ * @param windowMs   - Window size in milliseconds (default: 60 000 = 1 min)
+ * @param identifier - Optional override for the key suffix (default: client IP)
  */
 export function rateLimit(
   req: NextRequest,
   endpoint: string,
   limit: number,
   windowMs = 60_000,
+  identifier?: string,
 ): NextResponse | null {
-  const ip = getClientIp(req);
-  const key = `${endpoint}:${ip}`;
+  const id = identifier || getClientIp(req);
+  const key = `${endpoint}:${id}`;
   const now = Date.now();
 
   const entry = store.get(key);

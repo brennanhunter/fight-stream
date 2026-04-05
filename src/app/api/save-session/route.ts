@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing session ID' }, { status: 400 });
   }
 
-  // Save to Supabase
+  // Fetch session from Stripe once, reuse for both DB save and email cookie
+  let stripeSession: Stripe.Checkout.Session | null = null;
+
   try {
     const supabase = createServerClient();
 
@@ -27,32 +29,37 @@ export async function POST(req: NextRequest) {
       .eq('stripe_session_id', sessionId)
       .maybeSingle();
 
-    if (!existing) {
-      // Fetch product details from Stripe (one-time, then cached in DB)
-      const session = await stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ['line_items.data.price.product'],
-      });
+    // Fetch product details from Stripe (one-time, then cached in DB)
+    stripeSession = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['line_items.data.price.product'],
+    });
 
-      if (session.payment_status === 'paid') {
-        const lineItem = session.line_items?.data[0];
+    if (!existing) {
+      if (stripeSession.payment_status === 'paid') {
+        const lineItem = stripeSession.line_items?.data[0];
         const product = lineItem?.price?.product as Stripe.Product | undefined;
         const price = lineItem?.price;
 
         if (product?.metadata?.s3_key) {
-          const userId = session.metadata?.user_id || null;
-          await supabase.from('purchases').insert({
-            email: session.customer_details?.email?.toLowerCase().trim() || 'unknown@boxstreamtv.com',
-            purchase_type: 'vod',
-            stripe_session_id: sessionId,
-            stripe_product_id: product.id,
-            product_name: product.name,
-            product_image: product.images?.[0] || null,
-            s3_key: product.metadata.s3_key,
-            amount_paid: price?.unit_amount || 0,
-            currency: price?.currency || 'usd',
-            expires_at: null,
-            user_id: userId,
-          });
+          const customerEmail = stripeSession.customer_details?.email?.toLowerCase().trim();
+          if (!customerEmail) {
+            console.warn('Save-session: No customer email for session', sessionId);
+          } else {
+            const userId = stripeSession.metadata?.user_id || null;
+            await supabase.from('purchases').insert({
+              email: customerEmail,
+              purchase_type: 'vod',
+              stripe_session_id: sessionId,
+              stripe_product_id: product.id,
+              product_name: product.name,
+              product_image: product.images?.[0] || null,
+              s3_key: product.metadata.s3_key,
+              amount_paid: price?.unit_amount || 0,
+              currency: price?.currency || 'usd',
+              expires_at: null,
+              user_id: userId,
+            });
+          }
         }
       }
     }
@@ -95,10 +102,9 @@ export async function POST(req: NextRequest) {
     maxAge: 60 * 60 * 24 * 365,
   });
 
-  // Store customer email in a readable cookie for Supabase lookups
-  try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    const email = session.customer_details?.email?.toLowerCase().trim();
+  // Store customer email in a readable cookie — reuse the already-fetched session
+  if (stripeSession) {
+    const email = stripeSession.customer_details?.email?.toLowerCase().trim();
     if (email) {
       cookieStore.set('customer_email', email, {
         httpOnly: true,
@@ -107,8 +113,6 @@ export async function POST(req: NextRequest) {
         maxAge: 60 * 60 * 24 * 365,
       });
     }
-  } catch {
-    // email cookie is best-effort
   }
 
   return NextResponse.json({ success: true });

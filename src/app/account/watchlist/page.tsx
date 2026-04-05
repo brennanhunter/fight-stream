@@ -44,8 +44,17 @@ export default function WatchlistPage() {
   }, [supabase, router]);
 
   async function removeFavorite(id: string) {
-    await supabase.from('favorites').delete().eq('id', id);
     setFavorites((prev) => prev.filter((f) => f.id !== id));
+    const { error } = await supabase.from('favorites').delete().eq('id', id);
+    if (error) {
+      // Revert optimistic update on failure
+      const { data } = await supabase
+        .from('favorites')
+        .select('*')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .order('created_at', { ascending: false });
+      setFavorites(data || []);
+    }
   }
 
   if (loading) {

@@ -45,106 +45,90 @@ export async function POST(request: Request) {
 
           // VOD purchases — identified by metadata.purchase_type
           if (session.metadata?.purchase_type === 'vod') {
-            // Check for duplicate (save-session may have already saved)
-            const { data: existingVod } = await supabase
-              .from('purchases')
-              .select('id')
-              .eq('stripe_session_id', session.id)
-              .maybeSingle();
+            // Retrieve line items to get product details
+            const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+              expand: ['line_items.data.price.product'],
+            });
+            const lineItem = fullSession.line_items?.data[0];
+            const product = lineItem?.price?.product as Stripe.Product | undefined;
+            const price = lineItem?.price;
 
-            if (!existingVod) {
-              // Retrieve line items to get product details
-              const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-                expand: ['line_items.data.price.product'],
-              });
-              const lineItem = fullSession.line_items?.data[0];
-              const product = lineItem?.price?.product as Stripe.Product | undefined;
-              const price = lineItem?.price;
+            if (product?.metadata?.s3_key) {
+              // Upsert to handle race with save-session
+              const { error: upsertError } = await supabase.from('purchases').upsert({
+                email: customerEmail,
+                purchase_type: 'vod',
+                stripe_session_id: session.id,
+                stripe_product_id: product.id,
+                product_name: product.name,
+                product_image: product.images?.[0] || null,
+                s3_key: product.metadata.s3_key,
+                amount_paid: price?.unit_amount || 0,
+                currency: price?.currency || 'usd',
+                expires_at: null,
+                user_id: session.metadata?.user_id || null,
+              }, { onConflict: 'stripe_session_id', ignoreDuplicates: true });
 
-              if (product?.metadata?.s3_key) {
-                const { error: insertError } = await supabase.from('purchases').insert({
-                  email: customerEmail,
-                  purchase_type: 'vod',
-                  stripe_session_id: session.id,
-                  stripe_product_id: product.id,
-                  product_name: product.name,
-                  product_image: product.images?.[0] || null,
-                  s3_key: product.metadata.s3_key,
-                  amount_paid: price?.unit_amount || 0,
-                  currency: price?.currency || 'usd',
-                  expires_at: null,
-                  user_id: session.metadata?.user_id || null,
-                });
-
-                if (insertError) {
-                  console.error('Webhook: VOD purchase save error:', insertError);
-                } else {
-                  console.log('Webhook: VOD purchase saved for:', customerEmail);
-                }
+              if (upsertError) {
+                console.error('Webhook: VOD purchase save error:', upsertError);
               } else {
-                console.error('Webhook: VOD product missing s3_key metadata', session.id);
+                console.log('Webhook: VOD purchase saved for:', customerEmail);
               }
+            } else {
+              console.error('Webhook: VOD product missing s3_key metadata', session.id);
             }
 
             break;
           }
 
           // PPV purchases — everything else
-          // Prevent duplicate inserts (verify-payment may have already saved)
-          const { data: existing } = await supabase
-            .from('purchases')
-            .select('id')
-            .eq('stripe_payment_intent_id', paymentIntentId)
-            .maybeSingle();
+          const metadataEventId = session.metadata?.eventId;
+          let targetEvent;
 
-          if (!existing) {
-            const metadataEventId = session.metadata?.eventId;
-            let targetEvent;
+          if (metadataEventId) {
+            const { data } = await supabase
+              .from('events')
+              .select('id, name, expires_at')
+              .eq('id', metadataEventId)
+              .maybeSingle();
+            targetEvent = data;
+          }
 
-            if (metadataEventId) {
-              const { data } = await supabase
-                .from('events')
-                .select('id, name, expires_at')
-                .eq('id', metadataEventId)
-                .maybeSingle();
-              targetEvent = data;
-            }
+          if (!targetEvent && !metadataEventId) {
+            const { data } = await supabase
+              .from('events')
+              .select('id, name, expires_at')
+              .eq('is_active', true)
+              .maybeSingle();
+            targetEvent = data;
+          }
 
-            if (!targetEvent && !metadataEventId) {
-              const { data } = await supabase
-                .from('events')
-                .select('id, name, expires_at')
-                .eq('is_active', true)
-                .maybeSingle();
-              targetEvent = data;
-            }
+          if (targetEvent) {
+            const expiresAt = targetEvent.expires_at
+              ? new Date(targetEvent.expires_at).toISOString()
+              : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
-            if (targetEvent) {
-              const expiresAt = targetEvent.expires_at
-                ? new Date(targetEvent.expires_at).toISOString()
-                : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+            // Upsert to handle race with verify-payment
+            const { error: upsertError } = await supabase.from('purchases').upsert({
+              email: customerEmail,
+              purchase_type: 'ppv',
+              stripe_payment_intent_id: paymentIntentId,
+              stripe_product_id: null,
+              product_name: targetEvent.name,
+              event_id: targetEvent.id,
+              amount_paid: session.amount_total || 0,
+              currency: session.currency || 'usd',
+              expires_at: expiresAt,
+              user_id: session.metadata?.user_id || null,
+            }, { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true });
 
-              const { error: insertError } = await supabase.from('purchases').insert({
-                email: customerEmail,
-                purchase_type: 'ppv',
-                stripe_payment_intent_id: paymentIntentId,
-                stripe_product_id: null,
-                product_name: targetEvent.name,
-                event_id: targetEvent.id,
-                amount_paid: session.amount_total || 0,
-                currency: session.currency || 'usd',
-                expires_at: expiresAt,
-                user_id: session.metadata?.user_id || null,
-              });
-
-              if (insertError) {
-                console.error('Webhook: PPV purchase save error:', insertError);
-              } else {
-                console.log('Webhook: PPV purchase saved for:', customerEmail);
-              }
+            if (upsertError) {
+              console.error('Webhook: PPV purchase save error:', upsertError);
             } else {
-              console.error('Webhook: No event found for PPV checkout', session.id);
+              console.log('Webhook: PPV purchase saved for:', customerEmail);
             }
+          } else {
+            console.error('Webhook: No event found for PPV checkout', session.id);
           }
 
           break;

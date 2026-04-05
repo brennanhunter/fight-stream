@@ -22,7 +22,8 @@ export default function LoginPage() {
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/account';
+  const rawRedirect = searchParams.get('redirect') || '/account';
+  const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/account';
   const errorParam = searchParams.get('error');
 
   const [email, setEmail] = useState('');

@@ -19,6 +19,10 @@ export async function POST(req: NextRequest) {
 
     const trimmedEmail = email.trim().toLowerCase();
 
+    // Per-email rate limit: 2 attempts per hour
+    const emailLimited = rateLimit(req, 'recover-email', 2, 60 * 60 * 1000, trimmedEmail);
+    if (emailLimited) return emailLimited;
+
     const supabase = createServerClient();
 
     // Look up specific event or fall back to active event

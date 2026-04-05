@@ -64,6 +64,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ purchased: true });
           }
         }
+
+        // Authenticated user with no matching purchase — don't fall through to cookie
+        return NextResponse.json({ purchased: false });
       }
     } catch {
       // Not logged in — continue to cookie check

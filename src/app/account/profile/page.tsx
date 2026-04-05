@@ -16,6 +16,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     async function loadProfile() {
@@ -30,23 +31,27 @@ export default function ProfilePage() {
 
       setEmail(user.email || '');
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileErr } = await supabase
         .from('profiles')
         .select('display_name')
         .eq('id', user.id)
         .single();
 
-      if (profile) {
+      if (profileErr) {
+        setLoadError('Failed to load profile data. Please try refreshing.');
+      } else if (profile) {
         setDisplayName(profile.display_name || '');
       }
 
-      const { data: prefs } = await supabase
+      const { data: prefs, error: prefsErr } = await supabase
         .from('notification_preferences')
         .select('new_events, promotions')
         .eq('user_id', user.id)
         .single();
 
-      if (prefs) {
+      if (prefsErr && prefsErr.code !== 'PGRST116') {
+        setLoadError('Failed to load notification preferences. Please try refreshing.');
+      } else if (prefs) {
         setNewEvents(prefs.new_events);
         setPromotions(prefs.promotions);
       }
@@ -115,6 +120,12 @@ export default function ProfilePage() {
       <h1 className="text-2xl font-bold text-white tracking-[0.15em] uppercase mb-8">
         Profile
       </h1>
+
+      {loadError && (
+        <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-sm text-red-400 text-center">
+          {loadError}
+        </div>
+      )}
 
       {message && (
         <div className="mb-6 p-3 bg-white/5 border border-white/10 text-sm text-gray-300 text-center">

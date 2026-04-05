@@ -34,7 +34,11 @@ export default function SignupPage() {
     });
 
     if (error) {
-      setError(error.message);
+      if (error.message?.toLowerCase().includes('already registered')) {
+        setError('Unable to create account. Please try signing in instead.');
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
       return;
     }

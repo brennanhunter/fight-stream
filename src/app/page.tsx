@@ -46,37 +46,51 @@ async function getAllEvents(): Promise<CarouselEvent[]> {
 
     if (allEvents.length === 0) return [];
 
-    // Fetch Stripe data (poster + price) for each event
-    const enriched: CarouselEvent[] = await Promise.all(
-      allEvents.map(async (event) => {
-        let posterImage: string | null = null;
-        let priceCents = 0;
+    // Batch-fetch all needed prices in parallel (deduped) instead of N individual calls
+    const uniquePriceIds = [...new Set(
+      allEvents.map(e => e.stripe_price_id).filter((id): id is string => !!id)
+    )];
 
-        if (event.stripe_price_id) {
+    const priceMap = new Map<string, Stripe.Price>();
+    if (uniquePriceIds.length > 0) {
+      const results = await Promise.all(
+        uniquePriceIds.map(async (id) => {
           try {
-            const price = await stripe.prices.retrieve(event.stripe_price_id, {
-              expand: ['product'],
-            });
-            const product = price.product as Stripe.Product;
-            posterImage = product.images?.[0] || null;
-            priceCents = price.unit_amount ?? 0;
-          } catch (stripeErr) {
-            console.error(`Failed to fetch Stripe data for event ${event.id}:`, stripeErr);
+            return await stripe.prices.retrieve(id, { expand: ['product'] });
+          } catch {
+            return null;
           }
-        }
+        })
+      );
+      for (const price of results) {
+        if (price) priceMap.set(price.id, price);
+      }
+    }
 
-        return {
-          id: event.id,
-          name: event.name,
-          date: event.date,
-          stripe_price_id: event.stripe_price_id,
-          replay_url: event.replay_url,
-          posterImage,
-          priceCents,
-          is_active: event.is_active,
-        };
-      })
-    );
+    const enriched: CarouselEvent[] = allEvents.map((event) => {
+      let posterImage: string | null = null;
+      let priceCents = 0;
+
+      if (event.stripe_price_id) {
+        const price = priceMap.get(event.stripe_price_id);
+        if (price) {
+          const product = price.product as Stripe.Product;
+          posterImage = product.images?.[0] || null;
+          priceCents = price.unit_amount ?? 0;
+        }
+      }
+
+      return {
+        id: event.id,
+        name: event.name,
+        date: event.date,
+        stripe_price_id: event.stripe_price_id,
+        replay_url: event.replay_url,
+        posterImage,
+        priceCents,
+        is_active: event.is_active,
+      };
+    });
 
     return enriched;
   } catch (err) {

@@ -8,7 +8,7 @@ interface Subscription {
   cancel_at_period_end: boolean;
 }
 
-const ACTIVE_STATUSES = ['active', 'trialing', 'past_due'];
+const ACTIVE_STATUSES = ['active', 'trialing'];
 
 /** Get the user's active subscription, or null */
 export async function getSubscription(userId: string): Promise<Subscription | null> {

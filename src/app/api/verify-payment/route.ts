@@ -84,13 +84,16 @@ export async function POST(req: NextRequest) {
     }
     const paymentIntentId = typeof checkoutSession.payment_intent === 'string'
       ? checkoutSession.payment_intent
-      : checkoutSession.payment_intent?.id || sessionId;
+      : checkoutSession.payment_intent?.id || null;
+
+    // For 100% discount checkouts, payment_intent is null — use session ID as dedup key
+    const deduplicationId = paymentIntentId || sessionId;
 
     // Prevent duplicate inserts on page refresh
     const { data: existingPurchase } = await supabase
       .from('purchases')
       .select('id, session_version')
-      .eq('stripe_payment_intent_id', paymentIntentId)
+      .eq('stripe_payment_intent_id', deduplicationId)
       .maybeSingle();
 
     // Bump session_version (invalidates any other active session for this purchase)
@@ -104,7 +107,7 @@ export async function POST(req: NextRequest) {
     }
 
     const sessionData = {
-      purchaseId: paymentIntentId,
+      purchaseId: deduplicationId,
       email: customerEmail,
       eventId,
       eventName,
@@ -126,13 +129,13 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
-    // Save PPV purchase to Supabase (skip if already saved)
+    // Upsert PPV purchase to handle race with webhook
     if (!existingPurchase) {
       const userId = checkoutSession.metadata?.user_id || null;
-      const { error: insertError } = await supabase.from('purchases').insert({
+      const { error: upsertError } = await supabase.from('purchases').upsert({
         email: customerEmail,
         purchase_type: 'ppv',
-        stripe_payment_intent_id: paymentIntentId,
+        stripe_payment_intent_id: deduplicationId,
         stripe_product_id: null,
         product_name: eventName,
         event_id: eventId,
@@ -140,10 +143,10 @@ export async function POST(req: NextRequest) {
         currency: checkoutSession.currency || 'usd',
         expires_at: expiresAt,
         user_id: userId,
-      });
+      }, { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true });
 
-      if (insertError) {
-        console.error('Supabase PPV save error:', insertError);
+      if (upsertError) {
+        console.error('Supabase PPV save error:', upsertError);
       } else {
         console.log('Supabase PPV purchase saved for:', customerEmail);
       }

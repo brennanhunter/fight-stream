@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkGeoRestriction } from '@/lib/geo';
 import { createServerClient } from '@/lib/supabase';
@@ -94,12 +95,17 @@ export async function POST(request: NextRequest) {
           await stripe.coupons.retrieve(couponId);
         } catch {
           // Coupon doesn't exist yet — create it
-          await stripe.coupons.create({
-            id: couponId,
-            percent_off: discountPercent,
-            duration: 'once',
-            name: `Fight Pass ${tier === 'premium' ? 'Premium' : 'Basic'} – ${discountPercent}% Off PPV`,
-          });
+          try {
+            await stripe.coupons.create({
+              id: couponId,
+              percent_off: discountPercent,
+              duration: 'once',
+              name: `Fight Pass ${tier === 'premium' ? 'Premium' : 'Basic'} – ${discountPercent}% Off PPV`,
+            });
+          } catch {
+            // Another request may have created it concurrently — verify it exists
+            await stripe.coupons.retrieve(couponId);
+          }
         }
         discounts = [{ coupon: couponId }];
         metadata.subscription_tier = tier!;
@@ -137,7 +143,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    // Idempotency key: hash of user/IP + event + minute window to prevent double-click duplicates
+    const idempotencySource = `${user?.id || request.headers.get('x-forwarded-for') || 'anon'}:${event.id}:${Math.floor(Date.now() / 60000)}`;
+    const idempotencyKey = crypto.createHash('sha256').update(idempotencySource).digest('hex');
+
+    const session = await stripe.checkout.sessions.create(sessionParams, { idempotencyKey });
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

@@ -2,6 +2,21 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // CSRF protection: validate Origin on state-changing requests to API routes
+  if (
+    request.nextUrl.pathname.startsWith('/api/') &&
+    ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)
+  ) {
+    const origin = request.headers.get('origin');
+    const host = request.headers.get('host');
+    if (!origin || !host || new URL(origin).host !== host) {
+      return NextResponse.json(
+        { error: 'Invalid request origin' },
+        { status: 403 }
+      );
+    }
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -26,9 +41,13 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh the auth session (important — keeps cookies alive)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch (err) {
+    console.error('Middleware auth check failed:', err);
+  }
 
   // Protect /account routes — redirect to login if unauthenticated
   if (!user && request.nextUrl.pathname.startsWith('/account')) {
@@ -39,7 +58,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
+  if (user && (
+    request.nextUrl.pathname === '/login' ||
+    request.nextUrl.pathname === '/signup' ||
+    request.nextUrl.pathname === '/forgot-password' ||
+    request.nextUrl.pathname === '/reset-password'
+  )) {
     const url = request.nextUrl.clone();
     url.pathname = '/account';
     return NextResponse.redirect(url);

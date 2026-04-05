@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
           .eq('stripe_payment_intent_id', session.purchaseId)
           .maybeSingle();
 
-        if (purchaseRow && purchaseRow.session_version !== cookieAccess.sessionVersion) {
+        if (!purchaseRow) {
+          // Purchase was deleted or refunded — deny access
+          hasCookieAccess = false;
+        } else if (purchaseRow.session_version !== cookieAccess.sessionVersion) {
           // Someone else has claimed this session — deny access
           hasCookieAccess = false;
         }

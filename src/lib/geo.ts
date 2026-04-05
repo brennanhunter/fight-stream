@@ -10,12 +10,15 @@ interface VenueCoords {
   lon: number;
 }
 
-const geocodeCache = new Map<string, VenueCoords>();
+const MAX_CACHE_SIZE = 100;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const geocodeCache = new Map<string, { coords: VenueCoords; expiresAt: number }>();
 
 /** Geocode an address to lat/lon using OpenStreetMap Nominatim. */
 async function geocodeAddress(address: string): Promise<VenueCoords | null> {
   const cached = geocodeCache.get(address);
-  if (cached) return cached;
+  if (cached && cached.expiresAt > Date.now()) return cached.coords;
+  if (cached) geocodeCache.delete(address); // expired — remove
 
   const res = await fetch(
     `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
@@ -34,7 +37,14 @@ async function geocodeAddress(address: string): Promise<VenueCoords | null> {
     lat: parseFloat(results[0].lat),
     lon: parseFloat(results[0].lon),
   };
-  geocodeCache.set(address, coords);
+  geocodeCache.set(address, { coords, expiresAt: Date.now() + CACHE_TTL_MS });
+
+  // Evict oldest entries if cache exceeds max size
+  if (geocodeCache.size > MAX_CACHE_SIZE) {
+    const firstKey = geocodeCache.keys().next().value;
+    if (firstKey) geocodeCache.delete(firstKey);
+  }
+
   return coords;
 }
 

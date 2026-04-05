@@ -20,11 +20,17 @@ export default function SubscriptionPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // Check for success param
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('success')) {
-      setSuccess(true);
+    // Check for success param — use sessionStorage to prevent repeat display
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') && !sessionStorage.getItem('sub_success_shown')) {
+        setSuccess(true);
+        sessionStorage.setItem('sub_success_shown', '1');
+      }
       // Clean URL
-      window.history.replaceState({}, '', '/account/subscription');
+      if (params.get('success')) {
+        window.history.replaceState({}, '', '/account/subscription');
+      }
     }
 
     const fetchSubscription = async () => {
