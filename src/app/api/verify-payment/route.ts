@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripeServer } from '@/lib/stripe';
 import { createSession } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, 'verify-payment', 20);
+  if (limited) return limited;
+
   try {
     const { sessionId } = await req.json();
 

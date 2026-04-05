@@ -2,10 +2,14 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerClient } from '@/lib/supabase';
+import { rateLimit } from '@/lib/rate-limit';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, 'save-session', 30);
+  if (limited) return limited;
+
   const { sessionId } = await req.json();
 
   if (!sessionId) {

@@ -1,12 +1,16 @@
 import Stripe from 'stripe';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { checkGeoRestriction } from '@/lib/geo';
 import { createServerClient } from '@/lib/supabase';
 import { getPpvDiscount } from '@/lib/access';
+import { rateLimit } from '@/lib/rate-limit';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'ppv-checkout', 20);
+  if (limited) return limited;
+
   try {
     const supabase = createServerClient();
     const { priceId, eventId: clientEventId } = await request.json();

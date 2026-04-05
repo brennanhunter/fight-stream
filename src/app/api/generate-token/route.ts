@@ -1,11 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { hasEventAccess } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
+import { rateLimit } from '@/lib/rate-limit';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'generate-token', 30);
+  if (limited) return limited;
+
   try {
     // Find the active event
     const supabase = createServerClient();

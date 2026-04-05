@@ -1,11 +1,15 @@
 import Stripe from 'stripe';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
+import { rateLimit } from '@/lib/rate-limit';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'billing-portal', 10);
+  if (limited) return limited;
+
   try {
     const supabase = await createAuthServerClient();
     const { data: { user } } = await supabase.auth.getUser();

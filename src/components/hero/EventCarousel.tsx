@@ -23,10 +23,6 @@ interface EventCarouselProps {
 export default function EventCarousel({ events, subscriptionTier }: EventCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  if (events.length === 0) return null;
-
-  const currentEvent = events[activeIndex];
-
   const goToNext = useCallback(() => setActiveIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1)), [events.length]);
   const goToPrev = () => setActiveIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1));
 
@@ -36,6 +32,10 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
     const timer = setInterval(goToNext, 8000);
     return () => clearInterval(timer);
   }, [activeIndex, events.length, goToNext]);
+
+  if (events.length === 0) return null;
+
+  const currentEvent = events[activeIndex];
 
   return (
     <div className="relative">

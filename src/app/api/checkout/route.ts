@@ -1,10 +1,14 @@
 import Stripe from 'stripe';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
+import { rateLimit } from '@/lib/rate-limit';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'checkout', 20);
+  if (limited) return limited;
+
   try {
     const { priceId } = await request.json();
 
