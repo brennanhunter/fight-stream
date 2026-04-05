@@ -64,25 +64,44 @@ export async function POST(req: NextRequest) {
 
     const promoEmail = email.trim().toLowerCase();
 
-    // Prevent duplicate redemptions for the same email + event
-    const { data: existingPromo } = await supabase
-      .from('purchases')
-      .select('id')
-      .eq('email', promoEmail)
-      .eq('event_id', eventId)
-      .eq('amount_paid', 0)
-      .maybeSingle();
+    // Atomic upsert: prevent race condition on duplicate redemption.
+    // Uses ON CONFLICT to guarantee only one redemption per email+event+promo.
+    const purchaseId = crypto.randomUUID();
 
-    if (existingPromo) {
+    const { data: inserted, error: insertError } = await supabase
+      .from('purchases')
+      .upsert({
+        id: purchaseId,
+        email: promoEmail,
+        purchase_type: 'ppv',
+        stripe_payment_intent_id: `promo-${code.trim().toUpperCase()}-${purchaseId}`,
+        product_name: `${eventName} (Promo)`,
+        event_id: eventId,
+        amount_paid: 0,
+        currency: 'usd',
+        expires_at: expiresAt,
+      }, { onConflict: 'email,event_id,amount_paid', ignoreDuplicates: true })
+      .select('id');
+
+    // If no row returned, it was a duplicate
+    if (!inserted?.length) {
       return NextResponse.json(
         { error: 'This email has already redeemed a promo code for this event.' },
         { status: 400 }
       );
     }
 
+    if (insertError) {
+      console.error('Supabase promo save error:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to redeem promo code' },
+        { status: 500 }
+      );
+    }
+
     // Code is valid — grant access by creating a session
     const sessionData = {
-      purchaseId: `promo-${code.trim().toUpperCase()}-${Date.now()}`,
+      purchaseId: inserted[0].id,
       email: promoEmail,
       eventId,
       eventName,
@@ -91,22 +110,6 @@ export async function POST(req: NextRequest) {
     };
 
     await createSession(sessionData);
-
-    // Save promo redemption to Supabase
-    try {
-      await supabase.from('purchases').insert({
-        email: promoEmail,
-        purchase_type: 'ppv',
-        stripe_payment_intent_id: sessionData.purchaseId,
-        product_name: `${eventName} (Promo)`,
-        event_id: eventId,
-        amount_paid: 0,
-        currency: 'usd',
-        expires_at: expiresAt,
-      });
-    } catch (err) {
-      console.error('Supabase promo save error:', err);
-    }
 
     return NextResponse.json({
       success: true,

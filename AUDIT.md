@@ -15,11 +15,11 @@ Last updated: April 5, 2026
 - [x] **Admin login: no rate limiting + plaintext comparison** — `src/app/api/admin/login/route.ts`
   ~~Password compared with `!==` (timing attack vulnerable). No rate limiting.~~ Fixed: 3 attempts per 30 minutes per IP. Constant-time comparison via `crypto.timingSafeEqual()`. Generic error message.
 
-- [ ] **Promo code race condition** — `src/app/api/redeem-promo/route.ts`
-  Check-then-insert is not atomic. Two concurrent requests can both pass duplicate check. Purchase ID uses `Date.now()` (millisecond collision). Use UUID and database-level unique constraint with `ON CONFLICT DO NOTHING`.
+- [x] **Promo code race condition** — `src/app/api/redeem-promo/route.ts`
+  ~~Check-then-insert is not atomic.~~ Fixed: atomic upsert with `ON CONFLICT` + `crypto.randomUUID()` for purchase IDs. Duplicate redemption detected by empty return from upsert.
 
-- [ ] **Weak admin token derivation** — `src/lib/admin-auth.ts`
-  SHA-256 with no salt (~1 billion hashes/sec brute-force). Replace with bcrypt (rounds=12+) or Argon2.
+- [x] **Weak admin token derivation** — `src/lib/admin-auth.ts`
+  ~~SHA-256 with no salt.~~ Fixed: HMAC-SHA256 keyed with `JWT_SECRET`. Brute-force requires knowing the secret key.
 
 ---
 
