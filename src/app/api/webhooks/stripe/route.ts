@@ -226,20 +226,37 @@ export async function POST(request: Request) {
         const previousAttributes = event.data.previous_attributes as Partial<Stripe.Subscription> | undefined;
         const userId = subscription.metadata.user_id;
 
-        if (!userId) break;
-
         const tier = determineTier(subscription);
         const periods = getPeriodDates(subscription);
 
-        await supabase.from('subscriptions').upsert({
-          user_id: userId,
-          stripe_customer_id: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
-          stripe_subscription_id: subscription.id,
-          tier,
-          status: subscription.status,
-          ...periods,
-          cancel_at_period_end: subscription.cancel_at_period_end,
-        }, { onConflict: 'stripe_subscription_id' });
+        if (userId) {
+          await supabase.from('subscriptions').upsert({
+            user_id: userId,
+            stripe_customer_id: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
+            stripe_subscription_id: subscription.id,
+            tier,
+            status: subscription.status,
+            ...periods,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+          }, { onConflict: 'stripe_subscription_id' });
+        } else {
+          // No user_id in metadata — update existing row by stripe_subscription_id
+          const { error: updateError } = await supabase
+            .from('subscriptions')
+            .update({
+              tier,
+              status: subscription.status,
+              ...periods,
+              cancel_at_period_end: subscription.cancel_at_period_end,
+            })
+            .eq('stripe_subscription_id', subscription.id);
+
+          if (updateError) {
+            console.error('Webhook: subscription update (no user_id) failed:', updateError);
+          } else {
+            console.warn('Webhook: subscription.updated missing user_id metadata, updated by stripe_subscription_id for', subscription.id);
+          }
+        }
 
         // Send cancellation email when cancel_at_period_end flips to true
         const justCanceled = subscription.cancel_at_period_end && previousAttributes?.cancel_at_period_end === false;
