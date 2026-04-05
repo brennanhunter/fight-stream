@@ -33,9 +33,10 @@ interface UpcomingEventCardProps {
   eventName: string;
   eventDate: string;
   posterImage: string | null;
+  subscriptionTier?: 'basic' | 'premium' | null;
 }
 
-export default function UpcomingEventCard({ eventName, eventDate, posterImage }: UpcomingEventCardProps) {
+export default function UpcomingEventCard({ eventName, eventDate, posterImage, subscriptionTier }: UpcomingEventCardProps) {
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(eventDate));
 
   useEffect(() => {
@@ -103,13 +104,23 @@ export default function UpcomingEventCard({ eventName, eventDate, posterImage }:
               </div>
             </motion.div>
 
-            {/* Pre-buy message */}
+            {/* CTA based on subscription */}
             <motion.div variants={fadeUp}>
-              <button
-                className="group bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
-              >
-                Get PPV Access
-              </button>
+              {subscriptionTier === 'premium' ? (
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-white font-bold text-sm tracking-[0.15em] uppercase">Included with Fight Pass</span>
+                </div>
+              ) : (
+                <a
+                  href="/pricing"
+                  className="inline-block bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
+                >
+                  {subscriptionTier === 'basic' ? 'Get PPV Access — 25% Off' : 'Get PPV Access'}
+                </a>
+              )}
             </motion.div>
           </motion.div>
 

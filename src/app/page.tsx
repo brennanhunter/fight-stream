@@ -1,8 +1,8 @@
 import Stripe from 'stripe';
 import type { Metadata } from 'next';
 import Hero from '@/components/hero/Hero';
-import EventHero from '@/components/hero/EventHero';
-import UpcomingEventCard from '@/components/hero/UpcomingEventCard';
+import EventCarousel from '@/components/hero/EventCarousel';
+import type { CarouselEvent } from '@/components/hero/EventCarousel';
 import HomeContent from '@/components/hero/HomeContent';
 import Footer from '@/components/layout/Footer';
 import { createServerClient } from '@/lib/supabase';
@@ -19,118 +19,91 @@ export const metadata: Metadata = {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-interface ActiveEvent {
-  id: string;
-  name: string;
-  date: string;
-  stripe_price_id: string | null;
-  replay_url: string | null;
-  expires_at: string | null;
-  venue_address: string | null;
-  blackout_radius_miles: number | null;
-  // Populated from Stripe
-  posterImage: string | null;
-  priceCents: number;
-  currency: string;
-}
-
-async function getActiveEvent(): Promise<ActiveEvent | null> {
+async function getAllEvents(): Promise<CarouselEvent[]> {
   try {
     const supabase = createServerClient();
-    const { data, error } = await supabase
+
+    // Fetch active events
+    const { data: activeEvents, error: activeErr } = await supabase
       .from('events')
-      .select('id, name, date, stripe_price_id, replay_url, expires_at, venue_address, blackout_radius_miles')
-      .eq('is_active', true)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Supabase active event error:', error);
-      return null;
-    }
-    
-    if (!data) return null;
+      .select('id, name, date, stripe_price_id, replay_url, is_active')
+      .eq('is_active', true);
 
-    // Pull image and price directly from Stripe (like VODs do)
-    let posterImage: string | null = null;
-    let priceCents = 0;
-    let currency = 'usd';
+    if (activeErr) console.error('Supabase active events error:', activeErr);
 
-    if (data.stripe_price_id) {
-      try {
-        const price = await stripe.prices.retrieve(data.stripe_price_id, {
-          expand: ['product'],
-        });
-        const product = price.product as Stripe.Product;
-        posterImage = product.images?.[0] || null;
-        priceCents = price.unit_amount ?? 0;
-        currency = price.currency || 'usd';
-      } catch (stripeErr) {
-        console.error('Failed to fetch Stripe price/product:', stripeErr);
-      }
-    }
-
-    return {
-      ...data,
-      posterImage,
-      priceCents,
-      currency,
-    };
-  } catch (err) {
-    console.error('getActiveEvent exception:', err);
-    return null;
-  }
-}
-
-interface NextUpEvent {
-  name: string;
-  date: string;
-  posterImage: string | null;
-}
-
-async function getNextUpEvent(): Promise<NextUpEvent | null> {
-  try {
-    const supabase = createServerClient();
-    const { data, error } = await supabase
+    // Fetch upcoming events (future date, not active)
+    const { data: upcomingEvents, error: upcomingErr } = await supabase
       .from('events')
-      .select('name, date, stripe_price_id')
+      .select('id, name, date, stripe_price_id, replay_url, is_active')
       .eq('is_active', false)
       .gt('date', new Date().toISOString())
-      .order('date', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .order('date', { ascending: true });
 
-    if (error || !data) return null;
+    if (upcomingErr) console.error('Supabase upcoming events error:', upcomingErr);
 
-    let posterImage: string | null = null;
-    if (data.stripe_price_id) {
-      try {
-        const price = await stripe.prices.retrieve(data.stripe_price_id, {
-          expand: ['product'],
-        });
-        const product = price.product as Stripe.Product;
-        posterImage = product.images?.[0] || null;
-      } catch (stripeErr) {
-        console.error('Failed to fetch next-up Stripe product:', stripeErr);
-      }
-    }
+    // Combine: active first, then upcoming sorted by date
+    const allEvents = [...(activeEvents || []), ...(upcomingEvents || [])];
 
-    return {
-      name: data.name,
-      date: data.date,
-      posterImage,
-    };
+    if (allEvents.length === 0) return [];
+
+    // Fetch Stripe data (poster + price) for each event
+    const enriched: CarouselEvent[] = await Promise.all(
+      allEvents.map(async (event) => {
+        let posterImage: string | null = null;
+        let priceCents = 0;
+
+        if (event.stripe_price_id) {
+          try {
+            const price = await stripe.prices.retrieve(event.stripe_price_id, {
+              expand: ['product'],
+            });
+            const product = price.product as Stripe.Product;
+            posterImage = product.images?.[0] || null;
+            priceCents = price.unit_amount ?? 0;
+          } catch (stripeErr) {
+            console.error(`Failed to fetch Stripe data for event ${event.id}:`, stripeErr);
+          }
+        }
+
+        return {
+          id: event.id,
+          name: event.name,
+          date: event.date,
+          stripe_price_id: event.stripe_price_id,
+          replay_url: event.replay_url,
+          posterImage,
+          priceCents,
+          is_active: event.is_active,
+        };
+      })
+    );
+
+    return enriched;
   } catch (err) {
-    console.error('getNextUpEvent exception:', err);
-    return null;
+    console.error('getAllEvents exception:', err);
+    return [];
   }
 }
 
 export default async function Home() {
-  const activeEvent = await getActiveEvent();
-  const nextUpEvent = await getNextUpEvent();
-  const geo = activeEvent?.venue_address
-    ? await checkGeoRestriction(activeEvent.venue_address, activeEvent.blackout_radius_miles ?? 90)
-    : null;
+  const events = await getAllEvents();
+  const activeEvent = events.find((e) => e.is_active) || null;
+
+  // Geo-restrict only the active event
+  let geoBlocked = false;
+  if (activeEvent) {
+    const supabase = createServerClient();
+    const { data: eventGeo } = await supabase
+      .from('events')
+      .select('venue_address, blackout_radius_miles')
+      .eq('id', activeEvent.id)
+      .maybeSingle();
+
+    if (eventGeo?.venue_address) {
+      const geo = await checkGeoRestriction(eventGeo.venue_address, eventGeo.blackout_radius_miles ?? 90);
+      geoBlocked = geo.blocked;
+    }
+  }
 
   // Get subscription tier for logged-in users
   let subscriptionTier: 'basic' | 'premium' | null = null;
@@ -146,8 +119,8 @@ export default async function Home() {
 
   return (
     <>
-      {activeEvent && geo?.blocked ? (
-        /* Geo-restricted — blackout message instead of event hero */
+      {activeEvent && geoBlocked ? (
+        /* Geo-restricted — blackout message */
         <div className="min-h-screen flex items-center justify-center bg-black px-6">
           <div className="max-w-lg text-center">
             <h1 className="text-4xl font-bold text-white mb-4">Blackout Restriction</h1>
@@ -159,26 +132,10 @@ export default async function Home() {
             </p>
           </div>
         </div>
-      ) : activeEvent ? (
-        /* Active event replaces Hero, rest of page stays */
-        <EventHero
-          eventName={activeEvent.name}
-          eventDate={activeEvent.date}
-          posterImage={activeEvent.posterImage}
-          priceCents={activeEvent.priceCents}
-          stripePriceId={activeEvent.stripe_price_id}
-          replayUrl={activeEvent.replay_url}
-          subscriptionTier={subscriptionTier}
-        />
+      ) : events.length > 0 ? (
+        <EventCarousel events={events} subscriptionTier={subscriptionTier} />
       ) : (
         <Hero />
-      )}
-      {nextUpEvent && (
-        <UpcomingEventCard
-          eventName={nextUpEvent.name}
-          eventDate={nextUpEvent.date}
-          posterImage={nextUpEvent.posterImage}
-        />
       )}
       <HomeContent />
       <Footer />

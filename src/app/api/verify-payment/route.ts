@@ -33,13 +33,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get active event from Supabase
+    // Get event from checkout metadata, falling back to active event
     const supabase = createServerClient();
-    const { data: activeEvent } = await supabase
-      .from('events')
-      .select('id, name, expires_at')
-      .eq('is_active', true)
-      .maybeSingle();
+    const metadataEventId = checkoutSession.metadata?.eventId;
+
+    let activeEvent;
+    if (metadataEventId) {
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, expires_at')
+        .eq('id', metadataEventId)
+        .maybeSingle();
+      activeEvent = data;
+    }
+
+    // Fall back to active event if metadata lookup failed
+    if (!activeEvent) {
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, expires_at')
+        .eq('is_active', true)
+        .maybeSingle();
+      activeEvent = data;
+    }
 
     if (!activeEvent) {
       return NextResponse.json(

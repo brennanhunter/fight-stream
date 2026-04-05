@@ -9,11 +9,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 export async function POST(request: Request) {
   try {
     const supabase = createServerClient();
-    const { data: event } = await supabase
-      .from('events')
-      .select('id, name, venue_address, blackout_radius_miles')
-      .eq('is_active', true)
-      .maybeSingle();
+    const { priceId, eventId: clientEventId } = await request.json();
+
+    if (!priceId) {
+      return NextResponse.json({ error: 'Missing priceId' }, { status: 400 });
+    }
+
+    // Look up the specific event (by client-provided eventId) or fall back to active event
+    let event;
+    if (clientEventId) {
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, venue_address, blackout_radius_miles')
+        .eq('id', clientEventId)
+        .maybeSingle();
+      event = data;
+    } else {
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, venue_address, blackout_radius_miles')
+        .eq('is_active', true)
+        .maybeSingle();
+      event = data;
+    }
 
     if (event?.venue_address) {
       const geo = await checkGeoRestriction(event.venue_address, event.blackout_radius_miles ?? 90);
@@ -23,12 +41,6 @@ export async function POST(request: Request) {
           { status: 403 }
         );
       }
-    }
-
-    const { priceId } = await request.json();
-
-    if (!priceId) {
-      return NextResponse.json({ error: 'Missing priceId' }, { status: 400 });
     }
 
     // Attach user_id if logged in (optional — anonymous checkout still works)

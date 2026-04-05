@@ -51,6 +51,8 @@ interface EventHeroProps {
   stripePriceId: string | null;
   replayUrl: string | null;
   subscriptionTier: 'basic' | 'premium' | null;
+  isActive?: boolean;
+  eventId?: string;
 }
 
 /* ── 3D Tilt + Float Poster Card ── */
@@ -165,7 +167,7 @@ function getTimeRemaining(targetDate: string) {
   return { days, hours, minutes, seconds };
 }
 
-export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier }: EventHeroProps) {
+export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, eventId }: EventHeroProps) {
   const priceDisplay = `$${(priceCents / 100).toFixed(2)}`;
 
   // Calculate discounted price display
@@ -189,7 +191,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   }, [eventDate]);
 
   /* ── Purchase / access state ── */
-  const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'has-access'>('checking');
+  const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'has-access'>(isActive ? 'checking' : 'needs-purchase');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
@@ -210,8 +212,9 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   const [showControls, setShowControls] = useState(true);
   const [isPlayingReplay, setIsPlayingReplay] = useState(false);
 
-  /* ── Check access on mount ── */
+  /* ── Check access on mount (active event only) ── */
   useEffect(() => {
+    if (!isActive) return;
     (async () => {
       try {
         const res = await fetch('/api/generate-token', {
@@ -228,11 +231,12 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
         setAccessState('needs-purchase');
       }
     })();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
 
-  /* ── Load IVS script (only when has access) ── */
+  /* ── Load IVS script (only when has access and active) ── */
   useEffect(() => {
-    if (accessState !== 'has-access') return;
+    if (!isActive || accessState !== 'has-access') return;
     if (window.IVSPlayer) { setPlayerLoaded(true); return; }
     const script = document.createElement('script');
     script.src = 'https://player.live-video.net/1.26.0/amazon-ivs-player.min.js';
@@ -245,7 +249,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
 
   /* ── Initialize IVS player ── */
   useEffect(() => {
-    if (accessState !== 'has-access' || !playerLoaded || !playbackUrl || !videoRef.current) return;
+    if (!isActive || accessState !== 'has-access' || !playerLoaded || !playbackUrl || !videoRef.current) return;
 
     let healthCheck: NodeJS.Timeout | null = null;
     let onTimeUpdate: (() => void) | null = null;
@@ -316,7 +320,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
 
   /* ── Poll for stream when offline ── */
   useEffect(() => {
-    if (!playerRef.current || !playbackUrl) return;
+    if (!isActive || !playerRef.current || !playbackUrl) return;
     const poll = setInterval(() => {
       if (playerRef.current && !isStreamLive) playerRef.current.load(playbackUrl);
     }, 5000);
@@ -325,7 +329,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
 
   /* ── Re-attach player when video element changes (layout switch) ── */
   useEffect(() => {
-    if (!playerRef.current || !videoRef.current || !playbackUrl) return;
+    if (!isActive || !playerRef.current || !videoRef.current || !playbackUrl) return;
     if (videoRef.current !== attachedVideoEl.current) {
       attachedVideoEl.current = videoRef.current;
       playerRef.current.attachHTMLVideoElement(videoRef.current);
@@ -405,7 +409,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
       const res = await fetch('/api/ppv-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: stripePriceId }),
+        body: JSON.stringify({ priceId: stripePriceId, eventId }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -418,7 +422,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
       setCheckoutError('Something went wrong. Please try again.');
       setCheckoutLoading(false);
     }
-  }, [stripePriceId]);
+  }, [stripePriceId, eventId]);
 
   const handlePurchase = () => {
     if (!stripePriceId) return;
@@ -454,7 +458,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   /* ════════════════════════════════════════════
      RENDER: Full-width player (live stream OR replay)
      ════════════════════════════════════════════ */
-  const showFullPlayer = accessState === 'has-access' && (isStreamLive || isPlayingReplay);
+  const showFullPlayer = isActive && accessState === 'has-access' && (isStreamLive || isPlayingReplay);
 
   if (showFullPlayer) {
     const isLive = isStreamLive;
@@ -571,7 +575,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
             {/* Logo */}
             <motion.div variants={fadeUp}>
               <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={200} height={50} className="mb-6" />
-              <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-400">Live Pay-Per-View</p>
+              <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-400">{isActive ? 'Live Pay-Per-View' : 'Upcoming Event'}</p>
             </motion.div>
 
             <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] tracking-[-0.03em]">
@@ -633,7 +637,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                         ? 'The stream will begin shortly. Stay on this page.'
                         : "You're all set. The stream will appear here when we go live."}
                   </p>
-                  {replayUrl && !isStreamLive && (
+                  {isActive && replayUrl && !isStreamLive && (
                     <button
                       onClick={handleWatchReplay}
                       className="bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
