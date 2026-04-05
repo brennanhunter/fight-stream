@@ -158,6 +158,12 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     });
 
+    // isFirstClaim: true if this is the very first time the success page is hit
+    // (session_claimed_at was null before this request). Covers both cases:
+    // - webhook hasn't fired yet (existingPurchase is null)
+    // - webhook already wrote the row but nobody has visited the success page yet
+    const isFirstClaim = !existingPurchase || existingPurchase.session_claimed_at === null;
+
     // Upsert PPV purchase to handle race with webhook
     if (!existingPurchase) {
       const userId = checkoutSession.metadata?.user_id || null;
@@ -175,30 +181,28 @@ export async function POST(req: NextRequest) {
         session_claimed_at: new Date().toISOString(),
       }, { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true });
 
-      if (upsertError) {
-        console.error('Supabase PPV save error:', upsertError);
-      } else {
-        console.log('Supabase PPV purchase saved for:', customerEmail);
+      if (upsertError) console.error('Supabase PPV save error:', upsertError);
+      else console.log('Supabase PPV purchase saved for:', customerEmail);
+    }
 
-        // Send purchase confirmation email
-        try {
-          const { html, text } = purchaseConfirmationEmail({
-            eventName,
-            expiresAt,
-            amountPaid: checkoutSession.amount_total || 0,
-          });
-          await resend.emails.send({
-            from: 'BoxStreamTV <noreply@boxstreamtv.com>',
-            replyTo: 'hunter@boxstreamtv.com',
-            to: customerEmail,
-            subject: `You're in — ${eventName}`,
-            html,
-            text,
-          });
-        } catch (emailErr) {
-          // Never block purchase confirmation over an email failure
-          console.error('Confirmation email failed:', emailErr);
-        }
+    // Send confirmation email on the first claim regardless of insert/upsert path
+    if (isFirstClaim) {
+      try {
+        const { html, text } = purchaseConfirmationEmail({
+          eventName,
+          expiresAt,
+          amountPaid: checkoutSession.amount_total || 0,
+        });
+        await resend.emails.send({
+          from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+          replyTo: 'hunter@boxstreamtv.com',
+          to: customerEmail,
+          subject: `You're in — ${eventName}`,
+          html,
+          text,
+        });
+      } catch (emailErr) {
+        console.error('Confirmation email failed:', emailErr);
       }
     }
 
