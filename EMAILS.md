@@ -25,9 +25,9 @@
 | # | Email | Trigger | Status |
 |---|-------|---------|--------|
 | 7 | Access code for recovery | User requests access recovery | ✅ Built |
-| 8 | Event reminder — 24 hours before | Scheduled job: 24h before event date | ⬜ |
-| 9 | Event is live right now | Admin marks event as active | ⬜ |
-| 10 | Replay now available | Admin marks event as ended | ⬜ |
+| 8 | Event reminder — 24 hours before | Inngest cron (hourly): finds events with date 23–25h away | ✅ Built |
+| 9 | Event is starting now | Inngest cron (every 5min): finds events with date in last 10min | ✅ Built |
+| 10 | ~~Replay now available~~ | Dropped — replaced by #8 reminder mentioning replay | — |
 
 ---
 

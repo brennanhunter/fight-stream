@@ -21,6 +21,7 @@
     "amazon-ivs-player": "^1.46.0",
     "framer-motion": "^12.38.0",
     "heroicons": "^2.2.0",
+    "inngest": "^4.1.2",
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.548.0",

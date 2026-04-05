@@ -21,14 +21,15 @@ export default function SubscriptionPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    // Check for success param — use sessionStorage to prevent repeat display
+    let isSuccess = false;
+
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('success') && !sessionStorage.getItem('sub_success_shown')) {
         setSuccess(true);
+        isSuccess = true;
         sessionStorage.setItem('sub_success_shown', '1');
       }
-      // Clean URL
       if (params.get('success')) {
         window.history.replaceState({}, '', '/account/subscription');
       }
@@ -39,7 +40,7 @@ export default function SubscriptionPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data } = await supabase
+      const query = () => supabase
         .from('subscriptions')
         .select('id, tier, status, current_period_end, cancel_at_period_end')
         .eq('user_id', user.id)
@@ -47,6 +48,23 @@ export default function SubscriptionPage() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      const { data } = await query();
+
+      // On success redirect, retry up to 5x (3s apart) waiting for webhook to land
+      if (!data && isSuccess) {
+        let attempts = 0;
+        const interval = setInterval(async () => {
+          attempts++;
+          const { data: retryData } = await query();
+          if (retryData || attempts >= 5) {
+            clearInterval(interval);
+            setSubscription(retryData);
+            setLoading(false);
+          }
+        }, 3000);
+        return;
+      }
 
       setSubscription(data);
       setLoading(false);
@@ -153,12 +171,6 @@ export default function SubscriptionPage() {
             >
               {portalLoading ? 'Loading...' : 'Manage Billing'}
             </button>
-            <Link
-              href="/pricing"
-              className="px-6 py-3 border border-white/20 text-white text-sm font-bold tracking-[0.1em] uppercase hover:border-white transition-colors text-center"
-            >
-              View Plans
-            </Link>
           </div>
         </div>
       ) : (

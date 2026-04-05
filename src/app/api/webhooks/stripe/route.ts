@@ -194,6 +194,7 @@ export async function POST(request: Request) {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
+        const previousAttributes = event.data.previous_attributes as Partial<Stripe.Subscription> | undefined;
         const userId = subscription.metadata.user_id;
 
         if (!userId) break;
@@ -210,6 +211,30 @@ export async function POST(request: Request) {
           ...periods,
           cancel_at_period_end: subscription.cancel_at_period_end,
         }, { onConflict: 'stripe_subscription_id' });
+
+        // Send cancellation email when cancel_at_period_end flips to true
+        const justCanceled = subscription.cancel_at_period_end && previousAttributes?.cancel_at_period_end === false;
+        if (justCanceled) {
+          try {
+            const customerEmail = await getEmailForCustomer(subscription.customer);
+            if (customerEmail) {
+              const { html, text } = subscriptionCanceledEmail({
+                tier,
+                accessUntil: periods.current_period_end,
+              });
+              await resend.emails.send({
+                from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+                replyTo: 'hunter@boxstreamtv.com',
+                to: customerEmail,
+                subject: 'Your Fight Pass subscription has been canceled',
+                html,
+                text,
+              });
+            }
+          } catch (emailErr) {
+            console.error('Cancellation email failed:', emailErr);
+          }
+        }
 
         break;
       }

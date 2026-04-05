@@ -22,14 +22,24 @@ export default function VodPlayer({ src, title }: VodPlayerProps) {
   if (expired) {
     return (
       <div className="flex flex-col items-center justify-center bg-black/80 py-16 px-6 text-center">
-        <p className="text-white text-lg font-semibold mb-2">Video session expired</p>
-        <p className="text-gray-400 text-sm mb-6">Your playback link has timed out.</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-white text-black font-bold text-sm tracking-wide hover:bg-gray-200 transition-colors"
-        >
-          Refresh Page
-        </button>
+        <p className="text-white text-lg font-semibold mb-2">Playback link expired</p>
+        <p className="text-gray-400 text-sm mb-6">
+          Your video link has timed out. Refresh to get a new one, or restore your access below.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-white text-black font-bold text-sm tracking-wide hover:bg-gray-200 transition-colors"
+          >
+            Refresh Page
+          </button>
+          <a
+            href="/recover-access"
+            className="px-6 py-3 border border-white/30 text-white font-bold text-sm tracking-wide hover:border-white transition-colors"
+          >
+            Restore Access
+          </a>
+        </div>
       </div>
     );
   }

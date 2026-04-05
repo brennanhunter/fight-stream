@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import FightPassPrompt, { hasSeenFightPassPrompt, markFightPassPromptSeen } from '@/components/FightPassPrompt';
 
-export default function VodBuyButton({ priceId }: { priceId: string }) {
+export default function VodBuyButton({ priceId, subscriptionTier }: { priceId: string; subscriptionTier: 'basic' | 'premium' | null }) {
   const [loading, setLoading] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function VodBuyButton({ priceId }: { priceId: string }) {
   };
 
   const handlePurchase = () => {
-    if (!hasSeenFightPassPrompt()) {
+    if (!subscriptionTier && !hasSeenFightPassPrompt()) {
       setShowPrompt(true);
       return;
     }

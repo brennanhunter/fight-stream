@@ -199,7 +199,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                     ▶ Watch
                   </Link>
                 ) : product.available && product.priceId ? (
-                  <VodBuyButton priceId={product.priceId} />
+                  <VodBuyButton priceId={product.priceId} subscriptionTier={subscriptionTier} />
                 ) : !product.available ? (
                   <span className="px-6 py-3 bg-transparent text-gray-500 text-sm font-bold border border-white/20 uppercase tracking-wider cursor-default">
                     Coming Soon
@@ -285,7 +285,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                     ▶ Watch Now
                   </Link>
                 ) : product.available && product.priceId ? (
-                  <VodBuyButton priceId={product.priceId} />
+                  <VodBuyButton priceId={product.priceId} subscriptionTier={subscriptionTier} />
                 ) : !product.available ? (
                   <button
                     disabled

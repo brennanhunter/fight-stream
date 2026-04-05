@@ -85,7 +85,7 @@ export default async function WatchPage({
         }
 
         if (!isOwner) {
-          redirect('/vod');
+          redirect('/recover-access');
         }
 
         if (purchase.expires_at && new Date(purchase.expires_at) < new Date()) {
@@ -132,7 +132,7 @@ export default async function WatchPage({
         sessionOwner = true;
       }
     }
-    if (!sessionOwner) redirect('/vod');
+    if (!sessionOwner) redirect('/recover-access');
 
     const lineItem = session.line_items?.data[0];
     const product = lineItem?.price?.product as import('stripe').Stripe.Product;
