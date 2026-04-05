@@ -20,6 +20,14 @@ export async function POST(request: NextRequest) {
 
   const supabase = createServerClient();
 
+  // Fetch users who opted out of new event announcements
+  const { data: optedOut } = await supabase
+    .from('notification_preferences')
+    .select('user_id')
+    .eq('new_events', false);
+
+  const optedOutUserIds = new Set((optedOut || []).map((p) => p.user_id));
+
   // Collect recipient emails: active subscribers + past PPV buyers
   const recipientSet = new Set<string>();
 
@@ -30,7 +38,7 @@ export async function POST(request: NextRequest) {
     .in('status', ['active', 'trialing']);
 
   if (subscriptions?.length) {
-    const userIds = subscriptions.map((s) => s.user_id).filter(Boolean);
+    const userIds = subscriptions.map((s) => s.user_id).filter((id) => id && !optedOutUserIds.has(id));
     // Fetch in pages to handle large lists
     let page = 1;
     let hasMore = true;
@@ -47,16 +55,22 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 2. Past PPV buyer emails
+  // 2. Past PPV buyer emails (only include non-account buyers;
+  //    account holders are already handled above with preference filtering)
   const { data: ppvPurchases } = await supabase
     .from('purchases')
-    .select('email')
+    .select('email, user_id')
     .eq('purchase_type', 'ppv')
     .not('email', 'is', null);
 
   if (ppvPurchases?.length) {
     for (const p of ppvPurchases) {
-      if (p.email) recipientSet.add(p.email.toLowerCase());
+      if (p.email) {
+        // If this purchase is tied to an account, skip — they were handled above
+        // (either included or excluded by preference)
+        if (p.user_id && optedOutUserIds.has(p.user_id)) continue;
+        recipientSet.add(p.email.toLowerCase());
+      }
     }
   }
 
