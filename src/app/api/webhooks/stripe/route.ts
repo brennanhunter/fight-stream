@@ -31,6 +31,30 @@ export async function POST(request: Request) {
 
   const supabase = createServerClient();
 
+  // Idempotency: skip events we've already processed
+  const { data: existing } = await supabase
+    .from('stripe_events')
+    .select('id')
+    .eq('event_id', event.id)
+    .maybeSingle();
+
+  if (existing) {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
+  // Mark event as processing (insert early to prevent parallel duplicates)
+  const { error: insertError } = await supabase
+    .from('stripe_events')
+    .insert({ event_id: event.id, event_type: event.type });
+
+  if (insertError) {
+    // Unique constraint violation = another function instance is already handling this
+    if (insertError.code === '23505') {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    console.error('Failed to record stripe event:', insertError);
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -369,6 +393,39 @@ export async function POST(request: Request) {
           } catch (emailErr) {
             console.error('Payment failed email error:', emailErr);
           }
+        }
+
+        break;
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge;
+        const paymentIntentId = typeof charge.payment_intent === 'string'
+          ? charge.payment_intent
+          : charge.payment_intent?.id;
+
+        if (!paymentIntentId) {
+          console.error('Webhook: charge.refunded missing payment_intent', charge.id);
+          break;
+        }
+
+        // Revoke access: bump session_version so existing JWTs are invalidated,
+        // and set expires_at to now so the purchase is treated as expired.
+        const { data: updated, error: refundError } = await supabase
+          .from('purchases')
+          .update({
+            expires_at: new Date().toISOString(),
+            session_version: 999,
+          })
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .select('id, email, product_name');
+
+        if (refundError) {
+          console.error('Webhook: refund update error:', refundError);
+        } else if (updated?.length) {
+          console.log(`Webhook: Refund processed — revoked access for ${updated.length} purchase(s) on PI ${paymentIntentId}`);
+        } else {
+          console.warn(`Webhook: charge.refunded but no matching purchase for PI ${paymentIntentId}`);
         }
 
         break;
