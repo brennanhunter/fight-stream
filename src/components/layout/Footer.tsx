@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 export default function Footer() {
@@ -49,8 +50,24 @@ export default function Footer() {
           </a>
         </div>
 
+        {/* Legal links */}
+        <div className="mt-10 flex gap-6 justify-center">
+          <Link
+            href="/terms"
+            className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-600 hover:text-white transition-colors"
+          >
+            Terms of Service
+          </Link>
+          <Link
+            href="/privacy"
+            className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-600 hover:text-white transition-colors"
+          >
+            Privacy Policy
+          </Link>
+        </div>
+
         {/* Credit */}
-        <div className="mt-10 text-center">
+        <div className="mt-6 text-center">
           <p className="text-xs text-gray-600">
             <a
               href="https://xtremery.com"
