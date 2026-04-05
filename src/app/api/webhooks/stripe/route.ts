@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase';
 import { subscriptionConfirmationEmail } from '@/lib/emails/subscription-confirmation';
 import { subscriptionCanceledEmail } from '@/lib/emails/subscription-canceled';
 import { paymentFailedEmail } from '@/lib/emails/payment-failed';
+import { subscriptionRenewedEmail } from '@/lib/emails/subscription-renewed';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -268,6 +269,57 @@ export async function POST(request: Request) {
           }
         } catch (emailErr) {
           console.error('Cancellation email failed:', emailErr);
+        }
+
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+
+        // Only send on renewals, not the initial subscription payment
+        if (invoice.billing_reason !== 'subscription_cycle') break;
+
+        const subDetails = invoice.parent?.subscription_details;
+        const subscriptionId = subDetails
+          ? (typeof subDetails.subscription === 'string'
+              ? subDetails.subscription
+              : subDetails.subscription?.id)
+          : null;
+
+        if (!subscriptionId) break;
+
+        try {
+          const customerEmail = invoice.customer_email
+            ?? (invoice.customer ? await getEmailForCustomer(invoice.customer) : null);
+          if (customerEmail) {
+            const { data: sub } = await supabase
+              .from('subscriptions')
+              .select('tier, current_period_end')
+              .eq('stripe_subscription_id', subscriptionId)
+              .maybeSingle();
+
+            const tier = (sub?.tier as 'basic' | 'premium') ?? 'basic';
+            const amountPaid = invoice.amount_paid
+              ? `$${(invoice.amount_paid / 100).toFixed(2)}`
+              : 'N/A';
+
+            const { html, text } = subscriptionRenewedEmail({
+              tier,
+              amountPaid,
+              nextRenewal: sub?.current_period_end ?? null,
+            });
+            await resend.emails.send({
+              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              replyTo: 'hunter@boxstreamtv.com',
+              to: customerEmail,
+              subject: `Fight Pass ${tier === 'premium' ? 'Premium' : 'Basic'} renewed — BoxStreamTV`,
+              html,
+              text,
+            });
+          }
+        } catch (emailErr) {
+          console.error('Renewal email failed:', emailErr);
         }
 
         break;

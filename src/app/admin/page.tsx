@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
 import { createServerClient } from '@/lib/supabase';
 import AdminGrantForm from './AdminGrantForm';
+import AdminAnnounceForm from './AdminAnnounceForm';
 import AdminLogout from './AdminLogout';
 
 export const dynamic = 'force-dynamic';
@@ -71,6 +72,13 @@ export default async function AdminPage({
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Active Subscribers</p>
             <p className="text-3xl font-bold">{subCount ?? 0}</p>
           </div>
+        </div>
+
+        {/* Announce Event */}
+        <div className="border border-red-900/40 p-6 mb-6">
+          <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-red-400 mb-1">Announce Event</h2>
+          <p className="text-xs text-gray-600 mb-4">Emails all active subscribers and past PPV buyers.</p>
+          <AdminAnnounceForm />
         </div>
 
         {/* Grant Access */}
