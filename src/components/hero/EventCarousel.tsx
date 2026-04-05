@@ -30,7 +30,7 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
   // Auto-rotate every 8 seconds — pause when stream is live
   useEffect(() => {
     if (events.length <= 1 || streamLive) return;
-    const timer = setInterval(goToNext, 8000);
+    const timer = setInterval(goToNext, 20000);
     return () => clearInterval(timer);
   }, [activeIndex, events.length, goToNext, streamLive]);
 

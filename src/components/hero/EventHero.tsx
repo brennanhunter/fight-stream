@@ -246,9 +246,9 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
           body: JSON.stringify({ eventId }),
         });
         const data = await res.json();
-        if (data.purchased) setAccessState('has-access');
+        setAccessState(data.purchased ? 'has-access' : 'needs-purchase');
       } catch {
-        // Ignore — stays at needs-purchase
+        setAccessState('needs-purchase');
       }
     })();
   }, [isActive, eventId]);
