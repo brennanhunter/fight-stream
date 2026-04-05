@@ -146,7 +146,7 @@ export default async function VodPage() {
 
   return (
     <PageTransition>
-      <section className="min-h-screen bg-black overflow-x-hidden pt-20">
+      <section className="min-h-screen bg-black overflow-x-hidden pt-20 relative">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24">
           <div className="mb-12">
             <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">
@@ -158,22 +158,33 @@ export default async function VodPage() {
             <div className="w-16 h-[2px] bg-white mt-6" />
           </div>
 
-          {!subscriptionTier && (
-            <div className="mb-10 border border-white/10 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold text-white mb-1">Unlock the entire library</h2>
-                <p className="text-sm text-gray-400">Get unlimited access to all VOD replays with Fight Pass.</p>
-              </div>
-              <a
-                href="/pricing"
-                className="flex-shrink-0 px-6 py-3 bg-white text-black text-sm font-bold tracking-[0.15em] uppercase hover:bg-gray-200 transition-colors border border-white"
-              >
-                View Plans
-              </a>
+          {events.length === 0 ? (
+            <div className="text-center py-24">
+              <h2 className="text-2xl font-bold text-white mb-4">No Replays Available Yet</h2>
+              <p className="text-gray-400 text-lg">
+                Check back soon — new fight replays will be added here.
+              </p>
             </div>
-          )}
+          ) : (
+            <>
+              {!subscriptionTier && (
+                <div className="mb-10 border border-white/10 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-white mb-1">Unlock the entire library</h2>
+                    <p className="text-sm text-gray-400">Get unlimited access to all VOD replays with Fight Pass.</p>
+                  </div>
+                  <a
+                    href="/pricing"
+                    className="flex-shrink-0 px-6 py-3 bg-white text-black text-sm font-bold tracking-[0.15em] uppercase hover:bg-gray-200 transition-colors border border-white"
+                  >
+                    View Plans
+                  </a>
+                </div>
+              )}
 
-          <VodContent events={events} ownedProducts={ownedProducts} subscriptionTier={subscriptionTier} />
+              <VodContent events={events} ownedProducts={ownedProducts} subscriptionTier={subscriptionTier} />
+            </>
+          )}
         </div>
       </section>
       <Footer />
