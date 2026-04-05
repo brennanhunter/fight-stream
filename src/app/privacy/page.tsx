@@ -132,7 +132,7 @@ export default function PrivacyPage() {
               </ul>
               <p className="mt-4">
                 To exercise any of these rights, email us at{' '}
-                <a href="mailto:support@boxstreamtv.com" className="text-white hover:underline">support@boxstreamtv.com</a>.
+                <a href="mailto:hunter@boxstreamtv.com" className="text-white hover:underline">hunter@boxstreamtv.com</a>.
               </p>
             </section>
 
@@ -161,8 +161,8 @@ export default function PrivacyPage() {
               <h2 className="text-lg font-bold text-white mb-3">11. Contact</h2>
               <p>
                 Questions or concerns about this Privacy Policy? Contact us at{' '}
-                <a href="mailto:support@boxstreamtv.com" className="text-white hover:underline">
-                  support@boxstreamtv.com
+                <a href="mailto:hunter@boxstreamtv.com" className="text-white hover:underline">
+                  hunter@boxstreamtv.com
                 </a>{' '}
                 or use the{' '}
                 <a href="/contact" className="text-white hover:underline">contact form</a>.

@@ -84,8 +84,8 @@ export default function ContactPage() {
                     <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <a href="mailto:ryanmiross@gmail.com" className="hover:text-white transition-colors">
-                      ryanmiross@gmail.com
+                    <a href="mailto:ryan@boxstreamtv.com" className="hover:text-white transition-colors">
+                      ryan@boxstreamtv.com
                     </a>
                   </div>
                   <div className="flex items-center gap-3 text-gray-400">
@@ -107,8 +107,8 @@ export default function ContactPage() {
                     <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <a href="mailto:hunter@xtremery.com" className="hover:text-white transition-colors">
-                      hunter@xtremery.com
+                    <a href="mailto:hunter@boxstreamtv.com" className="hover:text-white transition-colors">
+                      hunter@boxstreamtv.com
                     </a>
                   </div>
                   <div className="flex items-center gap-3 text-gray-400">

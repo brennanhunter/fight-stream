@@ -54,7 +54,7 @@ export default function TermsPage() {
               </p>
               <p className="mb-3">
                 <span className="text-white font-semibold">No Refunds.</span> Because PPV content is delivered digitally and immediately upon purchase, all sales are final and non-refundable. If you experience a technical issue that prevents you from watching an event, contact us at{' '}
-                <a href="mailto:support@boxstreamtv.com" className="text-white hover:underline">support@boxstreamtv.com</a>{' '}
+                <a href="mailto:hunter@boxstreamtv.com" className="text-white hover:underline">hunter@boxstreamtv.com</a>{' '}
                 and we will make reasonable efforts to resolve the issue or provide replay access where available.
               </p>
               <p>
@@ -148,8 +148,8 @@ export default function TermsPage() {
               <h2 className="text-lg font-bold text-white mb-3">15. Contact</h2>
               <p>
                 Questions about these Terms? Email us at{' '}
-                <a href="mailto:support@boxstreamtv.com" className="text-white hover:underline">
-                  support@boxstreamtv.com
+                <a href="mailto:hunter@boxstreamtv.com" className="text-white hover:underline">
+                  hunter@boxstreamtv.com
                 </a>{' '}
                 or use the{' '}
                 <a href="/contact" className="text-white hover:underline">contact form</a>.
