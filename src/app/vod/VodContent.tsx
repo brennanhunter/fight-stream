@@ -91,10 +91,8 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                     className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="aspect-[3/4] bg-white/[0.03] flex items-center justify-center">
-                    <svg className="w-16 h-16 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
+                  <div className="aspect-[3/4] bg-white/[0.03] flex items-center justify-center px-6">
+                    <h3 className="text-2xl font-bold text-white text-center">{event.name}</h3>
                   </div>
                 )}
               </div>
@@ -187,12 +185,12 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
               <div className="flex items-center gap-4 flex-shrink-0">
                 {subscriptionTier ? (
                   <span className="text-sm text-gray-400 font-medium">Included with Fight Pass</span>
-                ) : (
+                ) : product.price ? (
                   <span className="text-3xl sm:text-4xl font-bold text-purple-400">
                     ${product.price}
                     <span className="text-gray-400 text-base ml-2 uppercase">{product.currency}</span>
                   </span>
-                )}
+                ) : null}
                 {ownedProducts[product.id] || subscriptionTier ? (
                   <Link
                     href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id]}` : `/watch?product_id=${product.id}`}
@@ -272,12 +270,12 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm text-gray-400 font-medium">Included with Fight Pass</span>
                   </div>
-                ) : (
+                ) : product.price ? (
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xl font-bold text-white">${product.price}</span>
                     <span className="text-xs text-gray-500 uppercase">{product.currency}</span>
                   </div>
-                )}
+                ) : null}
 
                 {ownedProducts[product.id] || subscriptionTier ? (
                   <Link

@@ -97,28 +97,54 @@ function groupByEvent(products: VodProduct[]): EventGroup[] {
 // Get map of productId -> purchaseId for owned products
 async function getOwnedProducts(): Promise<Record<string, string>> {
   try {
+    const supabase = createServerClient();
+    const owned: Record<string, string> = {};
+    const now = new Date();
+
+    // Check by authenticated user first
+    try {
+      const authClient = await createAuthServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user) {
+        const { data: purchases } = await supabase
+          .from('purchases')
+          .select('id, stripe_product_id, stripe_session_id, expires_at')
+          .eq('user_id', user.id)
+          .eq('purchase_type', 'vod');
+
+        if (purchases?.length) {
+          for (const p of purchases) {
+            if (p.stripe_product_id) {
+              if (p.expires_at && new Date(p.expires_at) < now) continue;
+              owned[p.stripe_product_id] = p.id || p.stripe_session_id;
+            }
+          }
+        }
+      }
+    } catch {
+      // Not logged in — continue to cookie check
+    }
+
+    // Also check by customer_email cookie
     const cookieStore = await cookies();
     const email = cookieStore.get('customer_email')?.value;
-    if (!email) return {};
+    if (email) {
+      const { data: purchases } = await supabase
+        .from('purchases')
+        .select('id, stripe_product_id, stripe_session_id, expires_at')
+        .eq('email', decodeURIComponent(email).toLowerCase())
+        .eq('purchase_type', 'vod');
 
-    const supabase = createServerClient();
-    const { data: purchases } = await supabase
-      .from('purchases')
-      .select('id, stripe_product_id, stripe_session_id, expires_at')
-      .eq('email', decodeURIComponent(email))
-      .eq('purchase_type', 'vod');
-
-    if (!purchases?.length) return {};
-
-    const now = new Date();
-    const owned: Record<string, string> = {};
-    for (const p of purchases) {
-      if (p.stripe_product_id) {
-        // Skip expired purchases
-        if (p.expires_at && new Date(p.expires_at) < now) continue;
-        owned[p.stripe_product_id] = p.id || p.stripe_session_id;
+      if (purchases?.length) {
+        for (const p of purchases) {
+          if (p.stripe_product_id && !owned[p.stripe_product_id]) {
+            if (p.expires_at && new Date(p.expires_at) < now) continue;
+            owned[p.stripe_product_id] = p.id || p.stripe_session_id;
+          }
+        }
       }
     }
+
     return owned;
   } catch {
     return {};

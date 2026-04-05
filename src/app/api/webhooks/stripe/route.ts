@@ -29,13 +29,13 @@ export async function POST(request: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // Handle PPV (one-time payment) checkouts
+        // Handle one-time payment checkouts (PPV or VOD)
         if (session.mode === 'payment') {
           if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') break;
 
           const customerEmail = session.customer_details?.email?.toLowerCase().trim();
           if (!customerEmail) {
-            console.error('Webhook: No customer email on PPV checkout', session.id);
+            console.error('Webhook: No customer email on payment checkout', session.id);
             break;
           }
 
@@ -43,6 +43,53 @@ export async function POST(request: Request) {
             ? session.payment_intent
             : session.payment_intent?.id || session.id;
 
+          // VOD purchases — identified by metadata.purchase_type
+          if (session.metadata?.purchase_type === 'vod') {
+            // Check for duplicate (save-session may have already saved)
+            const { data: existingVod } = await supabase
+              .from('purchases')
+              .select('id')
+              .eq('stripe_session_id', session.id)
+              .maybeSingle();
+
+            if (!existingVod) {
+              // Retrieve line items to get product details
+              const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+                expand: ['line_items.data.price.product'],
+              });
+              const lineItem = fullSession.line_items?.data[0];
+              const product = lineItem?.price?.product as Stripe.Product | undefined;
+              const price = lineItem?.price;
+
+              if (product?.metadata?.s3_key) {
+                const { error: insertError } = await supabase.from('purchases').insert({
+                  email: customerEmail,
+                  purchase_type: 'vod',
+                  stripe_session_id: session.id,
+                  stripe_product_id: product.id,
+                  product_name: product.name,
+                  product_image: product.images?.[0] || null,
+                  s3_key: product.metadata.s3_key,
+                  amount_paid: price?.unit_amount || 0,
+                  currency: price?.currency || 'usd',
+                  expires_at: null,
+                  user_id: session.metadata?.user_id || null,
+                });
+
+                if (insertError) {
+                  console.error('Webhook: VOD purchase save error:', insertError);
+                } else {
+                  console.log('Webhook: VOD purchase saved for:', customerEmail);
+                }
+              } else {
+                console.error('Webhook: VOD product missing s3_key metadata', session.id);
+              }
+            }
+
+            break;
+          }
+
+          // PPV purchases — everything else
           // Prevent duplicate inserts (verify-payment may have already saved)
           const { data: existing } = await supabase
             .from('purchases')

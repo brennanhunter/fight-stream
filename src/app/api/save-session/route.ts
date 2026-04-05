@@ -39,10 +39,9 @@ export async function POST(req: NextRequest) {
         const price = lineItem?.price;
 
         if (product?.metadata?.s3_key) {
-          const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
           const userId = session.metadata?.user_id || null;
           await supabase.from('purchases').insert({
-            email: session.customer_details?.email || 'unknown@boxstreamtv.com',
+            email: session.customer_details?.email?.toLowerCase().trim() || 'unknown@boxstreamtv.com',
             purchase_type: 'vod',
             stripe_session_id: sessionId,
             stripe_product_id: product.id,
@@ -51,7 +50,7 @@ export async function POST(req: NextRequest) {
             s3_key: product.metadata.s3_key,
             amount_paid: price?.unit_amount || 0,
             currency: price?.currency || 'usd',
-            expires_at: expiresAt,
+            expires_at: null,
             user_id: userId,
           });
         }
@@ -99,7 +98,7 @@ export async function POST(req: NextRequest) {
   // Store customer email in a readable cookie for Supabase lookups
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    const email = session.customer_details?.email;
+    const email = session.customer_details?.email?.toLowerCase().trim();
     if (email) {
       cookieStore.set('customer_email', email, {
         httpOnly: true,

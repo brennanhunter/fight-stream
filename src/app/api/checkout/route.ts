@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     // Attach user_id if logged in (optional — anonymous checkout still works)
     const supabase = await createAuthServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const metadata: Record<string, string> = {};
+    const metadata: Record<string, string> = { purchase_type: 'vod' };
     if (user) {
       metadata.user_id = user.id;
     }

@@ -99,7 +99,7 @@ export default async function WatchPage({
     Key: s3Key,
   });
 
-  const videoUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+  const videoUrl = await getSignedUrl(s3, command, { expiresIn: 21600 });
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
@@ -109,7 +109,7 @@ export default async function WatchPage({
           Now Playing
         </h1>
         <p className="text-gray-400 mb-8 text-center">
-          {isSubscriber ? 'Enjoy your replay with Fight Pass.' : 'Enjoy your replay. Your access is valid for 48 hours.'}
+          {isSubscriber ? 'Enjoy your replay with Fight Pass.' : 'Enjoy your replay.'}
         </p>
 
         <div className="vod-player-wrapper w-full rounded-2xl overflow-hidden border-2 border-accent/30 shadow-2xl shadow-accent/10">
