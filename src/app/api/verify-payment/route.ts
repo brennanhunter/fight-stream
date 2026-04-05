@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     // 'paid' for normal payments, 'no_payment_required' for 100% discount promo codes
     if (checkoutSession.payment_status !== 'paid' && checkoutSession.payment_status !== 'no_payment_required') {
       return NextResponse.json(
-        { error: `Payment not completed. Status: ${checkoutSession.payment_status}` },
+        { error: 'payment_incomplete' },
         { status: 400 }
       );
     }
@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Payment verification error:', error);
     return NextResponse.json(
-      { error: 'Failed to verify payment', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'verification_failed' },
       { status: 500 }
     );
   }

@@ -9,7 +9,7 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [errorType, setErrorType] = useState<'incomplete' | 'system' | 'no_session'>('system');
   const [eventInfo, setEventInfo] = useState<{ eventName: string; expiresAt: string } | null>(null);
   const [countdown, setCountdown] = useState(8);
   const redirectTimer = useRef<NodeJS.Timeout | null>(null);
@@ -19,13 +19,12 @@ function PaymentSuccessContent() {
 
   const verifyPayment = useCallback(async () => {
     if (!sessionId) {
+      setErrorType('no_session');
       setStatus('error');
-      setErrorMessage('No payment information found');
       return;
     }
 
     setStatus('loading');
-    setErrorMessage('');
 
     try {
       const response = await fetch('/api/verify-payment', {
@@ -37,7 +36,9 @@ function PaymentSuccessContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || data.details || 'Payment verification failed');
+        setErrorType(data.error === 'payment_incomplete' ? 'incomplete' : 'system');
+        setStatus('error');
+        return;
       }
 
       setEventInfo(data.eventAccess ? { eventName: data.eventAccess.eventName, expiresAt: data.eventAccess.expiresAt } : null);
@@ -56,10 +57,9 @@ function PaymentSuccessContent() {
         setCountdown(remaining);
         if (remaining <= 0) clearInterval(countdownTimer.current!);
       }, 1000);
-    } catch (error) {
-      console.error('Payment verification error:', error);
+    } catch {
+      setErrorType('system');
       setStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Verification failed');
     }
   }, [sessionId, router]);
 
@@ -83,6 +83,12 @@ function PaymentSuccessContent() {
   }
 
   if (status === 'error') {
+    const isIncomplete = errorType === 'incomplete';
+    const heading = isIncomplete ? 'Payment Not Completed' : 'Something Went Wrong';
+    const body = isIncomplete
+      ? "Your payment didn't go through and you have not been charged. Please try purchasing again."
+      : "We couldn't confirm your purchase. If your card was charged, your access will be activated shortly — check your account or contact us and we'll sort it out right away.";
+
     return (
       <div className="max-w-2xl mx-auto text-center py-20">
         <div className="border border-white/10 p-8">
@@ -91,21 +97,29 @@ function PaymentSuccessContent() {
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Payment Verification Failed</h2>
-          <p className="text-gray-400 mb-2">{errorMessage}</p>
-          <p className="text-gray-500 text-sm mb-6">Your card has not been charged. You can try again or contact support.</p>
+          <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">{heading}</h2>
+          <p className="text-gray-400 mb-6 leading-relaxed">{body}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={verifyPayment}
-              className="inline-block bg-white text-black font-bold py-3 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
-            >
-              Try Again
-            </button>
+            {isIncomplete ? (
+              <Link
+                href="/"
+                className="inline-block bg-white text-black font-bold py-3 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200 text-center"
+              >
+                Back to Home
+              </Link>
+            ) : (
+              <button
+                onClick={verifyPayment}
+                className="inline-block bg-white text-black font-bold py-3 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
+              >
+                Try Again
+              </button>
+            )}
             <Link
-              href="/"
+              href="/contact"
               className="inline-block border border-white/20 text-white font-bold py-3 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:border-white text-center"
             >
-              Return to Home
+              Contact Support
             </Link>
           </div>
         </div>
