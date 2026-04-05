@@ -52,9 +52,11 @@ export default function PricingCards({ prices }: PricingProps) {
     },
   ];
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubscribe = async (tier: string) => {
     setLoading(tier);
+    setError(null);
 
     try {
       // Check if user is logged in
@@ -70,7 +72,7 @@ export default function PricingCards({ prices }: PricingProps) {
       const priceId = plan?.priceId;
 
       if (!priceId) {
-        alert('Subscription pricing is not configured yet. Please check back soon.');
+        setError('Subscription pricing is not configured yet. Please check back soon.');
         return;
       }
 
@@ -85,10 +87,10 @@ export default function PricingCards({ prices }: PricingProps) {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || 'Something went wrong. Please try again.');
+        setError(data.error || 'Something went wrong. Please try again.');
       }
     } catch {
-      alert('Something went wrong. Please try again.');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(null);
     }
@@ -152,6 +154,9 @@ export default function PricingCards({ prices }: PricingProps) {
       ))}
 
       <div className="md:col-span-2 text-center mt-4">
+        {error && (
+          <p className="text-sm text-red-400 mb-4">{error}</p>
+        )}
         <p className="text-sm text-gray-500">
           Already have a subscription?{' '}
           <Link href="/account/subscription" className="text-white underline hover:no-underline">

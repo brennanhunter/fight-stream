@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
 import { hasEventAccess, getSession } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
@@ -96,22 +95,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Check by customer_email cookie
-      if (!hasPurchaseRecord && !hasPremium) {
-        const cookieStore = await cookies();
-        const customerEmail = cookieStore.get('customer_email')?.value;
-        if (customerEmail) {
-          const { data: byCookie } = await supabase
-            .from('purchases')
-            .select('id')
-            .eq('email', customerEmail.toLowerCase())
-            .eq('event_id', activeEvent.id)
-            .eq('purchase_type', 'ppv')
-            .limit(1)
-            .maybeSingle();
-          if (byCookie) hasPurchaseRecord = true;
-        }
-      }
+      // Note: customer_email cookie fallback removed here because it bypasses
+      // session_version enforcement. Anonymous users whose ppv_session expired
+      // should use recover-access to get a fresh session.
     }
 
     if (!hasCookieAccess && !hasPurchaseRecord && !hasPremium) {

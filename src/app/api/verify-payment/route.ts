@@ -92,18 +92,43 @@ export async function POST(req: NextRequest) {
     // Prevent duplicate inserts on page refresh
     const { data: existingPurchase } = await supabase
       .from('purchases')
-      .select('id, session_version')
+      .select('id, session_version, session_claimed_at')
       .eq('stripe_payment_intent_id', deduplicationId)
       .maybeSingle();
 
-    // Bump session_version (invalidates any other active session for this purchase)
+    // Grace window: allow re-claims within 15 minutes of the original claim
+    // (handles page refresh). After that, the session is locked to the first
+    // browser that claimed it — subsequent callers get a success response but
+    // no cookies, so the original buyer's session is never revoked.
+    const CLAIM_GRACE_MS = 15 * 60 * 1000;
     let sessionVersion = 1;
+
     if (existingPurchase) {
-      sessionVersion = (existingPurchase.session_version || 0) + 1;
-      await supabase
-        .from('purchases')
-        .update({ session_version: sessionVersion })
-        .eq('id', existingPurchase.id);
+      const claimedAt = existingPurchase.session_claimed_at
+        ? new Date(existingPurchase.session_claimed_at).getTime()
+        : null;
+
+      if (claimedAt !== null && Date.now() - claimedAt > CLAIM_GRACE_MS) {
+        // Session already claimed outside the grace window — return success
+        // without issuing new cookies so the original buyer is not displaced.
+        return NextResponse.json({
+          success: true,
+          message: 'Payment verified and access granted',
+          eventAccess: { eventId, eventName, expiresAt },
+        });
+      }
+
+      // Within grace window (or first claim) — re-issue with the existing
+      // session_version so the original buyer's JWT stays valid.
+      sessionVersion = existingPurchase.session_version || 1;
+
+      if (claimedAt === null) {
+        // First actual claim — record the timestamp.
+        await supabase
+          .from('purchases')
+          .update({ session_claimed_at: new Date().toISOString() })
+          .eq('id', existingPurchase.id);
+      }
     }
 
     const sessionData = {
@@ -143,6 +168,7 @@ export async function POST(req: NextRequest) {
         currency: checkoutSession.currency || 'usd',
         expires_at: expiresAt,
         user_id: userId,
+        session_claimed_at: new Date().toISOString(),
       }, { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true });
 
       if (upsertError) {

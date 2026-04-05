@@ -14,7 +14,15 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'BoxStreamTV | Live Boxing Streaming & Pay-Per-View Events',
-  description: 'Watch live boxing matches, championship fights, and exclusive PPV events in HD. Stream boxing online with BoxStreamTV.',
+  description: 'Stream live boxing matches and exclusive PPV events in HD. Watch professional, amateur, and youth boxing online — anytime, anywhere with BoxStreamTV.',
+  alternates: {
+    canonical: 'https://boxstreamtv.com',
+  },
+  openGraph: {
+    title: 'BoxStreamTV | Live Boxing Streaming & Pay-Per-View Events',
+    description: 'Stream live boxing matches and exclusive PPV events in HD. Watch professional, amateur, and youth boxing online with BoxStreamTV.',
+    url: 'https://boxstreamtv.com',
+  },
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);

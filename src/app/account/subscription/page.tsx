@@ -17,6 +17,7 @@ export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
@@ -56,16 +57,17 @@ export default function SubscriptionPage() {
 
   const openPortal = async () => {
     setPortalLoading(true);
+    setPortalError(null);
     try {
       const res = await fetch('/api/billing-portal', { method: 'POST' });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || 'Could not open billing portal.');
+        setPortalError(data.error || 'Could not open billing portal.');
       }
     } catch {
-      alert('Something went wrong.');
+      setPortalError('Something went wrong.');
     } finally {
       setPortalLoading(false);
     }
@@ -137,6 +139,10 @@ export default function SubscriptionPage() {
                 })}
               </span>
             </div>
+          )}
+
+          {portalError && (
+            <p className="mb-4 text-sm text-red-400">{portalError}</p>
           )}
 
           <div className="flex flex-col sm:flex-row gap-3">

@@ -6,9 +6,11 @@ import FightPassPrompt, { hasSeenFightPassPrompt, markFightPassPromptSeen } from
 export default function VodBuyButton({ priceId }: { priceId: string }) {
   const [loading, setLoading] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const startCheckout = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
@@ -20,10 +22,10 @@ export default function VodBuyButton({ priceId }: { priceId: string }) {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || 'Something went wrong. Please try again.');
+        setError(data.error || 'Something went wrong. Please try again.');
       }
     } catch {
-      alert('Something went wrong. Please try again.');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -42,15 +44,19 @@ export default function VodBuyButton({ priceId }: { priceId: string }) {
       <button
         onClick={handlePurchase}
         disabled={loading}
-        className="w-full sm:w-auto px-10 py-4 bg-white text-black text-xl font-bold 
-          hover:bg-gray-200 
+        className="w-full sm:w-auto px-10 py-4 bg-white text-black text-xl font-bold
+          hover:bg-gray-200
           disabled:opacity-50 disabled:cursor-not-allowed
-          transition-all duration-300 
+          transition-all duration-300
           tracking-wide
           border border-white"
       >
         {loading ? 'Redirecting to checkout...' : '🥊 Buy Now'}
       </button>
+
+      {error && (
+        <p className="mt-3 text-sm text-red-400">{error}</p>
+      )}
 
       <FightPassPrompt
         open={showPrompt}

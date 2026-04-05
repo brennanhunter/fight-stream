@@ -11,11 +11,25 @@ import { getSubscriptionTier } from '@/lib/access';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Video on Demand | BoxStreamTV - Watch Boxing Replays',
-  description: 'Watch full boxing event replays and individual fight highlights on demand. Purchase and stream championship fights, knockouts, and more from BoxStreamTV.',
+  title: 'Boxing Replays & VOD | BoxStreamTV - Watch Past Fights',
+  description: 'Watch full boxing event replays and fight highlights on demand. Stream past PPV events, championship bouts, knockouts, and amateur boxing matches from BoxStreamTV.',
+  keywords: [
+    'boxing replays',
+    'watch boxing on demand',
+    'boxing VOD',
+    'boxing highlights online',
+    'past boxing matches',
+    'boxing fight replays',
+    'PPV boxing replay',
+    'amateur boxing VOD',
+  ],
+  alternates: {
+    canonical: 'https://boxstreamtv.com/vod',
+  },
   openGraph: {
-    title: 'Video on Demand | BoxStreamTV',
-    description: 'Watch full boxing event replays and individual fight highlights on demand.',
+    title: 'Boxing Replays & VOD | BoxStreamTV',
+    description: 'Watch full boxing event replays and fight highlights on demand. Stream past PPV events, knockouts, and amateur bouts.',
+    url: 'https://boxstreamtv.com/vod',
   },
 };
 

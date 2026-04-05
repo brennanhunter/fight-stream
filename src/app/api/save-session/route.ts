@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     // Check if this session is already saved
     const { data: existing } = await supabase
       .from('purchases')
-      .select('id')
+      .select('id, session_claimed_at')
       .eq('stripe_session_id', sessionId)
       .maybeSingle();
 
@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
     stripeSession = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['line_items.data.price.product'],
     });
+
+    const CLAIM_GRACE_MS = 15 * 60 * 1000;
 
     if (!existing) {
       if (stripeSession.payment_status === 'paid') {
@@ -58,9 +60,28 @@ export async function POST(req: NextRequest) {
               currency: price?.currency || 'usd',
               expires_at: null,
               user_id: userId,
+              session_claimed_at: new Date().toISOString(),
             });
           }
         }
+      }
+    } else {
+      // Session already in DB — check whether the grace window has passed.
+      // If it has, skip setting cookies so the original buyer is not displaced.
+      const claimedAt = existing.session_claimed_at
+        ? new Date(existing.session_claimed_at).getTime()
+        : null;
+
+      if (claimedAt !== null && Date.now() - claimedAt > CLAIM_GRACE_MS) {
+        return NextResponse.json({ success: true });
+      }
+
+      // First claim (session_claimed_at not set yet) — record it now.
+      if (claimedAt === null) {
+        await supabase
+          .from('purchases')
+          .update({ session_claimed_at: new Date().toISOString() })
+          .eq('id', existing.id);
       }
     }
   } catch (err) {

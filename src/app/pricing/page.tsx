@@ -9,11 +9,24 @@ export const dynamic = 'force-dynamic';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export const metadata: Metadata = {
-  title: 'Fight Pass Pricing | BoxStreamTV',
-  description: 'Subscribe to Fight Pass for unlimited VOD replays and exclusive PPV discounts. Choose Basic or Premium.',
+  title: 'Fight Pass Pricing | BoxStreamTV Subscription Plans',
+  description: 'Subscribe to BoxStreamTV Fight Pass for unlimited boxing VOD replays and exclusive PPV discounts. Choose Basic or Premium — cancel anytime.',
+  keywords: [
+    'boxing subscription',
+    'Fight Pass boxing',
+    'boxing streaming plan',
+    'watch boxing monthly',
+    'boxing PPV discount',
+    'unlimited boxing replays',
+    'boxing fight pass price',
+  ],
+  alternates: {
+    canonical: 'https://boxstreamtv.com/pricing',
+  },
   openGraph: {
-    title: 'Fight Pass Pricing | BoxStreamTV',
-    description: 'Subscribe to Fight Pass for unlimited VOD replays and exclusive PPV discounts.',
+    title: 'Fight Pass Pricing | BoxStreamTV Subscription Plans',
+    description: 'Subscribe to BoxStreamTV Fight Pass for unlimited boxing VOD replays and exclusive PPV discounts. Basic or Premium plans.',
+    url: 'https://boxstreamtv.com/pricing',
   },
 };
 

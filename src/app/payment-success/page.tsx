@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, Suspense } from 'react';
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -11,54 +11,66 @@ function PaymentSuccessContent() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [eventInfo, setEventInfo] = useState<{ eventName: string; expiresAt: string } | null>(null);
+  const [countdown, setCountdown] = useState(8);
   const redirectTimer = useRef<NodeJS.Timeout | null>(null);
+  const countdownTimer = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    const sessionId = searchParams.get('session_id');
-    
+  const sessionId = searchParams.get('session_id');
+
+  const verifyPayment = useCallback(async () => {
     if (!sessionId) {
       setStatus('error');
       setErrorMessage('No payment information found');
       return;
     }
 
-    const verifyPayment = async (checkoutSessionId: string) => {
-      try {
-        const response = await fetch('/api/verify-payment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ sessionId: checkoutSessionId }),
-        });
+    setStatus('loading');
+    setErrorMessage('');
 
-        const data = await response.json();
+    try {
+      const response = await fetch('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
 
-        if (!response.ok) {
-          throw new Error(data.error || data.details || 'Payment verification failed');
-        }
+      const data = await response.json();
 
-        setEventInfo(data.eventAccess ? { eventName: data.eventAccess.eventName, expiresAt: data.eventAccess.expiresAt } : null);
-        setStatus('success');
-        
-        // Redirect to home page after 8 seconds
-        redirectTimer.current = setTimeout(() => {
-          router.push('/');
-        }, 8000);
-      } catch (error) {
-        console.error('Payment verification error:', error);
-        setStatus('error');
-        setErrorMessage(error instanceof Error ? error.message : 'Verification failed');
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Payment verification failed');
       }
-    };
 
-    // Verify payment and create session
-    verifyPayment(sessionId);
+      setEventInfo(data.eventAccess ? { eventName: data.eventAccess.eventName, expiresAt: data.eventAccess.expiresAt } : null);
+      setStatus('success');
+      setCountdown(8);
+
+      // Redirect to home page after 8 seconds
+      redirectTimer.current = setTimeout(() => {
+        router.push('/');
+      }, 8000);
+
+      // Tick countdown every second
+      let remaining = 8;
+      countdownTimer.current = setInterval(() => {
+        remaining -= 1;
+        setCountdown(remaining);
+        if (remaining <= 0) clearInterval(countdownTimer.current!);
+      }, 1000);
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      setStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Verification failed');
+    }
+  }, [sessionId, router]);
+
+  useEffect(() => {
+    verifyPayment();
 
     return () => {
       if (redirectTimer.current) clearTimeout(redirectTimer.current);
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
     };
-  }, [searchParams, router]);
+  }, [verifyPayment]);
 
   if (status === 'loading') {
     return (
@@ -80,13 +92,22 @@ function PaymentSuccessContent() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Payment Verification Failed</h2>
-          <p className="text-gray-400 mb-6">{errorMessage}</p>
-          <Link 
-            href="/"
-            className="inline-block bg-white text-black font-bold py-3 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
-          >
-            Return to Home
-          </Link>
+          <p className="text-gray-400 mb-2">{errorMessage}</p>
+          <p className="text-gray-500 text-sm mb-6">Your card has not been charged. You can try again or contact support.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={verifyPayment}
+              className="inline-block bg-white text-black font-bold py-3 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
+            >
+              Try Again
+            </button>
+            <Link
+              href="/"
+              className="inline-block border border-white/20 text-white font-bold py-3 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:border-white text-center"
+            >
+              Return to Home
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -138,7 +159,7 @@ function PaymentSuccessContent() {
 
         {/* Redirect Message */}
         <p className="text-gray-500 text-sm mb-6 tracking-wide">
-          Redirecting you to the stream in 3 seconds...
+          Redirecting you to the home page in {countdown} second{countdown !== 1 ? 's' : ''}...
         </p>
 
         {/* CTA Button */}

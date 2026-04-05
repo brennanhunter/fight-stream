@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 
     if (!purchase) {
       return NextResponse.json(
-        { error: 'No purchase found for this email. Please check the email address you used at checkout.' },
+        { error: 'Unable to recover access. Please check the email address you used at checkout.' },
         { status: 404 }
       );
     }
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     // Check expiration
     if (purchase.expires_at && new Date(purchase.expires_at) < new Date()) {
       return NextResponse.json(
-        { error: 'Your access to this event has expired.' },
+        { error: 'Unable to recover access. Please check the email address you used at checkout.' },
         { status: 403 }
       );
     }

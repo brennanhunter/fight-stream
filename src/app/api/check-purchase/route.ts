@@ -36,12 +36,14 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ purchased: true });
         }
 
+        const now = new Date().toISOString();
         const { data } = await supabase
           .from('purchases')
           .select('id')
           .eq('user_id', user.id)
           .eq('event_id', eventId)
           .eq('purchase_type', 'ppv')
+          .or(`expires_at.gt.${now},expires_at.is.null`)
           .limit(1)
           .maybeSingle();
 
@@ -57,6 +59,7 @@ export async function POST(req: NextRequest) {
             .eq('email', user.email.toLowerCase())
             .eq('event_id', eventId)
             .eq('purchase_type', 'ppv')
+            .or(`expires_at.gt.${now},expires_at.is.null`)
             .limit(1)
             .maybeSingle();
 
@@ -77,12 +80,14 @@ export async function POST(req: NextRequest) {
     const customerEmail = cookieStore.get('customer_email')?.value;
 
     if (customerEmail) {
+      const now = new Date().toISOString();
       const { data } = await supabase
         .from('purchases')
         .select('id')
         .eq('email', customerEmail.toLowerCase())
         .eq('event_id', eventId)
         .eq('purchase_type', 'ppv')
+        .or(`expires_at.gt.${now},expires_at.is.null`)
         .limit(1)
         .maybeSingle();
 

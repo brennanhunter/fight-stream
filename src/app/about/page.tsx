@@ -4,10 +4,22 @@ import { PageTransition, FadeInView } from '@/components/motion';
 
 export const metadata: Metadata = {
   title: 'About Us | BoxStreamTV - Live Boxing Streaming',
-  description: 'BoxStreamTV brings professional and amateur boxing to fans everywhere. Learn about our mission to stream live fights and PPV events.',
+  description: 'BoxStreamTV partners with boxing promoters to stream live and PPV events. Learn about our revenue-sharing model for professional, amateur, and youth boxing events.',
+  keywords: [
+    'boxing event streaming service',
+    'boxing promoter partnership',
+    'PPV revenue sharing boxing',
+    'stream boxing events',
+    'boxing event production',
+    'live boxing broadcast',
+  ],
+  alternates: {
+    canonical: 'https://boxstreamtv.com/about',
+  },
   openGraph: {
-    title: 'About Us | BoxStreamTV',
-    description: 'BoxStreamTV brings professional and amateur boxing to fans everywhere.',
+    title: 'About BoxStreamTV | Boxing Event Streaming & PPV Partnership',
+    description: 'BoxStreamTV partners with boxing promoters to stream live and PPV events. Revenue-sharing model for professional, amateur, and youth boxing.',
+    url: 'https://boxstreamtv.com/about',
   },
 };
 
