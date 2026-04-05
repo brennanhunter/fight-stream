@@ -25,14 +25,14 @@ Last updated: April 5, 2026
 
 ## HIGH (Fix This Week)
 
-- [ ] **`ignoreDuplicates` in webhook upsert** — `src/app/api/webhooks/stripe/route.ts`
-  If first webhook writes record with NULL email, retry won't update it. Customer never gets confirmation email. Replace `ignoreDuplicates: true` with proper `DO UPDATE`.
+- [x] **`ignoreDuplicates` in webhook upsert** — `src/app/api/webhooks/stripe/route.ts`
+  ~~If first webhook writes record with NULL email, retry won't update it. Customer never gets confirmation email. Replace `ignoreDuplicates: true` with proper `DO UPDATE`.~~ Fixed: removed `ignoreDuplicates: true` so upsert uses default `DO UPDATE SET` behavior, ensuring retries overwrite incomplete rows.
 
-- [ ] **Recovery code uses `Math.random()`** — `src/app/api/recover-access/send-code/route.ts`
-  Not cryptographically secure and only 6 digits (1M possibilities). Use `crypto.getRandomValues()` and consider 8+ character alphanumeric codes.
+- [x] **Recovery code uses `Math.random()`** — `src/app/api/recover-access/send-code/route.ts`
+  ~~Not cryptographically secure and only 6 digits (1M possibilities).~~ Fixed: replaced `Math.random()` with `crypto.getRandomValues()`. Kept 6-digit format.
 
-- [ ] **Session version never incremented** — `src/app/api/verify-payment/route.ts`, `src/lib/session.ts`
-  `sessionVersion` always defaults to 1. Stolen sessions remain valid after recovery or refund. Increment on each new purchase or recovery.
+- [x] **Session version never incremented** — `src/app/api/verify-payment/route.ts`, `src/lib/session.ts`
+  ~~`sessionVersion` always defaults to 1. Stolen sessions remain valid after recovery or refund. Increment on each new purchase or recovery.~~ Fixed: webhook upserts now explicitly write `session_version: 1`; `verify-payment` writes it on first claim. Recovery and refund already increment/set it correctly.
 
 - [ ] **Rate limit IP spoofable via x-forwarded-for** — `src/lib/rate-limit.ts`
   `getClientIp()` trusts `x-forwarded-for` header which can be forged. Validate only if behind trusted proxy (Vercel/Cloudflare).

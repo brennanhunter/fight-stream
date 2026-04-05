@@ -3,11 +3,13 @@ import { Resend } from 'resend';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
 import { recoveryCodeEmail } from '@/lib/emails/recovery-code';
+import crypto from 'crypto';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 function generateCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  const bytes = crypto.getRandomValues(new Uint32Array(1));
+  return String(100000 + (bytes[0] % 900000));
 }
 
 export async function POST(req: NextRequest) {

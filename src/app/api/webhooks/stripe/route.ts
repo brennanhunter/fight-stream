@@ -86,9 +86,9 @@ export async function POST(request: Request) {
 
             if (product?.metadata?.s3_key) {
               // Upsert to handle race with save-session
-              const { error: upsertError } = await supabase.from('purchases').upsert({
+              const vodRow = {
                 email: customerEmail,
-                purchase_type: 'vod',
+                purchase_type: 'vod' as const,
                 stripe_session_id: session.id,
                 stripe_product_id: product.id,
                 product_name: product.name,
@@ -98,7 +98,9 @@ export async function POST(request: Request) {
                 currency: price?.currency || 'usd',
                 expires_at: null,
                 user_id: session.metadata?.user_id || null,
-              }, { onConflict: 'stripe_session_id', ignoreDuplicates: true });
+                session_version: 1,
+              };
+              const { error: upsertError } = await supabase.from('purchases').upsert(vodRow, { onConflict: 'stripe_session_id' });
 
               if (upsertError) {
                 console.error('Webhook: VOD purchase save error:', upsertError);
@@ -140,9 +142,9 @@ export async function POST(request: Request) {
               : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
             // Upsert to handle race with verify-payment
-            const { error: upsertError } = await supabase.from('purchases').upsert({
+            const ppvRow = {
               email: customerEmail,
-              purchase_type: 'ppv',
+              purchase_type: 'ppv' as const,
               stripe_payment_intent_id: paymentIntentId,
               stripe_product_id: null,
               product_name: targetEvent.name,
@@ -151,7 +153,9 @@ export async function POST(request: Request) {
               currency: session.currency || 'usd',
               expires_at: expiresAt,
               user_id: session.metadata?.user_id || null,
-            }, { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true });
+              session_version: 1,
+            };
+            const { error: upsertError } = await supabase.from('purchases').upsert(ppvRow, { onConflict: 'stripe_payment_intent_id' });
 
             if (upsertError) {
               console.error('Webhook: PPV purchase save error:', upsertError);

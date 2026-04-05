@@ -127,10 +127,10 @@ export async function POST(req: NextRequest) {
       sessionVersion = existingPurchase.session_version || 1;
 
       if (claimedAt === null) {
-        // First actual claim — record the timestamp.
+        // First actual claim — record the timestamp and ensure session_version is set.
         await supabase
           .from('purchases')
-          .update({ session_claimed_at: new Date().toISOString() })
+          .update({ session_claimed_at: new Date().toISOString(), session_version: sessionVersion })
           .eq('id', existingPurchase.id);
       }
     }
