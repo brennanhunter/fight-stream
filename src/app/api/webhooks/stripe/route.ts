@@ -259,6 +259,11 @@ export async function POST(request: Request) {
         }
 
         // Send cancellation email when cancel_at_period_end flips to true
+        console.log('Webhook: subscription.updated —', {
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          previousAttributes: previousAttributes ? Object.keys(previousAttributes) : 'none',
+          prev_cancel_at_period_end: previousAttributes?.cancel_at_period_end,
+        });
         const justCanceled = subscription.cancel_at_period_end && previousAttributes?.cancel_at_period_end === false;
         if (justCanceled) {
           try {
