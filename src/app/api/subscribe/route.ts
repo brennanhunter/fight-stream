@@ -66,6 +66,7 @@ export async function POST(request: Request) {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
+      allow_promotion_codes: true,
       metadata: { user_id: user.id },
       subscription_data: {
         metadata: { user_id: user.id },
