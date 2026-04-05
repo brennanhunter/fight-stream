@@ -12,8 +12,8 @@ Last updated: April 5, 2026
 - [x] **No refund webhook handler** — `src/app/api/webhooks/stripe/route.ts`
   ~~No handlers for `charge.refunded`.~~ Fixed: `charge.refunded` handler sets `expires_at` to now and `session_version` to 999, invalidating all existing JWTs immediately.
 
-- [ ] **Admin login: no rate limiting + plaintext comparison** — `src/app/api/admin/login/route.ts`
-  Password compared with `!==` (timing attack vulnerable). No rate limiting on attempts. Use `crypto.timingSafeEqual()` and add rate limiting (5 attempts per 15 minutes).
+- [x] **Admin login: no rate limiting + plaintext comparison** — `src/app/api/admin/login/route.ts`
+  ~~Password compared with `!==` (timing attack vulnerable). No rate limiting.~~ Fixed: 3 attempts per 30 minutes per IP. Constant-time comparison via `crypto.timingSafeEqual()`. Generic error message.
 
 - [ ] **Promo code race condition** — `src/app/api/redeem-promo/route.ts`
   Check-then-insert is not atomic. Two concurrent requests can both pass duplicate check. Purchase ID uses `Date.now()` (millisecond collision). Use UUID and database-level unique constraint with `ON CONFLICT DO NOTHING`.
