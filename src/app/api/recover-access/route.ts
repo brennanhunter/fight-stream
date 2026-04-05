@@ -4,28 +4,29 @@ import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, 'recover-access', 5);
+  const limited = rateLimit(req, 'recover-access', 10);
   if (limited) return limited;
 
   try {
-    const { email, eventId: clientEventId } = await req.json();
+    const { email, code, eventId: clientEventId } = await req.json();
 
     if (!email || typeof email !== 'string') {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+    if (!code || typeof code !== 'string') {
+      return NextResponse.json({ error: 'Verification code is required' }, { status: 400 });
     }
 
     const trimmedEmail = email.trim().toLowerCase();
+    const trimmedCode = code.trim();
 
-    // Per-email rate limit: 2 attempts per hour
-    const emailLimited = rateLimit(req, 'recover-email', 2, 60 * 60 * 1000, trimmedEmail);
+    // Per-email rate limit: 5 attempts per hour
+    const emailLimited = rateLimit(req, 'recover-access-email', 5, 60 * 60 * 1000, trimmedEmail);
     if (emailLimited) return emailLimited;
 
     const supabase = createServerClient();
 
-    // Look up specific event or fall back to active event
+    // Resolve target event
     let targetEvent;
     if (clientEventId) {
       const { data } = await supabase
@@ -45,16 +46,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (!targetEvent) {
-      return NextResponse.json(
-        { error: 'No event found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'No event found' }, { status: 404 });
     }
 
-    // Look up purchase by email + event (take the most recent one)
     const { data: purchases } = await supabase
       .from('purchases')
-      .select('id, email, event_id, product_name, expires_at, session_version')
+      .select('id, email, event_id, expires_at, session_version, recovery_code, recovery_code_expires_at')
       .eq('email', trimmedEmail)
       .eq('event_id', targetEvent.id)
       .eq('purchase_type', 'ppv')
@@ -63,27 +60,36 @@ export async function POST(req: NextRequest) {
 
     const purchase = purchases?.[0] || null;
 
+    const genericError = 'Invalid or expired code. Please request a new one.';
+
     if (!purchase) {
-      return NextResponse.json(
-        { error: 'Unable to recover access. Please check the email address you used at checkout.' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: genericError }, { status: 404 });
     }
 
-    // Check expiration
+    // Check purchase expiry
     if (purchase.expires_at && new Date(purchase.expires_at) < new Date()) {
-      return NextResponse.json(
-        { error: 'Unable to recover access. Please check the email address you used at checkout.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: genericError }, { status: 403 });
     }
 
-    // Re-create the JWT session cookie
-    // Bump session_version to invalidate any other active session for this purchase
+    // Verify code exists and matches
+    if (!purchase.recovery_code || purchase.recovery_code !== trimmedCode) {
+      return NextResponse.json({ error: genericError }, { status: 403 });
+    }
+
+    // Verify code hasn't expired
+    if (!purchase.recovery_code_expires_at || new Date(purchase.recovery_code_expires_at) < new Date()) {
+      return NextResponse.json({ error: genericError }, { status: 403 });
+    }
+
+    // Code is valid — clear it so it can't be reused
     const newSessionVersion = (purchase.session_version || 0) + 1;
     await supabase
       .from('purchases')
-      .update({ session_version: newSessionVersion })
+      .update({
+        session_version: newSessionVersion,
+        recovery_code: null,
+        recovery_code_expires_at: null,
+      })
       .eq('id', purchase.id);
 
     const expiresAt = targetEvent.expires_at
@@ -102,7 +108,6 @@ export async function POST(req: NextRequest) {
 
     await createSession(sessionData);
 
-    // Also set the customer_email cookie
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     cookieStore.set('customer_email', trimmedEmail, {
@@ -115,7 +120,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Access restored! Reloading...',
+      message: 'Access restored!',
       eventName: targetEvent.name,
     });
   } catch (error) {

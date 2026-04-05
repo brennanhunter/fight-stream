@@ -1,6 +1,12 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
+import { Resend } from 'resend';
 import { createServerClient } from '@/lib/supabase';
+import { subscriptionConfirmationEmail } from '@/lib/emails/subscription-confirmation';
+import { subscriptionCanceledEmail } from '@/lib/emails/subscription-canceled';
+import { paymentFailedEmail } from '@/lib/emails/payment-failed';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -162,6 +168,27 @@ export async function POST(request: Request) {
           cancel_at_period_end: subscription.cancel_at_period_end,
         }, { onConflict: 'stripe_subscription_id' });
 
+        // Send subscription confirmation email
+        const customerEmail = session.customer_details?.email?.toLowerCase().trim();
+        if (customerEmail) {
+          try {
+            const { html, text } = subscriptionConfirmationEmail({
+              tier,
+              currentPeriodEnd: periods.current_period_end,
+            });
+            await resend.emails.send({
+              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              replyTo: 'hunter@boxstreamtv.com',
+              to: customerEmail,
+              subject: `Welcome to Fight Pass ${tier === 'premium' ? 'Premium' : 'Basic'} — BoxStreamTV`,
+              html,
+              text,
+            });
+          } catch (emailErr) {
+            console.error('Subscription confirmation email failed:', emailErr);
+          }
+        }
+
         break;
       }
 
@@ -195,6 +222,29 @@ export async function POST(request: Request) {
           .update({ status: 'canceled', cancel_at_period_end: false })
           .eq('stripe_subscription_id', subscription.id);
 
+        // Send cancellation confirmation email
+        try {
+          const customerEmail = await getEmailForCustomer(subscription.customer);
+          if (customerEmail) {
+            const tier = determineTier(subscription);
+            const periods = getPeriodDates(subscription);
+            const { html, text } = subscriptionCanceledEmail({
+              tier,
+              accessUntil: periods.current_period_end,
+            });
+            await resend.emails.send({
+              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              replyTo: 'hunter@boxstreamtv.com',
+              to: customerEmail,
+              subject: 'Your Fight Pass subscription has been canceled',
+              html,
+              text,
+            });
+          }
+        } catch (emailErr) {
+          console.error('Cancellation email failed:', emailErr);
+        }
+
         break;
       }
 
@@ -212,6 +262,36 @@ export async function POST(request: Request) {
             .from('subscriptions')
             .update({ status: 'past_due' })
             .eq('stripe_subscription_id', subscriptionId);
+
+          // Send payment failed email
+          try {
+            const customerEmail = invoice.customer_email
+              ?? (invoice.customer ? await getEmailForCustomer(invoice.customer) : null);
+            if (customerEmail) {
+              const { data: sub } = await supabase
+                .from('subscriptions')
+                .select('tier')
+                .eq('stripe_subscription_id', subscriptionId)
+                .maybeSingle();
+
+              const tier = (sub?.tier as 'basic' | 'premium') ?? 'basic';
+              const nextRetry = invoice.next_payment_attempt
+                ? new Date(invoice.next_payment_attempt * 1000).toISOString()
+                : null;
+
+              const { html, text } = paymentFailedEmail({ tier, nextRetryDate: nextRetry });
+              await resend.emails.send({
+                from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+                replyTo: 'hunter@boxstreamtv.com',
+                to: customerEmail,
+                subject: 'Action required — payment failed for your Fight Pass',
+                html,
+                text,
+              });
+            }
+          } catch (emailErr) {
+            console.error('Payment failed email error:', emailErr);
+          }
         }
 
         break;
@@ -222,6 +302,18 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Webhook handler error:', error);
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
+  }
+}
+
+/** Fetch customer email from Stripe given a customer ID or object */
+async function getEmailForCustomer(customer: Stripe.Subscription['customer']): Promise<string | null> {
+  try {
+    const customerId = typeof customer === 'string' ? customer : customer.id;
+    const retrieved = await stripe.customers.retrieve(customerId);
+    if (retrieved.deleted) return null;
+    return retrieved.email ?? null;
+  } catch {
+    return null;
   }
 }
 

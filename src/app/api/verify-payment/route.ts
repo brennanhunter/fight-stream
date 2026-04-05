@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Resend } from 'resend';
 import { stripeServer } from '@/lib/stripe';
 import { createSession } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
+import { purchaseConfirmationEmail } from '@/lib/emails/purchase-confirmation';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, 'verify-payment', 20);
@@ -175,6 +179,26 @@ export async function POST(req: NextRequest) {
         console.error('Supabase PPV save error:', upsertError);
       } else {
         console.log('Supabase PPV purchase saved for:', customerEmail);
+
+        // Send purchase confirmation email
+        try {
+          const { html, text } = purchaseConfirmationEmail({
+            eventName,
+            expiresAt,
+            amountPaid: checkoutSession.amount_total || 0,
+          });
+          await resend.emails.send({
+            from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+            replyTo: 'hunter@boxstreamtv.com',
+            to: customerEmail,
+            subject: `You're in — ${eventName}`,
+            html,
+            text,
+          });
+        } catch (emailErr) {
+          // Never block purchase confirmation over an email failure
+          console.error('Confirmation email failed:', emailErr);
+        }
       }
     }
 

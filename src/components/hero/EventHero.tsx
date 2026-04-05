@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import FightPassPrompt, { hasSeenFightPassPrompt, markFightPassPromptSeen } from '@/components/FightPassPrompt';
 
 const stagger = {
@@ -195,10 +196,6 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   /* ── Purchase / access state ── */
   const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'has-access'>('checking');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [showRecovery, setShowRecovery] = useState(false);
-  const [recoveryEmail, setRecoveryEmail] = useState('');
-  const [recoveryError, setRecoveryError] = useState<string | null>(null);
-  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   /* ── IVS player state ── */
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -458,26 +455,6 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
     startCheckout();
   };
 
-  /* ── Recover access handler ── */
-  const handleRecoverAccess = async () => {
-    if (!recoveryEmail.trim()) return;
-    setRecoveryLoading(true);
-    setRecoveryError(null);
-    try {
-      const res = await fetch('/api/recover-access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: recoveryEmail.trim(), eventId }),
-      });
-      const data = await res.json();
-      if (!res.ok) setRecoveryError(data.error || 'Could not recover access');
-      else window.location.reload();
-    } catch {
-      setRecoveryError('Something went wrong. Try again.');
-    } finally {
-      setRecoveryLoading(false);
-    }
-  };
 
   /* ════════════════════════════════════════════
      RENDER: Full-width player (live stream OR replay)
@@ -702,36 +679,12 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                   {checkoutError && (
                     <p className="text-sm text-red-400">{checkoutError}</p>
                   )}
-                  {!showRecovery ? (
-                    <button
-                      onClick={() => setShowRecovery(true)}
-                      className="text-xs text-gray-500 hover:text-white underline underline-offset-2 transition-colors"
-                    >
-                      Already purchased? Recover access
-                    </button>
-                  ) : (
-                    <div>
-                      <p className="text-xs text-gray-400 mb-2">Enter the email you used at checkout</p>
-                      <div className="flex items-center gap-2 max-w-sm">
-                        <input
-                          type="email"
-                          value={recoveryEmail}
-                          onChange={(e) => { setRecoveryEmail(e.target.value); setRecoveryError(null); }}
-                          onKeyDown={(e) => e.key === 'Enter' && handleRecoverAccess()}
-                          placeholder="your@email.com"
-                          className="flex-1 px-3 py-2 bg-black/50 border border-white/20 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-white"
-                        />
-                        <button
-                          onClick={handleRecoverAccess}
-                          disabled={recoveryLoading || !recoveryEmail.trim()}
-                          className="px-4 py-2 bg-white hover:bg-gray-200 text-black font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {recoveryLoading ? '...' : 'Recover'}
-                        </button>
-                      </div>
-                      {recoveryError && <p className="text-red-400 text-xs mt-1">{recoveryError}</p>}
-                    </div>
-                  )}
+                  <Link
+                    href="/recover-access"
+                    className="text-xs text-gray-500 hover:text-white underline underline-offset-2 transition-colors"
+                  >
+                    Already purchased? Recover access
+                  </Link>
                 </div>
               ) : (
                 /* Checking access… */
