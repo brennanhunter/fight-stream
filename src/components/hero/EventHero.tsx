@@ -53,6 +53,7 @@ interface EventHeroProps {
   subscriptionTier: 'basic' | 'premium' | null;
   isActive?: boolean;
   eventId?: string;
+  onStreamLive?: (isLive: boolean) => void;
 }
 
 /* ── 3D Tilt + Float Poster Card ── */
@@ -167,7 +168,7 @@ function getTimeRemaining(targetDate: string) {
   return { days, hours, minutes, seconds };
 }
 
-export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, eventId }: EventHeroProps) {
+export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, eventId, onStreamLive }: EventHeroProps) {
   const priceDisplay = `$${(priceCents / 100).toFixed(2)}`;
 
   // Calculate discounted price display
@@ -478,6 +479,11 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
      ════════════════════════════════════════════ */
   const showFullPlayer = isActive && accessState === 'has-access' && (isStreamLive || isPlayingReplay);
 
+  // Notify parent (carousel) when stream takes over
+  useEffect(() => {
+    onStreamLive?.(showFullPlayer);
+  }, [showFullPlayer, onStreamLive]);
+
   if (showFullPlayer) {
     const isLive = isStreamLive;
     return (
@@ -654,7 +660,9 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                       : replayUrl
                         ? 'The event has ended. Watch the full replay below.'
                         : eventStarted
-                          ? 'The stream will begin shortly. Stay on this page.'
+                          ? (isStreamLive
+                              ? 'The stream will begin shortly. Stay on this page.'
+                              : 'The event has ended. Replay coming soon.')
                           : "You're all set. The stream will appear here when we go live."}
                   </p>
                   {isActive && replayUrl && !isStreamLive && (

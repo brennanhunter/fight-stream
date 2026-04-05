@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
+import { getSession } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,12 @@ export async function POST(req: NextRequest) {
 
     if (!eventId || typeof eventId !== 'string') {
       return NextResponse.json({ purchased: false });
+    }
+
+    // Check JWT session cookie first (fastest, no DB call)
+    const session = await getSession();
+    if (session?.eventId === eventId) {
+      return NextResponse.json({ purchased: true });
     }
 
     const supabase = createServerClient();

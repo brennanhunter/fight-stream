@@ -22,20 +22,31 @@ interface EventCarouselProps {
 
 export default function EventCarousel({ events, subscriptionTier }: EventCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [streamLive, setStreamLive] = useState(false);
 
   const goToNext = useCallback(() => setActiveIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1)), [events.length]);
   const goToPrev = () => setActiveIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1));
 
-  // Auto-rotate every 8 seconds, reset timer on manual navigation
+  // Auto-rotate every 8 seconds — pause when stream is live
   useEffect(() => {
-    if (events.length <= 1) return;
+    if (events.length <= 1 || streamLive) return;
     const timer = setInterval(goToNext, 8000);
     return () => clearInterval(timer);
-  }, [activeIndex, events.length, goToNext]);
+  }, [activeIndex, events.length, goToNext, streamLive]);
+
+  // When stream goes live, snap to the active event
+  const handleStreamLive = useCallback((isLive: boolean) => {
+    setStreamLive(isLive);
+    if (isLive) {
+      const activeIdx = events.findIndex((e) => e.is_active);
+      if (activeIdx !== -1) setActiveIndex(activeIdx);
+    }
+  }, [events]);
 
   if (events.length === 0) return null;
 
   const currentEvent = events[activeIndex];
+  const showNav = events.length > 1 && !streamLive;
 
   return (
     <div className="relative">
@@ -57,12 +68,13 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
             subscriptionTier={subscriptionTier}
             isActive={currentEvent.is_active}
             eventId={currentEvent.id}
+            onStreamLive={currentEvent.is_active ? handleStreamLive : undefined}
           />
         </motion.div>
       </AnimatePresence>
 
-      {/* Navigation — only show when multiple events */}
-      {events.length > 1 && (
+      {/* Navigation — hide when stream is live */}
+      {showNav && (
         <>
           {/* Left arrow */}
           <button

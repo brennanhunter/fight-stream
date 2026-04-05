@@ -37,7 +37,14 @@ export async function POST(request: NextRequest) {
       event = data;
     }
 
-    if (event?.venue_address) {
+    if (!event) {
+      return NextResponse.json(
+        { error: 'Event not found. Please try again.' },
+        { status: 404 }
+      );
+    }
+
+    if (event.venue_address) {
       const geo = await checkGeoRestriction(event.venue_address, event.blackout_radius_miles ?? 90);
       if (geo.blocked) {
         return NextResponse.json(
