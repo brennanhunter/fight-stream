@@ -191,7 +191,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   }, [eventDate]);
 
   /* ── Purchase / access state ── */
-  const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'has-access'>(isActive ? 'checking' : 'needs-purchase');
+  const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'has-access'>('checking');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState('');
@@ -233,6 +233,24 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
+
+  /* ── Check purchase for non-active events ── */
+  useEffect(() => {
+    if (isActive || !eventId) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/check-purchase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId }),
+        });
+        const data = await res.json();
+        if (data.purchased) setAccessState('has-access');
+      } catch {
+        // Ignore — stays at needs-purchase
+      }
+    })();
+  }, [isActive, eventId]);
 
   /* ── Load IVS script (only when has access and active) ── */
   useEffect(() => {
@@ -631,11 +649,13 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                     <span className="text-white font-bold text-sm tracking-[0.15em] uppercase">Access Confirmed</span>
                   </div>
                   <p className="text-gray-400 text-sm">
-                    {replayUrl
-                      ? 'The event has ended. Watch the full replay below.'
-                      : eventStarted
-                        ? 'The stream will begin shortly. Stay on this page.'
-                        : "You're all set. The stream will appear here when we go live."}
+                    {!isActive
+                      ? "You're all set! Your access will be ready when the event goes live."
+                      : replayUrl
+                        ? 'The event has ended. Watch the full replay below.'
+                        : eventStarted
+                          ? 'The stream will begin shortly. Stay on this page.'
+                          : "You're all set. The stream will appear here when we go live."}
                   </p>
                   {isActive && replayUrl && !isStreamLive && (
                     <button

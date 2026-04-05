@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 import { hasEventAccess } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
@@ -26,12 +27,64 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user has purchased access to the active event
-    const hasPurchased = await hasEventAccess(activeEvent.id);
+    // 1) Check session cookie
+    const hasCookieAccess = await hasEventAccess(activeEvent.id);
 
-    // Also check if user has a premium subscription (grants free PPV)
+    // 2) Check purchases table (fallback when cookie expired)
+    let hasPurchaseRecord = false;
+    if (!hasCookieAccess) {
+      // Check by logged-in user
+      try {
+        const authClient = await createAuthServerClient();
+        const { data: { user } } = await authClient.auth.getUser();
+        if (user) {
+          const { data: byId } = await supabase
+            .from('purchases')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('event_id', activeEvent.id)
+            .eq('purchase_type', 'ppv')
+            .limit(1)
+            .maybeSingle();
+          if (byId) hasPurchaseRecord = true;
+
+          if (!hasPurchaseRecord && user.email) {
+            const { data: byEmail } = await supabase
+              .from('purchases')
+              .select('id')
+              .eq('email', user.email.toLowerCase())
+              .eq('event_id', activeEvent.id)
+              .eq('purchase_type', 'ppv')
+              .limit(1)
+              .maybeSingle();
+            if (byEmail) hasPurchaseRecord = true;
+          }
+        }
+      } catch {
+        // Not logged in — continue
+      }
+
+      // Check by customer_email cookie
+      if (!hasPurchaseRecord) {
+        const cookieStore = await cookies();
+        const customerEmail = cookieStore.get('customer_email')?.value;
+        if (customerEmail) {
+          const { data: byCookie } = await supabase
+            .from('purchases')
+            .select('id')
+            .eq('email', customerEmail.toLowerCase())
+            .eq('event_id', activeEvent.id)
+            .eq('purchase_type', 'ppv')
+            .limit(1)
+            .maybeSingle();
+          if (byCookie) hasPurchaseRecord = true;
+        }
+      }
+    }
+
+    // 3) Check premium subscription
     let hasPremium = false;
-    if (!hasPurchased) {
+    if (!hasCookieAccess && !hasPurchaseRecord) {
       try {
         const authClient = await createAuthServerClient();
         const { data: { user } } = await authClient.auth.getUser();
@@ -44,7 +97,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!hasPurchased && !hasPremium) {
+    if (!hasCookieAccess && !hasPurchaseRecord && !hasPremium) {
       return NextResponse.json(
         { error: 'Access denied. Please purchase the event to watch.' },
         { status: 403 }
