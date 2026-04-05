@@ -316,7 +316,6 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
       });
 
       player.addEventListener(IVSPlayer.PlayerState.READY, () => {
-        setIsStreamLive(true);
         const p = player.play();
         if (p?.catch) p.catch(() => {});
       });
