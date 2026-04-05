@@ -229,6 +229,10 @@ export async function POST(request: Request) {
         const tier = determineTier(subscription);
         const periods = getPeriodDates(subscription);
 
+        // Stripe billing portal may use cancel_at instead of cancel_at_period_end
+        const cancelAt = (subscription as Stripe.Subscription & { cancel_at: number | null }).cancel_at;
+        const effectivelyCanceling = subscription.cancel_at_period_end || !!cancelAt;
+
         if (userId) {
           await supabase.from('subscriptions').upsert({
             user_id: userId,
@@ -237,7 +241,7 @@ export async function POST(request: Request) {
             tier,
             status: subscription.status,
             ...periods,
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            cancel_at_period_end: effectivelyCanceling,
           }, { onConflict: 'stripe_subscription_id' });
         } else {
           // No user_id in metadata — update existing row by stripe_subscription_id
@@ -247,7 +251,7 @@ export async function POST(request: Request) {
               tier,
               status: subscription.status,
               ...periods,
-              cancel_at_period_end: subscription.cancel_at_period_end,
+              cancel_at_period_end: effectivelyCanceling,
             })
             .eq('stripe_subscription_id', subscription.id);
 
@@ -258,20 +262,25 @@ export async function POST(request: Request) {
           }
         }
 
-        // Send cancellation email when cancel_at_period_end flips to true
-        console.log('Webhook: subscription.updated —', {
-          cancel_at_period_end: subscription.cancel_at_period_end,
-          previousAttributes: previousAttributes ? Object.keys(previousAttributes) : 'none',
-          prev_cancel_at_period_end: previousAttributes?.cancel_at_period_end,
-        });
-        const justCanceled = subscription.cancel_at_period_end && previousAttributes?.cancel_at_period_end === false;
+        // Send cancellation email when subscription is scheduled to cancel
+        // Stripe billing portal may use cancel_at_period_end OR cancel_at (a specific timestamp)
+        const justCanceled =
+          // Method 1: cancel_at_period_end flipped to true
+          (subscription.cancel_at_period_end && previousAttributes?.cancel_at_period_end === false) ||
+          // Method 2: cancel_at was just set (cancellation_details changed)
+          (cancelAt && !subscription.cancel_at_period_end &&
+            previousAttributes?.cancellation_details !== undefined);
+
         if (justCanceled) {
+          const accessUntil = cancelAt
+            ? new Date(cancelAt * 1000).toISOString()
+            : periods.current_period_end;
           try {
             const customerEmail = await getEmailForCustomer(subscription.customer);
             if (customerEmail) {
               const { html, text } = subscriptionCanceledEmail({
                 tier,
-                accessUntil: periods.current_period_end,
+                accessUntil,
               });
               await resend.emails.send({
                 from: 'BoxStreamTV <noreply@boxstreamtv.com>',
