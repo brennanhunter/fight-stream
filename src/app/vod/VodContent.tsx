@@ -158,7 +158,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
             </div>
 
             {/* Full poster display - constrained height */}
-            {product.image && (
+            {product.image ? (
               <div className="bg-black flex justify-center">
                 <Image
                   src={product.image}
@@ -167,6 +167,10 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                   height={450}
                   className="w-auto max-h-[400px] object-contain"
                 />
+              </div>
+            ) : (
+              <div className="bg-black/50 flex items-center justify-center min-h-[200px] p-8">
+                <h3 className="text-2xl sm:text-3xl font-bold text-white text-center">{product.name}</h3>
               </div>
             )}
 
@@ -236,7 +240,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
               )}
 
               {/* Product Image */}
-              {product.image && (
+              {product.image ? (
                 <div className="relative bg-black overflow-hidden">
                   <Image
                     src={product.image}
@@ -245,6 +249,10 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                     height={900}
                     className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
                   />
+                </div>
+              ) : (
+                <div className="relative bg-black/50 overflow-hidden flex items-center justify-center min-h-[200px] p-6">
+                  <p className="text-lg font-bold text-white text-center">{product.name}</p>
                 </div>
               )}
 
