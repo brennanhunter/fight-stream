@@ -5,6 +5,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import SaveSession from './SaveSession';
 import VodPlayer from './VodPlayer';
+import ExpiryCountdown from '@/components/ExpiryCountdown';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
@@ -30,6 +31,7 @@ export default async function WatchPage({
   let s3Key: string | null = null;
   let sessionId: string | null = null;
   let isSubscriber = false;
+  let expiresAt: string | null = null;
 
   // 0. Subscription access by product_id
   if (params.product_id) {
@@ -95,6 +97,7 @@ export default async function WatchPage({
         if (purchase.s3_key) {
           s3Key = purchase.s3_key;
           sessionId = purchase.stripe_session_id;
+          expiresAt = purchase.expires_at ?? null;
         }
       }
     } catch (err) {
@@ -155,9 +158,14 @@ export default async function WatchPage({
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 text-center">
           Now Playing
         </h1>
-        <p className="text-gray-400 mb-8 text-center">
+        <p className="text-gray-400 mb-2 text-center">
           {isSubscriber ? 'Enjoy your replay with Fight Pass.' : 'Enjoy your replay.'}
         </p>
+        {expiresAt && (
+          <div className="mb-8 text-center">
+            <ExpiryCountdown expiresAt={expiresAt} />
+          </div>
+        )}
 
         <div className="vod-player-wrapper w-full rounded-2xl overflow-hidden border-2 border-accent/30 shadow-2xl shadow-accent/10">
           <VodPlayer src={videoUrl} />

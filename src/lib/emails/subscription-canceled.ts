@@ -32,9 +32,7 @@ export function subscriptionCanceledEmail({
           <!-- Header -->
           <tr>
             <td align="center" style="padding-bottom:32px;">
-              <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:#6b7280;">
-                BOXSTREAMTV
-              </p>
+              <img src="https://boxstreamtv.com/logos/BoxStreamThumbnail.png" alt="BoxStreamTV" width="72" height="72" style="display:block;border:0;margin:0 auto;" />
             </td>
           </tr>
 

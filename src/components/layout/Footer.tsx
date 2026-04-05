@@ -53,6 +53,12 @@ export default function Footer() {
         {/* Legal links */}
         <div className="mt-10 flex gap-6 justify-center">
           <Link
+            href="/faq"
+            className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-600 hover:text-white transition-colors"
+          >
+            Help / FAQ
+          </Link>
+          <Link
             href="/terms"
             className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-600 hover:text-white transition-colors"
           >

@@ -71,9 +71,11 @@ export default function WatchlistPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
-      <h1 className="text-2xl font-bold text-white tracking-[0.15em] uppercase mb-8">
-        Watchlist
-      </h1>
+      <div className="mb-8">
+        <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">Account</p>
+        <h1 className="text-3xl font-bold text-white tracking-tight">Watchlist</h1>
+        <div className="w-12 h-[2px] bg-white mt-4" />
+      </div>
 
       {favorites.length > 0 ? (
         <div className="space-y-3">

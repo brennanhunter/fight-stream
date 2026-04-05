@@ -39,6 +39,7 @@ export default function Header() {
     { name: 'Fight Pass', href: '/pricing' },
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
+    { name: 'Help', href: '/faq' },
   ];
 
   const isActive = (href: string) => pathname === href;

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import VodBuyButton from './VodBuyButton';
+import ExpiryCountdown from '@/components/ExpiryCountdown';
 
 export interface VodProduct {
   id: string;
@@ -34,7 +35,7 @@ export interface EventGroup {
   products: VodProduct[];
 }
 
-export default function VodContent({ events, ownedProducts, subscriptionTier }: { events: EventGroup[]; ownedProducts: Record<string, string>; subscriptionTier: 'basic' | 'premium' | null }) {
+export default function VodContent({ events, ownedProducts, subscriptionTier }: { events: EventGroup[]; ownedProducts: Record<string, { purchaseId: string; expiresAt: string | null }>; subscriptionTier: 'basic' | 'premium' | null }) {
   const [selectedEvent, setSelectedEvent] = useState<EventGroup | null>(null);
 
   // Event Grid View
@@ -192,12 +193,17 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                   </span>
                 ) : null}
                 {ownedProducts[product.id] || subscriptionTier ? (
-                  <Link
-                    href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id]}` : `/watch?product_id=${product.id}`}
-                    className="px-8 py-4 bg-white text-black text-xl font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center gap-2 tracking-wide"
-                  >
-                    ▶ Watch
-                  </Link>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Link
+                      href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id].purchaseId}` : `/watch?product_id=${product.id}`}
+                      className="px-8 py-4 bg-white text-black text-xl font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center gap-2 tracking-wide"
+                    >
+                      ▶ Watch
+                    </Link>
+                    {ownedProducts[product.id]?.expiresAt && (
+                      <ExpiryCountdown expiresAt={ownedProducts[product.id].expiresAt!} />
+                    )}
+                  </div>
                 ) : product.available && product.priceId ? (
                   <VodBuyButton priceId={product.priceId} subscriptionTier={subscriptionTier} />
                 ) : !product.available ? (
@@ -278,12 +284,17 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                 ) : null}
 
                 {ownedProducts[product.id] || subscriptionTier ? (
-                  <Link
-                    href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id]}` : `/watch?product_id=${product.id}`}
-                    className="w-full text-center px-6 py-3 bg-white text-black text-base font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center justify-center gap-2 tracking-wide"
-                  >
-                    ▶ Watch Now
-                  </Link>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Link
+                      href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id].purchaseId}` : `/watch?product_id=${product.id}`}
+                      className="w-full text-center px-6 py-3 bg-white text-black text-base font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center justify-center gap-2 tracking-wide"
+                    >
+                      ▶ Watch Now
+                    </Link>
+                    {ownedProducts[product.id]?.expiresAt && (
+                      <ExpiryCountdown expiresAt={ownedProducts[product.id].expiresAt!} />
+                    )}
+                  </div>
                 ) : product.available && product.priceId ? (
                   <VodBuyButton priceId={product.priceId} subscriptionTier={subscriptionTier} />
                 ) : !product.available ? (

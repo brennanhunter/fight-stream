@@ -4,24 +4,38 @@ import { PageTransition } from '@/components/motion';
 import Link from 'next/link';
 
 export default async function AccountPage() {
-  const supabase = await createAuthServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const authClient = await createAuthServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
 
-  if (!user) return null; // Middleware handles redirect
+  if (!user) return null;
 
-  // Fetch profile and recent purchases using service role (bypasses RLS)
   const adminClient = createServerClient();
-  const [{ data: profile }, { data: purchases }] = await Promise.all([
-    adminClient.from('profiles').select('*').eq('id', user.id).single(),
-    adminClient
-      .from('purchases')
-      .select('*')
-      .or(`user_id.eq.${user.id},email.eq.${user.email}`)
-      .order('created_at', { ascending: false })
-      .limit(5),
-  ]);
+  const [{ data: profile }, { data: purchases }, { data: subscription }, { data: nextEvent }] =
+    await Promise.all([
+      adminClient.from('profiles').select('display_name').eq('id', user.id).maybeSingle(),
+      adminClient
+        .from('purchases')
+        .select('id, product_name, purchase_type, amount_paid, created_at, expires_at')
+        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      adminClient
+        .from('subscriptions')
+        .select('tier, status, current_period_end, cancel_at_period_end')
+        .eq('user_id', user.id)
+        .in('status', ['active', 'trialing', 'past_due'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      adminClient
+        .from('events')
+        .select('id, name, date')
+        .eq('is_active', true)
+        .gte('date', new Date().toISOString())
+        .order('date', { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
   const displayName =
     profile?.display_name ||
@@ -29,59 +43,160 @@ export default async function AccountPage() {
     user.email?.split('@')[0] ||
     'Fighter';
 
+  const memberSince = new Date(user.created_at).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
     <PageTransition>
-      <h1 className="text-2xl font-bold text-white tracking-[0.15em] uppercase mb-2">
-        Welcome back, {displayName}
-      </h1>
-      <p className="text-sm text-gray-500 mb-12">{user.email}</p>
-
-      {/* Quick Links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
-        {[
-          { name: 'Profile', href: '/account/profile', desc: 'Edit your info' },
-          { name: 'Purchases', href: '/account/purchases', desc: 'View history' },
-          { name: 'Watchlist', href: '/account/watchlist', desc: 'Saved content' },
-        ].map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="border border-white/10 p-5 hover:border-white/25 transition-colors group"
-          >
-            <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-white group-hover:text-white/90 mb-1">
-              {item.name}
-            </h2>
-            <p className="text-[10px] text-gray-500">{item.desc}</p>
-          </Link>
-        ))}
+      {/* Header */}
+      <div className="mb-8">
+        <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500 mb-1">
+          Member since {memberSince}
+        </p>
+        <h1 className="text-3xl font-bold text-white tracking-tight">
+          Welcome back, {displayName}
+        </h1>
+        <div className="w-12 h-[2px] bg-white mt-4" />
       </div>
 
-      {/* Recent Purchases */}
-      <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-gray-400 mb-4">
-        Recent Purchases
-      </h2>
-      {purchases && purchases.length > 0 ? (
-        <div className="space-y-3">
-          {purchases.map((purchase: Record<string, string>) => (
-            <div
-              key={purchase.id}
-              className="flex items-center justify-between border border-white/10 p-4"
-            >
-              <div>
-                <p className="text-sm text-white font-bold">{purchase.product_name}</p>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">
-                  {purchase.purchase_type} · {new Date(purchase.created_at).toLocaleDateString()}
+      {/* Status cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+        {/* Subscription status */}
+        <div className="border border-white/10 p-5">
+          <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-2">
+            Fight Pass
+          </p>
+          {subscription ? (
+            <>
+              <p className="text-base font-bold text-white mb-1">
+                {subscription.tier === 'premium' ? 'Premium' : 'Basic'}
+                {subscription.cancel_at_period_end && (
+                  <span className="ml-2 text-[10px] font-bold tracking-[0.1em] uppercase text-yellow-400">
+                    Canceling
+                  </span>
+                )}
+                {subscription.status === 'past_due' && (
+                  <span className="ml-2 text-[10px] font-bold tracking-[0.1em] uppercase text-red-400">
+                    Past Due
+                  </span>
+                )}
+              </p>
+              {subscription.current_period_end && (
+                <p className="text-[11px] text-gray-500">
+                  {subscription.cancel_at_period_end ? 'Access until ' : 'Renews '}
+                  {new Date(subscription.current_period_end).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
                 </p>
-              </div>
-              <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500">
-                ${(Number(purchase.amount_paid) / 100).toFixed(2)}
-              </span>
-            </div>
-          ))}
+              )}
+              <Link
+                href="/account/subscription"
+                className="inline-block mt-3 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-400 hover:text-white transition-colors"
+              >
+                Manage →
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-gray-400 mb-3">No active subscription</p>
+              <Link
+                href="/pricing"
+                className="inline-block text-[10px] font-bold tracking-[0.15em] uppercase text-white hover:text-gray-300 transition-colors"
+              >
+                View Plans →
+              </Link>
+            </>
+          )}
         </div>
-      ) : (
-        <p className="text-sm text-gray-500">No purchases yet.</p>
-      )}
+
+        {/* Upcoming event */}
+        <div className="border border-white/10 p-5">
+          <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-2">
+            Next Event
+          </p>
+          {nextEvent ? (
+            <>
+              <p className="text-base font-bold text-white mb-1">{nextEvent.name}</p>
+              <p className="text-[11px] text-gray-500">
+                {new Date(nextEvent.date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </p>
+              <Link
+                href="/pricing"
+                className="inline-block mt-3 text-[10px] font-bold tracking-[0.15em] uppercase text-white hover:text-gray-300 transition-colors"
+              >
+                Get Access →
+              </Link>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500">No upcoming events</p>
+          )}
+        </div>
+      </div>
+
+      {/* Recent purchases */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400">
+            Recent Purchases
+          </h2>
+          {purchases && purchases.length > 0 && (
+            <Link
+              href="/account/purchases"
+              className="text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500 hover:text-white transition-colors"
+            >
+              View All →
+            </Link>
+          )}
+        </div>
+
+        {purchases && purchases.length > 0 ? (
+          <div className="space-y-2">
+            {purchases.map((purchase: Record<string, string | number | null>) => {
+              const isExpired =
+                purchase.expires_at &&
+                new Date(purchase.expires_at as string) < new Date();
+              return (
+                <div
+                  key={purchase.id as string}
+                  className="flex items-center justify-between border border-white/10 p-4"
+                >
+                  <div>
+                    <p className="text-sm text-white font-bold">{purchase.product_name as string}</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">
+                      {purchase.purchase_type as string} ·{' '}
+                      {new Date(purchase.created_at as string).toLocaleDateString()}
+                      {isExpired && <span className="ml-2 text-red-400">Expired</span>}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500">
+                    ${((purchase.amount_paid as number) / 100).toFixed(2)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="border border-white/10 p-8 text-center">
+            <p className="text-sm text-gray-500 mb-3">No purchases yet.</p>
+            <Link
+              href="/vod"
+              className="text-[10px] font-bold tracking-[0.2em] uppercase text-white hover:underline"
+            >
+              Browse VOD →
+            </Link>
+          </div>
+        )}
+      </div>
     </PageTransition>
   );
 }

@@ -117,9 +117,11 @@ export default function ProfilePage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
-      <h1 className="text-2xl font-bold text-white tracking-[0.15em] uppercase mb-8">
-        Profile
-      </h1>
+      <div className="mb-8">
+        <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">Account</p>
+        <h1 className="text-3xl font-bold text-white tracking-tight">Profile</h1>
+        <div className="w-12 h-[2px] bg-white mt-4" />
+      </div>
 
       {loadError && (
         <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-sm text-red-400 text-center">

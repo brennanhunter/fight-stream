@@ -108,11 +108,11 @@ function groupByEvent(products: VodProduct[]): EventGroup[] {
   );
 }
 
-// Get map of productId -> purchaseId for owned products
-async function getOwnedProducts(): Promise<Record<string, string>> {
+// Get map of productId -> { purchaseId, expiresAt } for owned products
+async function getOwnedProducts(): Promise<Record<string, { purchaseId: string; expiresAt: string | null }>> {
   try {
     const supabase = createServerClient();
-    const owned: Record<string, string> = {};
+    const owned: Record<string, { purchaseId: string; expiresAt: string | null }> = {};
     const now = new Date();
 
     // Check by authenticated user first
@@ -130,7 +130,7 @@ async function getOwnedProducts(): Promise<Record<string, string>> {
           for (const p of purchases) {
             if (p.stripe_product_id) {
               if (p.expires_at && new Date(p.expires_at) < now) continue;
-              owned[p.stripe_product_id] = p.id || p.stripe_session_id;
+              owned[p.stripe_product_id] = { purchaseId: p.id || p.stripe_session_id, expiresAt: p.expires_at ?? null };
             }
           }
         }
@@ -153,7 +153,7 @@ async function getOwnedProducts(): Promise<Record<string, string>> {
         for (const p of purchases) {
           if (p.stripe_product_id && !owned[p.stripe_product_id]) {
             if (p.expires_at && new Date(p.expires_at) < now) continue;
-            owned[p.stripe_product_id] = p.id || p.stripe_session_id;
+            owned[p.stripe_product_id] = { purchaseId: p.id || p.stripe_session_id, expiresAt: p.expires_at ?? null };
           }
         }
       }
