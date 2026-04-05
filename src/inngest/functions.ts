@@ -11,7 +11,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // that haven't had a reminder sent yet, then emails all PPV purchasers.
 
 export const eventReminderFunction = inngest.createFunction(
-  { id: 'event-reminder', triggers: [{ cron: '0 * * * *' }] },
+  { id: 'event-reminder', triggers: { cron: '0 * * * *' } },
   async () => {
     const supabase = createServerClient();
 
@@ -84,7 +84,7 @@ export const eventReminderFunction = inngest.createFunction(
 // that haven't had a "starting" email sent yet.
 
 export const eventStartingFunction = inngest.createFunction(
-  { id: 'event-starting', triggers: [{ cron: '*/5 * * * *' }] },
+  { id: 'event-starting', triggers: { cron: '*/5 * * * *' } },
   async () => {
     const supabase = createServerClient();
 

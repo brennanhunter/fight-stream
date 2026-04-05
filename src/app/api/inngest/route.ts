@@ -2,9 +2,9 @@ import { serve } from 'inngest/next';
 import { inngest } from '@/lib/inngest';
 import { eventReminderFunction, eventStartingFunction } from '@/inngest/functions';
 
-const handler = serve({
+export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [eventReminderFunction, eventStartingFunction],
+  serveOrigin: 'https://boxstreamtv.com',
+  servePath: '/api/inngest',
 });
-
-export { handler as GET, handler as POST, handler as PUT };
