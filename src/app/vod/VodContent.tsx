@@ -1,42 +1,82 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import VodBuyButton from './VodBuyButton';
 import ExpiryCountdown from '@/components/ExpiryCountdown';
+import { createBrowserClient } from '@/lib/supabase';
+import type { VodProduct, EventGroup } from '@/lib/vod';
 
-export interface VodProduct {
-  id: string;
-  name: string;
-  description: string | null;
-  image: string | null;
-  price: string | null;
-  currency: string;
-  priceId: string | undefined;
-  note: string | null;
-  available: boolean;
-  featured: string | null; // 'true' = featured fight, 'full-event' = full event replay, null = regular
-  sortOrder: number;
-  eventSlug: string;
-  eventName: string;
-  eventDate: string;
-  eventImage: string | null; // auto-populated from product image
+function WatchlistButton({ productId, isInWatchlist, onToggle }: { productId: string; isInWatchlist: boolean; onToggle: (productId: string) => void }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle(productId);
+      }}
+      className={`absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center bg-black/70 border transition-colors ${
+        isInWatchlist
+          ? 'border-white/40 text-white hover:text-red-400 hover:border-red-400/50'
+          : 'border-white/20 text-gray-500 hover:text-white hover:border-white/40'
+      }`}
+      title={isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+    >
+      <svg className="w-4 h-4" fill={isInWatchlist ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+      </svg>
+    </button>
+  );
 }
 
-export interface EventGroup {
-  slug: string;
-  name: string;
-  date: string;
-  image: string | null;
-  hasFeaturedFight: boolean;
-  hasFullEvent: boolean;
-  fightCount: number;
-  products: VodProduct[];
-}
-
-export default function VodContent({ events, ownedProducts, subscriptionTier }: { events: EventGroup[]; ownedProducts: Record<string, { purchaseId: string; expiresAt: string | null }>; subscriptionTier: 'basic' | 'premium' | null }) {
+export default function VodContent({ events, ownedProducts, subscriptionTier, initialWatchlist }: { events: EventGroup[]; ownedProducts: Record<string, { purchaseId: string; expiresAt: string | null }>; subscriptionTier: 'basic' | 'premium' | null; initialWatchlist: string[] }) {
   const [selectedEvent, setSelectedEvent] = useState<EventGroup | null>(null);
+  const [watchlist, setWatchlist] = useState<Set<string>>(new Set(initialWatchlist));
+  const supabase = createBrowserClient();
+
+  const toggleWatchlist = useCallback(async (productId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const isInWatchlist = watchlist.has(productId);
+
+    // Optimistic update
+    setWatchlist((prev) => {
+      const next = new Set(prev);
+      if (isInWatchlist) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+
+    if (isInWatchlist) {
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('item_type', 'vod')
+        .eq('item_id', productId);
+      if (error) {
+        setWatchlist((prev) => new Set(prev).add(productId));
+      }
+    } else {
+      const { error } = await supabase
+        .from('favorites')
+        .insert({ user_id: user.id, item_type: 'vod', item_id: productId });
+      if (error) {
+        setWatchlist((prev) => {
+          const next = new Set(prev);
+          next.delete(productId);
+          return next;
+        });
+      }
+    }
+  }, [watchlist, supabase]);
 
   // Event Grid View
   if (!selectedEvent) {
@@ -156,6 +196,9 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
               </span>
             </div>
 
+            {/* Watchlist Button */}
+            <WatchlistButton productId={product.id} isInWatchlist={watchlist.has(product.id)} onToggle={toggleWatchlist} />
+
             {/* Full poster display - constrained height */}
             {product.image ? (
               <div className="bg-black flex justify-center">
@@ -242,6 +285,9 @@ export default function VodContent({ events, ownedProducts, subscriptionTier }: 
                   </span>
                 </div>
               )}
+
+              {/* Watchlist Button */}
+              <WatchlistButton productId={product.id} isInWatchlist={watchlist.has(product.id)} onToggle={toggleWatchlist} />
 
               {/* Product Image */}
               {product.image ? (

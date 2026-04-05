@@ -1,116 +1,65 @@
-'use client';
+import { redirect } from 'next/navigation';
+import { createAuthServerClient } from '@/lib/supabase-server';
+import { createServerClient } from '@/lib/supabase';
+import { getSubscriptionTier } from '@/lib/access';
+import { getProducts } from '@/lib/vod';
+import WatchlistContent from './WatchlistContent';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { createBrowserClient } from '@/lib/supabase';
+export default async function WatchlistPage() {
+  const authClient = await createAuthServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
 
-interface Favorite {
-  id: string;
-  item_type: string;
-  item_id: string;
-  created_at: string;
-}
+  if (!user) {
+    redirect('/login');
+  }
 
-export default function WatchlistPage() {
-  const router = useRouter();
-  const supabase = createBrowserClient();
+  const supabase = createServerClient();
 
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Fetch favorites, products, owned products, and subscription in parallel
+  const [{ data: favorites }, products, subscriptionTier] = await Promise.all([
+    supabase
+      .from('favorites')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('item_type', 'vod')
+      .order('created_at', { ascending: false }),
+    getProducts(),
+    getSubscriptionTier(user.id),
+  ]);
 
-  useEffect(() => {
-    async function loadFavorites() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  // Get owned products for this user
+  const now = new Date();
+  const { data: purchases } = await supabase
+    .from('purchases')
+    .select('id, stripe_product_id, stripe_session_id, expires_at')
+    .eq('user_id', user.id)
+    .eq('purchase_type', 'vod');
 
-      if (!user) {
-        router.push('/login');
-        return;
+  const owned: Record<string, { purchaseId: string; expiresAt: string | null }> = {};
+  if (purchases?.length) {
+    for (const p of purchases) {
+      if (p.stripe_product_id) {
+        if (p.expires_at && new Date(p.expires_at) < now) continue;
+        owned[p.stripe_product_id] = { purchaseId: p.id || p.stripe_session_id, expiresAt: p.expires_at ?? null };
       }
-
-      const { data } = await supabase
-        .from('favorites')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      setFavorites(data || []);
-      setLoading(false);
-    }
-
-    loadFavorites();
-  }, [supabase, router]);
-
-  async function removeFavorite(id: string) {
-    setFavorites((prev) => prev.filter((f) => f.id !== id));
-    const { error } = await supabase.from('favorites').delete().eq('id', id);
-    if (error) {
-      // Revert optimistic update on failure
-      const { data } = await supabase
-        .from('favorites')
-        .select('*')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .order('created_at', { ascending: false });
-      setFavorites(data || []);
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // Build a product lookup map
+  const productMap = new Map(products.map((p) => [p.id, p]));
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
-    >
-      <div className="mb-8">
-        <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">Account</p>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Watchlist</h1>
-        <div className="w-12 h-[2px] bg-white mt-4" />
-      </div>
+  // Match favorites to products
+  const items = (favorites || [])
+    .map((fav) => {
+      const product = productMap.get(fav.item_id);
+      if (!product) return null;
+      return {
+        favoriteId: fav.id as string,
+        product,
+        owned: owned[product.id] || null,
+      };
+    })
+    .filter(Boolean) as { favoriteId: string; product: (typeof products)[0]; owned: { purchaseId: string; expiresAt: string | null } | null }[];
 
-      {favorites.length > 0 ? (
-        <div className="space-y-3">
-          {favorites.map((fav) => (
-            <div
-              key={fav.id}
-              className="flex items-center justify-between border border-white/10 p-4"
-            >
-              <div>
-                <p className="text-sm text-white font-bold">{fav.item_id}</p>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">
-                  {fav.item_type} · Added{' '}
-                  {new Date(fav.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <button
-                onClick={() => removeFavorite(fav.id)}
-                className="text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500 hover:text-red-400 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16 border border-white/10">
-          <p className="text-sm text-gray-500 mb-4">Your watchlist is empty.</p>
-          <a
-            href="/vod"
-            className="text-[10px] font-bold tracking-[0.2em] uppercase text-white hover:underline"
-          >
-            Browse VOD →
-          </a>
-        </div>
-      )}
-    </motion.div>
-  );
+  return <WatchlistContent items={items} subscriptionTier={subscriptionTier} />;
 }

@@ -1,12 +1,12 @@
-import Stripe from 'stripe';
 import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
 import { PageTransition } from '@/components/motion';
-import VodContent, { type VodProduct, type EventGroup } from './VodContent';
+import VodContent from './VodContent';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
+import { getProducts, groupByEvent } from '@/lib/vod';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,80 +33,7 @@ export const metadata: Metadata = {
   },
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-async function getProducts(): Promise<VodProduct[]> {
-  const products: Stripe.Product[] = [];
-  for await (const product of stripe.products.list({ active: true, expand: ['data.default_price'], limit: 100 })) {
-    products.push(product);
-  }
-
-  return products
-    .filter((p) => p.metadata.site === 'boxstreamtv' && (p.metadata.s3_key || p.metadata.available === 'false'))
-    .map((p) => {
-      const price = p.default_price as Stripe.Price;
-      return {
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        image: p.images?.[0] || null,
-        price: price?.unit_amount ? (price.unit_amount / 100).toFixed(2) : null,
-        currency: price?.currency || 'usd',
-        priceId: price?.id,
-        note: p.metadata.note || null,
-        available: p.metadata.available !== 'false',
-        featured: p.metadata.featured || null,
-        sortOrder: parseInt(p.metadata.sort_order || '99', 10),
-        eventSlug: p.metadata.event_slug || 'uncategorized',
-        eventName: p.metadata.event_name || 'Other Fights',
-        eventDate: p.metadata.event_date || '2020-01-01',
-        eventImage: p.metadata.event_image
-          ? p.metadata.event_image.startsWith('/') || p.metadata.event_image.startsWith('http')
-            ? p.metadata.event_image
-            : `/${p.metadata.event_image}`
-          : null,
-      };
-    })
-    .sort((a, b) => a.sortOrder - b.sortOrder);
-}
-
-function groupByEvent(products: VodProduct[]): EventGroup[] {
-  const groups: Record<string, EventGroup> = {};
-
-  for (const product of products) {
-    if (!groups[product.eventSlug]) {
-      groups[product.eventSlug] = {
-        slug: product.eventSlug,
-        name: product.eventName,
-        date: product.eventDate,
-        image: product.eventImage,
-        hasFeaturedFight: false,
-        hasFullEvent: false,
-        fightCount: 0,
-        products: [],
-      };
-    }
-    groups[product.eventSlug].products.push(product);
-    groups[product.eventSlug].fightCount++;
-    // Use explicit event_image if any product provides one, else fall back to first product image
-    if (product.eventImage) {
-      groups[product.eventSlug].image = product.eventImage;
-    } else if (!groups[product.eventSlug].image && product.image) {
-      groups[product.eventSlug].image = product.image;
-    }
-    // Track featured status by type
-    if (product.featured === 'full-event') {
-      groups[product.eventSlug].hasFullEvent = true;
-    } else if (product.featured === 'true') {
-      groups[product.eventSlug].hasFeaturedFight = true;
-    }
-  }
-
-  // Sort events by date, newest first
-  return Object.values(groups).sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-}
 
 // Get map of productId -> { purchaseId, expiresAt } for owned products
 async function getOwnedProducts(): Promise<Record<string, { purchaseId: string; expiresAt: string | null }>> {
@@ -184,6 +111,24 @@ export default async function VodPage() {
   ]);
   const events = groupByEvent(products);
 
+  // Fetch user's watchlist favorites
+  let watchlistIds: string[] = [];
+  try {
+    const authClient = await createAuthServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (user) {
+      const supabase = createServerClient();
+      const { data } = await supabase
+        .from('favorites')
+        .select('item_id')
+        .eq('user_id', user.id)
+        .eq('item_type', 'vod');
+      watchlistIds = (data || []).map((f: { item_id: string }) => f.item_id);
+    }
+  } catch {
+    // Not logged in — no watchlist
+  }
+
   return (
     <PageTransition>
       <section className="min-h-screen bg-black overflow-x-hidden pt-20 relative">
@@ -222,7 +167,7 @@ export default async function VodPage() {
                 </div>
               )}
 
-              <VodContent events={events} ownedProducts={ownedProducts} subscriptionTier={subscriptionTier} />
+              <VodContent events={events} ownedProducts={ownedProducts} subscriptionTier={subscriptionTier} initialWatchlist={watchlistIds} />
             </>
           )}
         </div>
