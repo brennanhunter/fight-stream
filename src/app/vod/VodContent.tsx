@@ -88,11 +88,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
             <button
               key={event.slug}
               onClick={() => setSelectedEvent(event)}
-              className={`group relative overflow-visible text-left transition-all duration-300 transform hover:scale-[1.03] bg-black ${
-                !event.hasFullEvent && !event.hasFeaturedFight
-                  ? 'border border-white/10 hover:border-white/30 shadow-lg'
-                  : ''
-              }`}
+              className="group relative overflow-visible text-left transition-all duration-300 transform hover:scale-[1.03] bg-black"
             >
               {/* Glow overlay for full-event cards */}
               {event.hasFullEvent && (
@@ -101,6 +97,10 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
               {/* Glow overlay for featured cards */}
               {!event.hasFullEvent && event.hasFeaturedFight && (
                 <div className="absolute inset-0 border-2 border-accent shadow-[0_0_15px_rgba(251,191,36,0.5),0_0_30px_rgba(251,191,36,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(251,191,36,0.8),0_0_60px_rgba(251,191,36,0.5),0_0_100px_rgba(251,191,36,0.3)]" />
+              )}
+              {/* Glow overlay for basic cards */}
+              {!event.hasFullEvent && !event.hasFeaturedFight && (
+                <div className="absolute inset-0 border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.15),0_0_20px_rgba(255,255,255,0.08)] pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.4),0_0_40px_rgba(255,255,255,0.2),0_0_70px_rgba(255,255,255,0.1)]" />
               )}
 
               {/* Full Event Badge */}
@@ -269,12 +269,16 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
               className={`group relative overflow-visible transition-all duration-300 hover:scale-[1.03] ${
                 product.featured === 'true'
                   ? 'bg-gradient-to-b from-accent/10 to-primary/10'
-                  : 'bg-black border border-white/10 hover:border-white/30 shadow-lg'
+                  : 'bg-black'
               }`}
             >
               {/* Glow overlay for featured fight cards */}
               {product.featured === 'true' && (
                 <div className="absolute inset-0 border-2 border-accent shadow-[0_0_15px_rgba(251,191,36,0.5),0_0_30px_rgba(251,191,36,0.3)] animate-pulse pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_30px_rgba(251,191,36,0.8),0_0_60px_rgba(251,191,36,0.5),0_0_100px_rgba(251,191,36,0.3)]" />
+              )}
+              {/* Glow overlay for basic fight cards */}
+              {product.featured !== 'true' && (
+                <div className="absolute inset-0 border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.15),0_0_20px_rgba(255,255,255,0.08)] pointer-events-none z-10 transition-shadow duration-500 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.4),0_0_40px_rgba(255,255,255,0.2),0_0_70px_rgba(255,255,255,0.1)]" />
               )}
 
               {/* Featured Fight Badge */}
