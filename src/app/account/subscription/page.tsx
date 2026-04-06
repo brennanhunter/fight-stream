@@ -19,6 +19,11 @@ export default function SubscriptionPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [reactivateLoading, setReactivateLoading] = useState(false);
+  const [reactivateError, setReactivateError] = useState<string | null>(null);
 
   useEffect(() => {
     let isSuccess = false;
@@ -72,6 +77,43 @@ export default function SubscriptionPage() {
 
     fetchSubscription();
   }, []);
+
+  const handleReactivate = async () => {
+    setReactivateLoading(true);
+    setReactivateError(null);
+    try {
+      const res = await fetch('/api/reactivate-subscription', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setSubscription(prev => prev ? { ...prev, cancel_at_period_end: false } : prev);
+      } else {
+        setReactivateError(data.error || 'Could not reactivate subscription.');
+      }
+    } catch {
+      setReactivateError('Something went wrong.');
+    } finally {
+      setReactivateLoading(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    setCancelLoading(true);
+    setCancelError(null);
+    try {
+      const res = await fetch('/api/cancel-subscription', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setSubscription(prev => prev ? { ...prev, cancel_at_period_end: true } : prev);
+        setConfirmCancel(false);
+      } else {
+        setCancelError(data.error || 'Could not cancel subscription.');
+      }
+    } catch {
+      setCancelError('Something went wrong.');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   const openPortal = async () => {
     setPortalLoading(true);
@@ -171,7 +213,61 @@ export default function SubscriptionPage() {
             >
               {portalLoading ? 'Loading...' : 'Manage Billing'}
             </button>
+
+            {!subscription.cancel_at_period_end ? (
+              <button
+                onClick={() => { setConfirmCancel(true); setCancelError(null); }}
+                className="px-6 py-3 border border-white/20 text-gray-400 text-sm font-bold tracking-[0.1em] uppercase hover:border-white/40 hover:text-white transition-colors"
+              >
+                Cancel Subscription
+              </button>
+            ) : (
+              <button
+                onClick={handleReactivate}
+                disabled={reactivateLoading}
+                className="px-6 py-3 border border-white/20 text-gray-400 text-sm font-bold tracking-[0.1em] uppercase hover:border-white/40 hover:text-white transition-colors disabled:opacity-50"
+              >
+                {reactivateLoading ? 'Reactivating...' : 'Reactivate Subscription'}
+              </button>
+            )}
+            {reactivateError && (
+              <p className="text-sm text-red-400 self-center">{reactivateError}</p>
+            )}
           </div>
+
+          {confirmCancel && (
+            <div className="mt-6 border border-white/10 p-5">
+              <p className="text-sm text-white font-semibold mb-1">Cancel your Fight Pass?</p>
+              <p className="text-sm text-gray-400 mb-4">
+                You&apos;ll keep full access until{' '}
+                <span className="text-white">
+                  {new Date(subscription.current_period_end).toLocaleDateString('en-US', {
+                    month: 'long', day: 'numeric', year: 'numeric',
+                  })}
+                </span>
+                . No charges after that.
+              </p>
+              {cancelError && (
+                <p className="mb-3 text-sm text-red-400">{cancelError}</p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelLoading}
+                  className="px-5 py-2 bg-white text-black text-sm font-bold tracking-[0.1em] uppercase hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  {cancelLoading ? 'Canceling...' : 'Yes, Cancel'}
+                </button>
+                <button
+                  onClick={() => setConfirmCancel(false)}
+                  disabled={cancelLoading}
+                  className="px-5 py-2 border border-white/20 text-gray-400 text-sm font-bold tracking-[0.1em] uppercase hover:text-white transition-colors disabled:opacity-50"
+                >
+                  Keep Subscription
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="border border-white/10 p-8 max-w-lg text-center">

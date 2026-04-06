@@ -53,12 +53,15 @@ export default function TermsPage() {
                 PPV event purchases grant you a limited, non-exclusive, non-transferable license to stream the specific event for personal, non-commercial use. All purchases are final.
               </p>
               <p className="mb-3">
-                <span className="text-white font-semibold">No Refunds.</span> Because PPV content is delivered digitally and immediately upon purchase, all sales are final and non-refundable. If you experience a technical issue that prevents you from watching an event, contact us at{' '}
+                <span className="text-white font-semibold">Refund Policy.</span> PPV purchases are generally non-refundable. If you experienced a technical issue that prevented you from watching an event, contact us at{' '}
                 <a href="mailto:hunter@boxstreamtv.com" className="text-white hover:underline">hunter@boxstreamtv.com</a>{' '}
-                and we will make reasonable efforts to resolve the issue or provide replay access where available.
+                and we will review your request on a case-by-case basis. Where a refund is not issued, we will make reasonable efforts to provide replay access.
+              </p>
+              <p className="mb-3">
+                Prices are listed in US dollars and are subject to change without notice. Applicable taxes may be added at checkout.
               </p>
               <p>
-                Prices are listed in US dollars and are subject to change without notice. Applicable taxes may be added at checkout.
+                <span className="text-white font-semibold">Event Cancellation &amp; Interruption.</span> If a purchased event is cancelled by the promoter, we will issue a full refund. If an event is significantly delayed or interrupted due to circumstances outside our control (weather, venue issues, broadcast failure), we will make reasonable efforts to provide replay access. If replay access cannot be provided, refund requests will be reviewed on a case-by-case basis. Streaming quality may vary based on your internet connection and is not grounds for a refund.
               </p>
             </section>
 

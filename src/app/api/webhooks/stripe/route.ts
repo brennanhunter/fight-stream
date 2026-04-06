@@ -6,6 +6,7 @@ import { subscriptionConfirmationEmail } from '@/lib/emails/subscription-confirm
 import { subscriptionCanceledEmail } from '@/lib/emails/subscription-canceled';
 import { paymentFailedEmail } from '@/lib/emails/payment-failed';
 import { subscriptionRenewedEmail } from '@/lib/emails/subscription-renewed';
+import { purchaseConfirmationEmail } from '@/lib/emails/purchase-confirmation';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -106,6 +107,23 @@ export async function POST(request: Request) {
                 console.error('Webhook: VOD purchase save error:', upsertError);
               } else {
                 console.log('Webhook: VOD purchase saved for:', customerEmail);
+                try {
+                  const { html, text } = purchaseConfirmationEmail({
+                    eventName: product.name,
+                    expiresAt: null,
+                    amountPaid: price?.unit_amount || 0,
+                  });
+                  await resend.emails.send({
+                    from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+                    replyTo: 'hunter@boxstreamtv.com',
+                    to: customerEmail,
+                    subject: `Your purchase is confirmed — ${product.name}`,
+                    html,
+                    text,
+                  });
+                } catch (emailErr) {
+                  console.error('VOD confirmation email failed:', emailErr);
+                }
               }
             } else {
               console.error('Webhook: VOD product missing s3_key metadata', session.id);

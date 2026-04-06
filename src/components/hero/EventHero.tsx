@@ -679,6 +679,11 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                   {checkoutError && (
                     <p className="text-sm text-red-400">{checkoutError}</p>
                   )}
+                  <p className="text-[11px] text-gray-600 leading-relaxed max-w-sm">
+                    If this event is cancelled or you experience a technical issue preventing access, contact us at{' '}
+                    <a href="mailto:hunter@boxstreamtv.com" className="underline hover:text-gray-400 transition-colors">hunter@boxstreamtv.com</a>{' '}
+                    and we&apos;ll review your case.
+                  </p>
                   <Link
                     href="/recover-access"
                     className="text-xs text-gray-500 hover:text-white underline underline-offset-2 transition-colors"

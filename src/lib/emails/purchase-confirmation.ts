@@ -4,15 +4,17 @@ export function purchaseConfirmationEmail({
   amountPaid,
 }: {
   eventName: string;
-  expiresAt: string;
+  expiresAt: string | null;
   amountPaid: number; // cents
 }) {
-  const expiryFormatted = new Date(expiresAt).toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const expiryFormatted = expiresAt
+    ? new Date(expiresAt).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : 'Lifetime access';
 
   const amountFormatted =
     amountPaid > 0

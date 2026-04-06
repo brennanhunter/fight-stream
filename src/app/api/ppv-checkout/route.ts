@@ -112,11 +112,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim();
+    const userAgent = request.headers.get('user-agent');
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'payment',
       metadata,
+      payment_intent_data: {
+        statement_descriptor: 'BOXSTREAMTV',
+        metadata: {
+          ...(ip ? { ip_address: ip } : {}),
+          ...(userAgent ? { user_agent: userAgent.slice(0, 500) } : {}),
+        },
+      },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/`,
     };
@@ -141,6 +151,11 @@ export async function POST(request: NextRequest) {
       if (existingSubs.data?.stripe_customer_id) {
         sessionParams.customer = existingSubs.data.stripe_customer_id;
       }
+    }
+
+    // Pass customer_email for Radar scoring when no Stripe customer object is attached
+    if (!sessionParams.customer && user?.email) {
+      sessionParams.customer_email = user.email;
     }
 
     // Idempotency key: hash of user/IP + event + minute window to prevent double-click duplicates

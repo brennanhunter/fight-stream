@@ -126,6 +126,7 @@ export default function PricingCards({ prices }: PricingProps) {
           <div className="mb-6">
             <span className="text-4xl font-bold text-white">{plan.price}</span>
             <span className="text-gray-500 ml-1">/{plan.interval}</span>
+            <p className="text-xs text-gray-500 mt-1">Billed {plan.interval}ly · Cancel anytime</p>
           </div>
 
           <ul className="space-y-3 mb-8 flex-1">
@@ -150,6 +151,9 @@ export default function PricingCards({ prices }: PricingProps) {
           >
             {loading === plan.tier ? 'Redirecting...' : plan.cta}
           </button>
+          <p className="text-[11px] text-gray-600 text-center mt-3 leading-relaxed">
+            By subscribing you authorize BoxStreamTV to charge {plan.price}/{plan.interval} on a recurring basis until you cancel.
+          </p>
         </motion.div>
       ))}
 

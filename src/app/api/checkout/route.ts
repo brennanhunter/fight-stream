@@ -29,12 +29,23 @@ export async function POST(request: NextRequest) {
     const idempotencySource = `${user?.id || request.headers.get('x-forwarded-for') || 'anon'}:${priceId}:${Math.floor(Date.now() / 60000)}`;
     const idempotencyKey = crypto.createHash('sha256').update(idempotencySource).digest('hex');
 
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim();
+    const userAgent = request.headers.get('user-agent');
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       allow_promotion_codes: true,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'payment',
       metadata,
+      ...(user?.email ? { customer_email: user.email } : {}),
+      payment_intent_data: {
+        statement_descriptor: 'BOXSTREAMTV',
+        metadata: {
+          ...(ip ? { ip_address: ip } : {}),
+          ...(userAgent ? { user_agent: userAgent.slice(0, 500) } : {}),
+        },
+      },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/watch?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/vod`,
     }, { idempotencyKey });
