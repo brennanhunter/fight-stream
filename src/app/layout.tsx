@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   },
   description: "Watch live boxing matches, championship fights, and exclusive PPV events in HD. Stream professional, amateur, and youth boxing online with BoxStreamTV.",
   keywords: [
+    "BoxStreamTV",
+    "Box Stream TV",
+    "boxstreamtv.com",
     "live boxing stream",
     "watch boxing online",
     "boxing pay per view",
@@ -37,7 +40,6 @@ export const metadata: Metadata = {
     "boxing live broadcast",
     "PPV boxing events",
     "online boxing matches",
-    "BoxStreamTV",
   ],
   authors: [{ name: "BoxStreamTV", url: BASE_URL }],
   creator: "BoxStreamTV",
