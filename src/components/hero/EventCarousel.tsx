@@ -86,42 +86,75 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
       {/* Navigation — hide when stream is live */}
       {showNav && (
         <>
-          {/* Left arrow */}
-          <button
+          {/* Left arrow — desktop: absolute mid-left; mobile: hidden (handled in bottom bar) */}
+          <motion.button
             onClick={goToPrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-black/50 backdrop-blur-sm border border-white/20 p-3 text-white hover:bg-white/10 transition-colors"
+            className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-black/50 backdrop-blur-sm border border-white/20 p-3 text-white hover:bg-white/10 transition-colors"
             aria-label="Previous event"
+            animate={{ boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 20px rgba(255,255,255,0.6)', '0 0 4px rgba(255,255,255,0.1)', '0 0 20px rgba(255,255,255,0.6)', '0 0 0px rgba(255,255,255,0)'] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut', times: [0, 0.1, 0.2, 0.3, 1] }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-          </button>
+          </motion.button>
 
-          {/* Right arrow */}
-          <button
+          {/* Right arrow — desktop: absolute mid-right; mobile: hidden (handled in bottom bar) */}
+          <motion.button
             onClick={goToNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-black/50 backdrop-blur-sm border border-white/20 p-3 text-white hover:bg-white/10 transition-colors"
+            className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-black/50 backdrop-blur-sm border border-white/20 p-3 text-white hover:bg-white/10 transition-colors"
             aria-label="Next event"
+            animate={{ boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 20px rgba(255,255,255,0.6)', '0 0 4px rgba(255,255,255,0.1)', '0 0 20px rgba(255,255,255,0.6)', '0 0 0px rgba(255,255,255,0)'] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut', times: [0, 0.1, 0.2, 0.3, 1] }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-          </button>
+          </motion.button>
 
-          {/* Dot indicators */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-3">
-            {events.map((event, i) => (
-              <button
-                key={event.id}
-                onClick={() => setActiveIndex(i)}
-                aria-label={`Go to ${event.name}`}
-                className={`w-3 h-3 rounded-full border border-white/30 transition-all ${
-                  i === activeIndex
-                    ? 'bg-white scale-110'
-                    : 'bg-white/20 hover:bg-white/40'
-                }`}
-              />
-            ))}
+          {/* Bottom nav bar: prev + label + dots + next */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2">
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500">See Other Events</span>
+            <div className="flex items-center gap-3">
+              {/* Prev — mobile only */}
+              <motion.button
+                onClick={goToPrev}
+                className="md:hidden bg-black/50 backdrop-blur-sm border border-white/20 p-2 text-white hover:bg-white/10 transition-colors"
+                aria-label="Previous event"
+                animate={{ boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 18px rgba(255,255,255,0.5)', '0 0 0px rgba(255,255,255,0)'] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </motion.button>
+
+              {events.map((event, i) => (
+                <button
+                  key={event.id}
+                  onClick={() => setActiveIndex(i)}
+                  aria-label={`Go to ${event.name}`}
+                  className={`w-3 h-3 rounded-full border border-white/30 transition-all ${
+                    i === activeIndex
+                      ? 'bg-white scale-110'
+                      : 'bg-white/20 hover:bg-white/40'
+                  }`}
+                />
+              ))}
+
+              {/* Next — mobile only */}
+              <motion.button
+                onClick={goToNext}
+                className="md:hidden bg-black/50 backdrop-blur-sm border border-white/20 p-2 text-white hover:bg-white/10 transition-colors"
+                aria-label="Next event"
+                animate={{ boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 18px rgba(255,255,255,0.5)', '0 0 0px rgba(255,255,255,0)'] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </motion.button>
+            </div>
           </div>
         </>
       )}

@@ -570,8 +570,8 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
       <div className="ring-ropes absolute inset-0" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-24 md:py-32 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left: Event Info + Countdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 lg:items-start">
+          {/* Top: Logo, fight name, date, countdown */}
           <motion.div
             className="space-y-8"
             variants={stagger}
@@ -624,9 +624,21 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                 <span className="text-sm font-bold tracking-[0.2em] uppercase text-red-400">Live Now</span>
               </motion.div>
             )}
+          </motion.div>
 
-            {/* CTA area — changes based on access state */}
-            <motion.div variants={fadeUp} className="space-y-4 pt-2">
+          {/* Poster — mobile: after fight info; desktop: right col spanning both rows */}
+          <div className="lg:row-span-2 lg:row-start-1 lg:col-start-2">
+            <PosterCard
+              isStreamLive={isStreamLive}
+              posterImage={posterImage}
+              eventName={eventName}
+              accessState={accessState}
+              videoRef={videoRef}
+            />
+          </div>
+
+          {/* CTA — mobile: after poster; desktop: left col row 2 */}
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-4 pt-2 lg:col-start-1 lg:row-start-2">
               {accessState === 'has-access' ? (
                 /* Purchased — waiting for stream or replay available */
                 <div className="space-y-3">
@@ -699,23 +711,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                 </div>
               )}
 
-              <a
-                href="#past-events"
-                className="inline-block border border-white/30 text-white font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-all hover:border-white hover:bg-white/5"
-              >
-                Past Events
-              </a>
             </motion.div>
-          </motion.div>
-
-          {/* Right: Poster or live stream */}
-          <PosterCard
-            isStreamLive={isStreamLive}
-            posterImage={posterImage}
-            eventName={eventName}
-            accessState={accessState}
-            videoRef={videoRef}
-          />
         </div>
       </div>
 
