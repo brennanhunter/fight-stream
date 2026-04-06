@@ -103,7 +103,7 @@ export default function Hero() {
                   </span>
                 </Link>
                 <Link
-                  href="/about"
+                  href="/work-with-us"
                   className="border border-white/30 text-white font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-all hover:border-white hover:bg-white/5"
                 >
                   Learn More

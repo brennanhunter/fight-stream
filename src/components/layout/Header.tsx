@@ -37,7 +37,7 @@ export default function Header() {
     { name: 'Home', href: '/' },
     { name: 'VOD', href: '/vod' },
     { name: 'Fight Pass', href: '/pricing' },
-    { name: 'About', href: '/about' },
+    { name: 'Work With Us', href: '/work-with-us' },
     { name: 'Contact', href: '/contact' },
     { name: 'Help', href: '/faq' },
   ];

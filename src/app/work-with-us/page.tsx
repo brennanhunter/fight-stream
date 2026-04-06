@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { PageTransition, FadeInView } from '@/components/motion';
 
 export const metadata: Metadata = {
-  title: 'About Us | BoxStreamTV - Live Boxing Streaming',
+  title: 'Work With Us | BoxStreamTV - Live Boxing Streaming',
   description: 'BoxStreamTV partners with boxing promoters to stream live and PPV events. Learn about our revenue-sharing model for professional, amateur, and youth boxing events.',
   keywords: [
     'boxing event streaming service',
@@ -14,12 +14,12 @@ export const metadata: Metadata = {
     'live boxing broadcast',
   ],
   alternates: {
-    canonical: 'https://boxstreamtv.com/about',
+    canonical: 'https://boxstreamtv.com/work-with-us',
   },
   openGraph: {
-    title: 'About BoxStreamTV | Boxing Event Streaming & PPV Partnership',
+    title: 'Work With Us | BoxStreamTV - Boxing Event Streaming & PPV Partnership',
     description: 'BoxStreamTV partners with boxing promoters to stream live and PPV events. Revenue-sharing model for professional, amateur, and youth boxing.',
-    url: 'https://boxstreamtv.com/about',
+    url: 'https://boxstreamtv.com/work-with-us',
   },
 };
 
@@ -35,7 +35,7 @@ export default function SlidingScalePage() {
               Who We Are
             </p>
             <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-              About Us
+              Work With Us
             </h1>
             <div className="w-16 h-[2px] bg-white mt-6" />
           </div>

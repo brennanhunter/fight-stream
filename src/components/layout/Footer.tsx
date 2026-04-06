@@ -25,7 +25,7 @@ const nav = [
   {
     label: 'Company',
     links: [
-      { name: 'About', href: '/about' },
+      { name: 'Work With Us', href: '/work-with-us' },
       { name: 'Contact', href: '/contact' },
       { name: 'Help / FAQ', href: '/faq' },
     ],
