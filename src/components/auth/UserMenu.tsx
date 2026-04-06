@@ -41,7 +41,7 @@ export default function UserMenu({ user }: { user: User }) {
 
   const menuItems = [
     { name: 'Dashboard', href: '/account' },
-    { name: 'Subscription', href: '/account/subscription' },
+    { name: 'Fight Pass', href: '/account/subscription' },
     { name: 'Profile', href: '/account/profile' },
     { name: 'Purchases', href: '/account/purchases' },
     { name: 'Watchlist', href: '/account/watchlist' },
