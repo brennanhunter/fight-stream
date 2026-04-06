@@ -41,7 +41,7 @@ export default function Hero() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length);
-    }, 5000);
+    }, 2000);
     return () => clearInterval(interval);
   }, [carouselImages.length]);
 

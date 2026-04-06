@@ -28,10 +28,10 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
   const goToNext = useCallback(() => setActiveIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1)), [events.length]);
   const goToPrev = () => setActiveIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1));
 
-  // Auto-rotate every 20 seconds — pause when stream is live or user is interacting
+  // Auto-rotate every 5 seconds — pause when stream is live or user is interacting
   useEffect(() => {
     if (events.length <= 1 || streamLive || userInteracting) return;
-    const timer = setInterval(goToNext, 20000);
+    const timer = setInterval(goToNext, 5000);
     return () => clearInterval(timer);
   }, [activeIndex, events.length, goToNext, streamLive, userInteracting]);
 
