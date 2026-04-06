@@ -109,7 +109,7 @@ export default function SubscriptionPage() {
         <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-3">
           Account
         </p>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Subscription</h1>
+        <h1 className="text-3xl font-bold text-white tracking-tight">Fight Pass</h1>
         <div className="w-12 h-[2px] bg-white mt-4" />
       </div>
 
@@ -175,7 +175,7 @@ export default function SubscriptionPage() {
         </div>
       ) : (
         <div className="border border-white/10 p-8 max-w-lg text-center">
-          <h2 className="text-xl font-bold text-white mb-3">No Active Subscription</h2>
+          <h2 className="text-xl font-bold text-white mb-3">No Active Fight Pass</h2>
           <p className="text-gray-400 text-sm mb-6">
             Subscribe to Fight Pass for unlimited VOD access and exclusive perks.
           </p>

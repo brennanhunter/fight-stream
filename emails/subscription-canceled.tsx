@@ -31,7 +31,7 @@ export default function SubscriptionCanceled({
             <div style={accentStripe} />
             <Section style={cardBody}>
               <Text style={statusLabel}>Fight Pass {tierLabel}</Text>
-              <Text style={heading}>Subscription Canceled</Text>
+              <Text style={heading}>Fight Pass Canceled</Text>
               <Hr style={divider} />
 
               <Text style={bodyText}>

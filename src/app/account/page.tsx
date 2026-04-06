@@ -102,7 +102,7 @@ export default async function AccountPage() {
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-400 mb-3">No active subscription</p>
+              <p className="text-sm text-gray-400 mb-3">No active Fight Pass</p>
               <Link
                 href="/pricing"
                 className="inline-block text-[10px] font-bold tracking-[0.15em] uppercase text-white hover:text-gray-300 transition-colors"

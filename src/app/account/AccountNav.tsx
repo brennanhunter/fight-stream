@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase';
 
 const links = [
   { href: '/account', label: 'Overview' },
-  { href: '/account/subscription', label: 'Subscription' },
+  { href: '/account/subscription', label: 'Fight Pass' },
   { href: '/account/purchases', label: 'Purchases' },
   { href: '/account/watchlist', label: 'Watchlist' },
   { href: '/account/profile', label: 'Profile' },

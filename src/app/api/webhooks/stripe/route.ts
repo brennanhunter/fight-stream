@@ -286,7 +286,7 @@ export async function POST(request: Request) {
                 from: 'BoxStreamTV <noreply@boxstreamtv.com>',
                 replyTo: 'hunter@boxstreamtv.com',
                 to: customerEmail,
-                subject: 'Your Fight Pass subscription has been canceled',
+                subject: 'Your Fight Pass has been canceled',
                 html,
                 text,
               });
@@ -321,7 +321,7 @@ export async function POST(request: Request) {
               from: 'BoxStreamTV <noreply@boxstreamtv.com>',
               replyTo: 'hunter@boxstreamtv.com',
               to: customerEmail,
-              subject: 'Your Fight Pass subscription has been canceled',
+              subject: 'Your Fight Pass has been canceled',
               html,
               text,
             });
