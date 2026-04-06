@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
             console.warn('Save-session: No customer email for session', sessionId);
           } else {
             const userId = stripeSession.metadata?.user_id || null;
-            await supabase.from('purchases').insert({
+            await supabase.from('purchases').upsert({
               email: customerEmail,
               purchase_type: 'vod',
               stripe_session_id: sessionId,
@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
               expires_at: null,
               user_id: userId,
               session_claimed_at: new Date().toISOString(),
-            });
+              session_version: 1,
+            }, { onConflict: 'stripe_session_id' });
           }
         }
       }

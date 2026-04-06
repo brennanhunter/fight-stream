@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     // Check JWT session cookie first (fastest, no DB call)
     const session = await getSession();
-    if (session?.eventId === eventId) {
+    if (session?.eventId === eventId && session.expiresAt && new Date(session.expiresAt) > new Date()) {
       return NextResponse.json({ purchased: true });
     }
 

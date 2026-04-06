@@ -37,8 +37,8 @@ Last updated: April 5, 2026
 - [ ] **Rate limit IP spoofable via x-forwarded-for** — `src/lib/rate-limit.ts`
   `getClientIp()` trusts `x-forwarded-for` header which can be forged. Validate only if behind trusted proxy (Vercel/Cloudflare).
 
-- [ ] **save-session INSERT race with webhook** — `src/app/api/save-session/route.ts`
-  Uses INSERT (not UPSERT). Parallel insert with webhook causes one to fail and purchase is lost. Change to UPSERT with proper conflict handling.
+- [x] **save-session INSERT race with webhook** — `src/app/api/save-session/route.ts`
+  ~~Uses INSERT (not UPSERT). Parallel insert with webhook causes one to fail and purchase is lost.~~ Fixed: changed to upsert with `onConflict: 'stripe_session_id'`.
 
 - [ ] **No email format validation on admin grant** — `src/app/api/admin/grant/route.ts`
   Admin can insert any string as email. Add regex validation.
@@ -59,8 +59,8 @@ Last updated: April 5, 2026
 - [ ] **No CSRF tokens on admin actions** — admin grant/announce routes
   Only Origin header check, no CSRF token. Implement CSRF token validation.
 
-- [ ] **check-purchase doesn't filter expired purchases** — `src/app/api/check-purchase/route.ts`
-  Expired purchases return `purchased: true`, hiding the buy button. Add `expires_at` filter.
+- [x] **check-purchase doesn't filter expired purchases** — `src/app/api/check-purchase/route.ts`
+  ~~Expired purchases return `purchased: true`, hiding the buy button.~~ Fixed: added expiry check on JWT session path. DB queries already filtered correctly.
 
 - [ ] **No input size limits on contact form** — `src/app/api/contact/route.ts`
   No max length on message/name fields. Can send 1MB+ payloads. Add length validation.
