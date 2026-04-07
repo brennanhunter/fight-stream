@@ -13,6 +13,7 @@ export interface CarouselEvent {
   posterImage: string | null;
   priceCents: number;
   is_active: boolean;
+  is_streaming: boolean;
 }
 
 interface EventCarouselProps {
@@ -58,6 +59,7 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
             replayUrl={currentEvent.replay_url}
             subscriptionTier={subscriptionTier}
             isActive={currentEvent.is_active}
+            isStreaming={currentEvent.is_streaming}
             eventId={currentEvent.id}
             onInteraction={setUserInteracting}
           />

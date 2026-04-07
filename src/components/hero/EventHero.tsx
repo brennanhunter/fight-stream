@@ -31,6 +31,7 @@ interface EventHeroProps {
   replayUrl: string | null;
   subscriptionTier: 'basic' | 'premium' | null;
   isActive?: boolean;
+  isStreaming?: boolean;
   eventId?: string;
   onInteraction?: (interacting: boolean) => void;
 }
@@ -130,7 +131,7 @@ function getTimeRemaining(targetDate: string) {
   return { days, hours, minutes, seconds };
 }
 
-export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, eventId, onInteraction }: EventHeroProps) {
+export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, isStreaming: initialIsStreaming = false, eventId, onInteraction }: EventHeroProps) {
   const priceDisplay = `$${(priceCents / 100).toFixed(2)}`;
 
   // Calculate discounted price display
@@ -152,6 +153,21 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
     const timer = setInterval(() => setTimeLeft(getTimeRemaining(eventDate)), 1000);
     return () => clearInterval(timer);
   }, [eventDate]);
+
+  /* ── Stream live state — poll every 10s so button appears without a page refresh ── */
+  const [isStreaming, setIsStreaming] = useState(initialIsStreaming);
+
+  useEffect(() => {
+    if (!isActive) return;
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch('/api/stream-status');
+        const data = await res.json();
+        setIsStreaming(data.live);
+      } catch { /* ignore */ }
+    }, 10000);
+    return () => clearInterval(poll);
+  }, [isActive]);
 
   /* ── Purchase / access state ── */
   const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'has-access'>('checking');
@@ -317,11 +333,13 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                 <p className="text-gray-400 text-sm">
                   {!isActive
                     ? "You're all set! Your access will be ready when the event goes live."
-                    : eventStarted
-                      ? (replayUrl ? 'The event has ended. Watch the full replay.' : 'The event is live now.')
-                      : "You're all set. Watch Now will be active when the event starts."}
+                    : replayUrl
+                      ? 'The event has ended. Watch the full replay.'
+                      : isStreaming
+                        ? 'The event is live now.'
+                        : "You're all set. Watch Now will appear when the stream starts."}
                 </p>
-                {isActive && (
+                {isActive && isStreaming && (
                   <Link
                     href="/live"
                     className="group inline-flex items-center gap-2 bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"

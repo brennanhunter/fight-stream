@@ -52,6 +52,7 @@ export default function LivePlayer({
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
 
   /* ── IVS player state ── */
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const replayRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<IVSPlayerInstance | null>(null);
@@ -187,6 +188,39 @@ export default function LivePlayer({
       if (el && onTimeUpdate) el.removeEventListener('timeupdate', onTimeUpdate);
     };
   }, [accessState, playerLoaded, playbackUrl]);
+
+  /* ── Auto-fullscreen on landscape rotation (mobile) ── */
+  useEffect(() => {
+    if (accessState !== 'has-access') return;
+
+    const handleOrientationChange = () => {
+      setTimeout(() => {
+        const isLandscape = window.innerWidth > window.innerHeight;
+        if (isLandscape && !document.fullscreenElement) {
+          const container = containerRef.current;
+          if (container?.requestFullscreen) {
+            container.requestFullscreen().catch(() => {
+              // iOS Safari: can only fullscreen a video element directly
+              const vid = videoRef.current;
+              if (vid && (vid as unknown as { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen) {
+                (vid as unknown as { webkitEnterFullscreen: () => void }).webkitEnterFullscreen();
+              }
+            });
+          } else {
+            const vid = videoRef.current;
+            if (vid && (vid as unknown as { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen) {
+              (vid as unknown as { webkitEnterFullscreen: () => void }).webkitEnterFullscreen();
+            }
+          }
+        } else if (!isLandscape && document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }, 100); // let dimensions settle after rotation
+    };
+
+    window.addEventListener('orientationchange', handleOrientationChange);
+    return () => window.removeEventListener('orientationchange', handleOrientationChange);
+  }, [accessState]);
 
   /* ── Poll for stream when offline ── */
   // playerLoaded must be a dep so this re-runs after the player is ready.
@@ -408,6 +442,7 @@ export default function LivePlayer({
     <section className="relative bg-black text-white min-h-screen pt-16">
       <div className="w-full">
         <div
+          ref={containerRef}
           className="relative aspect-video bg-black max-h-[85vh]"
           onMouseEnter={() => setShowControls(true)}
           onMouseLeave={() => setShowControls(false)}

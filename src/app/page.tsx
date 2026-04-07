@@ -34,7 +34,7 @@ async function getAllEvents(): Promise<CarouselEvent[]> {
     // Fetch active events
     const { data: activeEvents, error: activeErr } = await supabase
       .from('events')
-      .select('id, name, date, stripe_price_id, replay_url, is_active')
+      .select('id, name, date, stripe_price_id, replay_url, is_active, is_streaming')
       .eq('is_active', true);
 
     if (activeErr) console.error('Supabase active events error:', activeErr);
@@ -97,6 +97,7 @@ async function getAllEvents(): Promise<CarouselEvent[]> {
         posterImage,
         priceCents,
         is_active: event.is_active,
+        is_streaming: (event as { is_streaming?: boolean }).is_streaming ?? false,
       };
     });
 

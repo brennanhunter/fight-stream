@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase';
 import AdminGrantForm from './AdminGrantForm';
 import AdminAnnounceForm from './AdminAnnounceForm';
 import AdminLogout from './AdminLogout';
+import AdminStreamToggle from './AdminStreamToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ export default async function AdminPage({
   // Active event
   const { data: activeEvent } = await supabase
     .from('events')
-    .select('id, name, date, expires_at, ivs_playback_url, ivs_channel_arn')
+    .select('id, name, date, expires_at, ivs_playback_url, ivs_channel_arn, is_streaming')
     .eq('is_active', true)
     .maybeSingle();
 
@@ -86,6 +87,12 @@ export default async function AdminPage({
                 <span className={`text-[10px] font-bold tracking-[0.15em] uppercase px-2 py-1 ${alreadyExpired ? 'bg-red-900/40 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
                   {alreadyExpired ? 'Expired' : 'Live'}
                 </span>
+              </div>
+              <div className="mb-4">
+                <AdminStreamToggle isStreaming={!!activeEvent.is_streaming} />
+                <p className="text-[10px] text-gray-600 mt-1">
+                  {activeEvent.is_streaming ? 'Watch Now button is visible to buyers.' : 'Watch Now button is hidden from buyers.'}
+                </p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                 <div>
