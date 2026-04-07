@@ -12,6 +12,8 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+
+  if (pathname.startsWith('/report/')) return null;
   const supabase = createBrowserClient();
 
   useEffect(() => {
