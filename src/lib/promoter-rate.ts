@@ -1,3 +1,20 @@
+export interface NextTierInfo {
+  nextThreshold: number;
+  nextRate: number;
+  currentFloor: number;
+}
+
+export function getNextTierInfo(count: number): NextTierInfo | null {
+  if (count < 100)   return { nextThreshold: 100,  nextRate: 0.20, currentFloor: 0    };
+  if (count <= 1000) return { nextThreshold: 1001, nextRate: 0.30, currentFloor: 100  };
+  if (count <= 2000) return { nextThreshold: 2001, nextRate: 0.40, currentFloor: 1001 };
+  if (count <= 3000) return { nextThreshold: 3001, nextRate: 0.50, currentFloor: 2001 };
+  if (count <= 4000) return { nextThreshold: 4001, nextRate: 0.60, currentFloor: 3001 };
+  if (count <= 5000) return { nextThreshold: 5001, nextRate: 0.70, currentFloor: 4001 };
+  if (count <= 6000) return { nextThreshold: 6001, nextRate: 0.80, currentFloor: 5001 };
+  return null; // already at max tier
+}
+
 export function getPromoterRate(paidCount: number): number {
   if (paidCount < 100) return 0;
   if (paidCount <= 1000) return 0.20;

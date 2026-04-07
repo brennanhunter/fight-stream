@@ -5,7 +5,7 @@ import { createServerClient } from '@/lib/supabase';
 import { verifyReportToken } from '@/lib/report-token';
 import { verifyReportSession, reportCookieName } from '@/lib/report-session';
 import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
-import { getPromoterRate, getTierLabel } from '@/lib/promoter-rate';
+import { getPromoterRate, getTierLabel, getNextTierInfo } from '@/lib/promoter-rate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReportCharts, { type DayData } from './ReportCharts';
 import ReportEmailGate from './ReportEmailGate';
@@ -61,6 +61,17 @@ export default async function PromoterReportPage({
   const tierLabel = getTierLabel(totalCount);
   const promoterCutCents = Math.round(grossRevenueCents * rate);
   const ourCutCents = grossRevenueCents - promoterCutCents;
+  const nextTier = getNextTierInfo(totalCount);
+  const avgPriceCents = totalCount > 0 ? Math.round(grossRevenueCents / totalCount) : 0;
+  const projectedRevenueCents = nextTier && avgPriceCents > 0
+    ? avgPriceCents * nextTier.nextThreshold
+    : 0;
+  const projectedCutCents = nextTier ? Math.round(projectedRevenueCents * nextTier.nextRate) : 0;
+  const projectedDeltaCents = projectedCutCents - promoterCutCents;
+  const tierProgressPct = nextTier
+    ? Math.min(100, Math.round(((totalCount - nextTier.currentFloor) / (nextTier.nextThreshold - nextTier.currentFloor)) * 100))
+    : 100;
+  const remaining = nextTier ? nextTier.nextThreshold - totalCount : 0;
 
   // Group by calendar day for charts
   const dayMap = new Map<string, DayData>();
@@ -158,6 +169,60 @@ export default async function PromoterReportPage({
             </div>
           </CardContent>
         </Card>
+
+        {/* Next tier progress */}
+        {nextTier ? (
+          <Card className="bg-zinc-900 border-white/20 text-white mb-4">
+            <CardContent className="px-5 py-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1">Next Tier</p>
+                  <p className="text-white font-semibold">
+                    {remaining.toLocaleString()} more {remaining === 1 ? 'sale' : 'sales'} to unlock{' '}
+                    <span className="text-white font-bold">{Math.round(nextTier.nextRate * 100)}%</span>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1">
+                    {totalCount.toLocaleString()} / {nextTier.nextThreshold.toLocaleString()}
+                  </p>
+                  <p className="text-2xl font-bold">{tierProgressPct}%</p>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-500"
+                  style={{ width: `${tierProgressPct}%` }}
+                />
+              </div>
+              {/* Projection */}
+              {projectedDeltaCents > 0 && (
+                <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+                  At {nextTier.nextThreshold.toLocaleString()} sales (avg {fmt(avgPriceCents)}/ticket), you&apos;d earn{' '}
+                  <span className="text-white font-semibold">{fmt(projectedCutCents)}</span> — that&apos;s{' '}
+                  <span className="text-white font-semibold">+{fmt(projectedDeltaCents)}</span> more than your current rate.
+                </p>
+              )}
+              {projectedDeltaCents === 0 && (
+                <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+                  Hit {nextTier.nextThreshold.toLocaleString()} sales and every dollar earned starts paying you{' '}
+                  <span className="text-white font-semibold">{Math.round(nextTier.nextRate * 100)}%</span> — automatically.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="bg-zinc-900 border-white/20 text-white mb-4">
+            <CardContent className="px-5 py-5 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1">Tier Status</p>
+                <p className="text-white font-semibold">You&apos;ve reached the top tier</p>
+              </div>
+              <p className="text-3xl font-bold">80%</p>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex items-center justify-between mb-8">
           <TierBreakdown currentCount={totalCount} />
