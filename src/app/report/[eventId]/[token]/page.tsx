@@ -77,10 +77,12 @@ export default async function PromoterReportPage({
   const dayMap = new Map<string, DayData>();
   for (const p of rows) {
     const d = new Date(p.created_at);
+    d.setHours(0, 0, 0, 0);
     const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const existing = dayMap.get(key) ?? { date: key, count: 0, revenue: 0 };
+    const existing = dayMap.get(key) ?? { date: key, ts: d.getTime(), count: 0, revenue: 0 };
     dayMap.set(key, {
       date: key,
+      ts: d.getTime(),
       count: existing.count + 1,
       revenue: existing.revenue + p.amount_paid,
     });
@@ -96,7 +98,7 @@ export default async function PromoterReportPage({
     const cursor = new Date(first);
     while (cursor <= last) {
       const key = cursor.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      days.push(dayMap.get(key) ?? { date: key, count: 0, revenue: 0 });
+      days.push(dayMap.get(key) ?? { date: key, ts: cursor.getTime(), count: 0, revenue: 0 });
       cursor.setDate(cursor.getDate() + 1);
     }
   }

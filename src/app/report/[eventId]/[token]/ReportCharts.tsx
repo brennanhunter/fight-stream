@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -18,9 +19,12 @@ import {
 
 export interface DayData {
   date: string;
+  ts: number; // start-of-day timestamp ms
   count: number;
   revenue: number; // cents
 }
+
+type Period = 'today' | 'week' | 'month' | 'all';
 
 const purchaseConfig: ChartConfig = {
   count: {
@@ -40,10 +44,31 @@ function fmt(cents: number) {
   return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+const PERIODS: { label: string; value: Period }[] = [
+  { label: 'Today', value: 'today' },
+  { label: 'This Week', value: 'week' },
+  { label: 'This Month', value: 'month' },
+  { label: 'All Time', value: 'all' },
+];
+
+function filterByPeriod(days: DayData[], period: Period): DayData[] {
+  if (period === 'all') return days;
+  const now = new Date();
+  const cutoff = new Date(now);
+  cutoff.setHours(0, 0, 0, 0);
+  if (period === 'week') cutoff.setDate(cutoff.getDate() - 6);
+  if (period === 'month') cutoff.setDate(cutoff.getDate() - 29);
+  return days.filter((d) => d.ts >= cutoff.getTime());
+}
+
 export default function ReportCharts({ days }: { days: DayData[] }) {
+  const [period, setPeriod] = useState<Period>('all');
+
+  const filtered = filterByPeriod(days, period);
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const chartDays = days.length > 0 ? days : [{ date: today, count: 0, revenue: 0 }];
-  const isEmpty = days.length === 0;
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const chartDays = filtered.length > 0 ? filtered : [{ date: today, ts: now.getTime(), count: 0, revenue: 0 }];
+  const isEmpty = filtered.length === 0;
 
   // Build cumulative data for area chart
   let running = 0;
@@ -59,8 +84,25 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
 
   return (
     <div className="space-y-10">
+      {/* Period toggle */}
+      <div className="flex gap-1">
+        {PERIODS.map((p) => (
+          <button
+            key={p.value}
+            onClick={() => setPeriod(p.value)}
+            className={`text-[10px] font-bold tracking-[0.15em] uppercase px-3 py-1.5 transition-all duration-150 ${
+              period === p.value
+                ? 'bg-white text-black'
+                : 'text-gray-500 hover:text-white border border-white/10 hover:border-white/30'
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
       {isEmpty && (
-        <p className="text-[11px] text-gray-600">No sales yet — charts will populate as purchases come in.</p>
+        <p className="text-[11px] text-gray-600">No sales in this period — charts will populate as purchases come in.</p>
       )}
 
       {/* Purchases per day */}
