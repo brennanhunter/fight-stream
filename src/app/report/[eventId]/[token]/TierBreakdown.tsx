@@ -47,7 +47,7 @@ export default function TierBreakdown({ currentCount }: { currentCount: number }
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-xs text-gray-500 mb-4">
+        <p className="text-xs text-gray-300 mb-4">
           Your rate is applied to total gross revenue based on paid purchase count.
           As you hit higher tiers, your percentage increases for all sales — not just the ones above the threshold.
         </p>
@@ -55,9 +55,9 @@ export default function TierBreakdown({ currentCount }: { currentCount: number }
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10">
-              <th className="text-left py-2 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500">Purchases</th>
-              <th className="text-center py-2 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500">Your Cut</th>
-              <th className="text-center py-2 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500">Platform</th>
+              <th className="text-left py-2 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300">Purchases</th>
+              <th className="text-center py-2 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300">Your Cut</th>
+              <th className="text-center py-2 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300">Platform</th>
             </tr>
           </thead>
           <tbody>
@@ -75,10 +75,10 @@ export default function TierBreakdown({ currentCount }: { currentCount: number }
                     {!active && <span className="w-1.5 h-1.5 flex-shrink-0" />}
                     {tier.range}
                   </td>
-                  <td className={`py-3 text-center font-bold ${active ? 'text-white' : 'text-gray-500'}`}>
+                  <td className={`py-3 text-center font-bold ${active ? 'text-white' : 'text-gray-300'}`}>
                     {tier.promoter}
                   </td>
-                  <td className={`py-3 text-center ${active ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <td className={`py-3 text-center ${active ? 'text-gray-400' : 'text-gray-400'}`}>
                     {tier.platform}
                   </td>
                 </tr>
@@ -87,7 +87,7 @@ export default function TierBreakdown({ currentCount }: { currentCount: number }
           </tbody>
         </table>
 
-        <p className="text-[10px] text-gray-600 mt-2">
+        <p className="text-[10px] text-gray-400 mt-2">
           Your current tier is highlighted. Tiers are based on total paid purchases for this event only.
         </p>
       </DialogContent>

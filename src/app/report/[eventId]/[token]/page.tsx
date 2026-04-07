@@ -124,16 +124,16 @@ export default async function PromoterReportPage({
             className="h-12 w-auto"
           />
           <div className="text-right">
-            <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500">Promoter Report</p>
-            <p className="text-[10px] text-gray-600 mt-0.5">Live data — updates in real time</p>
+            <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-300">Promoter Report</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">Live data — updates in real time</p>
           </div>
         </div>
 
         {/* Event name */}
         <div className="mb-10">
-          <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500 mb-2">Event</p>
+          <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-300 mb-2">Event</p>
           <h1 className="text-3xl font-bold tracking-tight">{event.name}</h1>
-          <p className="text-gray-500 text-sm mt-1">{eventDate}</p>
+          <p className="text-gray-300 text-sm mt-1">{eventDate}</p>
           <div className="w-12 h-[2px] bg-white mt-4" />
         </div>
 
@@ -147,7 +147,7 @@ export default async function PromoterReportPage({
           ].map((stat) => (
             <Card key={stat.label} className="bg-zinc-900 border-white/20 text-white">
               <CardHeader className="pb-1 pt-4 px-5">
-                <CardTitle className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400">
+                <CardTitle className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300">
                   {stat.label}
                 </CardTitle>
               </CardHeader>
@@ -162,11 +162,11 @@ export default async function PromoterReportPage({
         <Card className="bg-zinc-900 border-white/20 text-white mb-4">
           <CardContent className="px-5 py-4 flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Current Tier</p>
+              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300 mb-1">Current Tier</p>
               <p className="text-white font-semibold">{tierLabel}</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Your Rate</p>
+              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300 mb-1">Your Rate</p>
               <p className="text-3xl font-bold">{Math.round(rate * 100)}%</p>
             </div>
           </CardContent>
@@ -178,14 +178,14 @@ export default async function PromoterReportPage({
             <CardContent className="px-5 py-5">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1">Next Tier</p>
+                  <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300 mb-1">Next Tier</p>
                   <p className="text-white font-semibold">
                     {remaining.toLocaleString()} more {remaining === 1 ? 'sale' : 'sales'} to unlock{' '}
                     <span className="text-white font-bold">{Math.round(nextTier.nextRate * 100)}%</span>
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1">
+                  <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300 mb-1">
                     {totalCount.toLocaleString()} / {nextTier.nextThreshold.toLocaleString()}
                   </p>
                   <p className="text-2xl font-bold">{tierProgressPct}%</p>
@@ -200,14 +200,14 @@ export default async function PromoterReportPage({
               </div>
               {/* Projection */}
               {projectedDeltaCents > 0 && (
-                <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+                <p className="text-[11px] text-gray-300 mt-3 leading-relaxed">
                   At {nextTier.nextThreshold.toLocaleString()} sales (avg {fmt(avgPriceCents)}/ticket), you&apos;d earn{' '}
                   <span className="text-white font-semibold">{fmt(projectedCutCents)}</span> — that&apos;s{' '}
                   <span className="text-white font-semibold">+{fmt(projectedDeltaCents)}</span> more than your current rate.
                 </p>
               )}
               {projectedDeltaCents === 0 && (
-                <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+                <p className="text-[11px] text-gray-300 mt-3 leading-relaxed">
                   Hit {nextTier.nextThreshold.toLocaleString()} sales and every dollar earned starts paying you{' '}
                   <span className="text-white font-semibold">{Math.round(nextTier.nextRate * 100)}%</span> — automatically.
                 </p>
@@ -218,7 +218,7 @@ export default async function PromoterReportPage({
           <Card className="bg-zinc-900 border-white/20 text-white mb-4">
             <CardContent className="px-5 py-5 flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1">Tier Status</p>
+                <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300 mb-1">Tier Status</p>
                 <p className="text-white font-semibold">You&apos;ve reached the top tier</p>
               </div>
               <p className="text-3xl font-bold">80%</p>
@@ -228,7 +228,7 @@ export default async function PromoterReportPage({
 
         <div className="flex items-center justify-between mb-8">
           <TierBreakdown currentCount={totalCount} />
-          <p className="text-[10px] text-gray-600 max-w-xs text-right leading-relaxed">
+          <p className="text-[10px] text-gray-400 max-w-xs text-right leading-relaxed">
             Payouts are issued 14 days after the event. Final amounts may be adjusted for chargebacks or refunds processed during that window.
           </p>
         </div>
@@ -241,16 +241,16 @@ export default async function PromoterReportPage({
         </Card>
 
         {/* Notes */}
-        <p className="text-[11px] text-gray-600 leading-relaxed">
+        <p className="text-[11px] text-gray-400 leading-relaxed">
           This report reflects paid PPV purchases only. Complimentary accesses are excluded from all calculations.
           Stripe processing fees (~2.9% + $0.30 per transaction) are deducted from the platform share before payout.
-          Questions? Email <a href="mailto:hunter@boxstreamtv.com" className="underline hover:text-gray-400 transition-colors">hunter@boxstreamtv.com</a>.
+          Questions? Email <a href="mailto:hunter@boxstreamtv.com" className="underline hover:text-white transition-colors">hunter@boxstreamtv.com</a>.
         </p>
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-white/10 flex items-center justify-between">
-          <p className="text-[10px] text-gray-700">Powered by BoxStreamTV</p>
-          <p className="text-[10px] text-gray-700">boxstreamtv.com</p>
+          <p className="text-[10px] text-gray-500">Powered by BoxStreamTV</p>
+          <p className="text-[10px] text-gray-500">boxstreamtv.com</p>
         </div>
 
       </div>
