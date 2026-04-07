@@ -2,11 +2,15 @@ export function purchaseConfirmationEmail({
   eventName,
   expiresAt,
   amountPaid,
+  purchaseType = 'ppv',
 }: {
   eventName: string;
   expiresAt: string | null;
   amountPaid: number; // cents
+  purchaseType?: 'ppv' | 'vod';
 }) {
+  const isVod = purchaseType === 'vod';
+
   const expiryFormatted = expiresAt
     ? new Date(expiresAt).toLocaleDateString('en-US', {
         weekday: 'long',
@@ -20,6 +24,13 @@ export function purchaseConfirmationEmail({
     amountPaid > 0
       ? `$${(amountPaid / 100).toFixed(2)}`
       : 'Free (promo applied)';
+
+  const headline = isVod ? 'Your video is ready.' : 'You\'re in.';
+  const subtext = isVod
+    ? `<strong style="color:#ffffff;">${eventName}</strong> is available to watch now in your VOD library.`
+    : `Your purchase for <strong style="color:#ffffff;">${eventName}</strong> has been confirmed. Head to the home page when the fight starts — your access is ready.`;
+  const ctaLabel = isVod ? 'Watch Now' : 'Go to BoxStreamTV';
+  const ctaUrl = isVod ? 'https://boxstreamtv.com/vod' : 'https://boxstreamtv.com';
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -58,25 +69,24 @@ export function purchaseConfirmationEmail({
 
               <!-- Title -->
               <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#ffffff;text-align:center;letter-spacing:-0.02em;">
-                You're in.
+                ${headline}
               </h1>
               <div style="width:40px;height:2px;background-color:#ffffff;margin:0 auto 24px;"></div>
               <p style="margin:0 0 28px;font-size:15px;color:#9ca3af;text-align:center;line-height:1.6;">
-                Your purchase for <strong style="color:#ffffff;">${eventName}</strong> has been confirmed.
-                Head to the home page when the fight starts — your access is ready.
+                ${subtext}
               </p>
 
               <!-- Details table -->
               <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,255,255,0.1);margin-bottom:28px;">
                 <tr>
                   <td style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
-                    <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;">Event</p>
+                    <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;">${isVod ? 'Video' : 'Event'}</p>
                     <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#ffffff;">${eventName}</p>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
-                    <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;">Access Until</p>
+                    <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;">Access</p>
                     <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#ffffff;">${expiryFormatted}</p>
                   </td>
                 </tr>
@@ -92,8 +102,8 @@ export function purchaseConfirmationEmail({
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                 <tr>
                   <td align="center">
-                    <a href="https://boxstreamtv.com" style="display:inline-block;background-color:#ffffff;color:#000000;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;padding:14px 36px;">
-                      Watch Now
+                    <a href="${ctaUrl}" style="display:inline-block;background-color:#ffffff;color:#000000;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;padding:14px 36px;">
+                      ${ctaLabel}
                     </a>
                   </td>
                 </tr>
@@ -103,7 +113,7 @@ export function purchaseConfirmationEmail({
               <p style="margin:0;font-size:12px;color:#4b5563;text-align:center;line-height:1.6;">
                 Having trouble? Email us at
                 <a href="mailto:hunter@boxstreamtv.com" style="color:#9ca3af;text-decoration:underline;">hunter@boxstreamtv.com</a>
-                and we&rsquo;ll get you sorted.
+                and we&rsquo;ll make it right.
               </p>
 
             </td>
@@ -128,7 +138,21 @@ export function purchaseConfirmationEmail({
 </body>
 </html>`;
 
-  const text = `Purchase Confirmed – BoxStreamTV
+  const text = isVod
+    ? `Purchase Confirmed – BoxStreamTV
+
+Your video is ready. ${eventName} is available to watch now.
+
+Video: ${eventName}
+Access: ${expiryFormatted}
+Amount Paid: ${amountFormatted}
+
+Watch now at https://boxstreamtv.com/vod
+
+Having trouble? Email hunter@boxstreamtv.com and we'll make it right.
+
+BoxStreamTV | https://boxstreamtv.com`
+    : `Purchase Confirmed – BoxStreamTV
 
 You're in. Your purchase for ${eventName} has been confirmed.
 
@@ -138,7 +162,7 @@ Amount Paid: ${amountFormatted}
 
 Head to https://boxstreamtv.com when the fight starts — your access is ready.
 
-Having trouble? Email hunter@boxstreamtv.com and we'll get you sorted.
+Having trouble? Email hunter@boxstreamtv.com and we'll make it right.
 
 BoxStreamTV | https://boxstreamtv.com`;
 

@@ -112,6 +112,7 @@ export async function POST(request: Request) {
                     eventName: product.name,
                     expiresAt: null,
                     amountPaid: price?.unit_amount || 0,
+                    purchaseType: 'vod',
                   });
                   await resend.emails.send({
                     from: 'BoxStreamTV <noreply@boxstreamtv.com>',
