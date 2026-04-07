@@ -8,6 +8,7 @@ import AdminGrantForm from './AdminGrantForm';
 import AdminAnnounceForm from './AdminAnnounceForm';
 import AdminLogout from './AdminLogout';
 import AdminStreamToggle from './AdminStreamToggle';
+import AdminCopyButton from './AdminCopyButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -214,14 +215,17 @@ export default async function AdminPage({
                       <td className="px-4 py-3 text-white font-semibold">${(ev.promoterCut / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3 text-gray-300">${(ev.ourCut / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3">
-                        <a
-                          href={ev.reportUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
-                        >
-                          View / Share →
-                        </a>
+                        <div className="flex items-center gap-2">
+                          <AdminCopyButton url={ev.reportUrl} />
+                          <a
+                            href={ev.reportUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-600 hover:text-white transition-colors"
+                          >
+                            Open →
+                          </a>
+                        </div>
                       </td>
                     </tr>
                   ))}
