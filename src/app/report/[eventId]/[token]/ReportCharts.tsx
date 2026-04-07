@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ResponsiveBar } from '@nivo/bar';
 import { ResponsiveLine } from '@nivo/line';
 
@@ -52,6 +52,8 @@ const theme = {
 
 export default function ReportCharts({ days }: { days: DayData[] }) {
   const [period, setPeriod] = useState<Period>('all');
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const filtered = filterByPeriod(days, period);
   const today = new Date();
@@ -98,90 +100,103 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
         <p className="text-[11px] text-gray-500">No sales in this period — charts will populate as purchases come in.</p>
       )}
 
-      {/* Purchases per day */}
-      <div>
-        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Purchases Per Day</p>
-        <div className="h-52">
-          <ResponsiveBar
-            data={barData}
-            keys={['Purchases']}
-            indexBy="date"
-            theme={theme}
-            colors={['#ffffff']}
-            borderRadius={2}
-            padding={0.35}
-            margin={{ top: 4, right: 4, bottom: 36, left: 36 }}
-            axisBottom={{ tickSize: 0, tickPadding: 8 }}
-            axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => Number.isInteger(v) ? v : '' }}
-            gridYValues={4}
-            enableLabel={false}
-            isInteractive={true}
-            tooltip={({ value, indexValue }) => (
-              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
-                <strong>{indexValue}</strong>: {value} {value === 1 ? 'purchase' : 'purchases'}
-              </div>
-            )}
-          />
+      {!mounted ? (
+        <div className="space-y-10">
+          {['Purchases Per Day', 'Cumulative Purchases', 'Revenue Per Day'].map((label) => (
+            <div key={label}>
+              <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">{label}</p>
+              <div className="h-52 bg-white/[0.02] animate-pulse rounded" />
+            </div>
+          ))}
         </div>
-      </div>
+      ) : (
+        <div className="space-y-10">
+          {/* Purchases per day */}
+          <div>
+            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Purchases Per Day</p>
+            <div className="h-52">
+              <ResponsiveBar
+                data={barData}
+                keys={['Purchases']}
+                indexBy="date"
+                theme={theme}
+                colors={['#ffffff']}
+                borderRadius={2}
+                padding={0.35}
+                margin={{ top: 4, right: 4, bottom: 36, left: 36 }}
+                axisBottom={{ tickSize: 0, tickPadding: 8 }}
+                axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => Number.isInteger(v) ? v : '' }}
+                gridYValues={4}
+                enableLabel={false}
+                isInteractive={true}
+                tooltip={({ value, indexValue }) => (
+                  <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
+                    <strong>{indexValue}</strong>: {value} {value === 1 ? 'purchase' : 'purchases'}
+                  </div>
+                )}
+              />
+            </div>
+          </div>
 
-      {/* Cumulative purchases */}
-      <div>
-        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Cumulative Purchases</p>
-        <div className="h-52">
-          <ResponsiveLine
-            data={lineData}
-            theme={theme}
-            colors={['#ffffff']}
-            margin={{ top: 4, right: 4, bottom: 36, left: 36 }}
-            xScale={{ type: 'point' }}
-            yScale={{ type: 'linear', min: 0, max: 'auto', stacked: false }}
-            axisBottom={{ tickSize: 0, tickPadding: 8 }}
-            axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => Number.isInteger(v) ? v : '' }}
-            gridYValues={4}
-            enablePoints={chartDays.length === 1}
-            pointSize={6}
-            pointColor="#ffffff"
-            enableArea={true}
-            areaOpacity={0.08}
-            curve="monotoneX"
-            enableCrosshair={true}
-            useMesh={true}
-            tooltip={({ point }) => (
-              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
-                <strong>{point.data.xFormatted}</strong>: {point.data.y as number} total
-              </div>
-            )}
-          />
-        </div>
-      </div>
+          {/* Cumulative purchases */}
+          <div>
+            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Cumulative Purchases</p>
+            <div className="h-52">
+              <ResponsiveLine
+                data={lineData}
+                theme={theme}
+                colors={['#ffffff']}
+                margin={{ top: 4, right: 4, bottom: 36, left: 36 }}
+                xScale={{ type: 'point' }}
+                yScale={{ type: 'linear', min: 0, max: 'auto', stacked: false }}
+                axisBottom={{ tickSize: 0, tickPadding: 8 }}
+                axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => Number.isInteger(v) ? v : '' }}
+                gridYValues={4}
+                enablePoints={chartDays.length === 1}
+                pointSize={6}
+                pointColor="#ffffff"
+                enableArea={true}
+                areaOpacity={0.08}
+                curve="monotoneX"
+                enableCrosshair={true}
+                useMesh={true}
+                tooltip={({ point }) => (
+                  <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
+                    <strong>{point.data.xFormatted}</strong>: {point.data.y as number} total
+                  </div>
+                )}
+              />
+            </div>
+          </div>
 
-      {/* Revenue per day */}
-      <div>
-        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Revenue Per Day</p>
-        <div className="h-52">
-          <ResponsiveBar
-            data={revenueData}
-            keys={['Revenue']}
-            indexBy="date"
-            theme={theme}
-            colors={['#ffffff']}
-            borderRadius={2}
-            padding={0.35}
-            margin={{ top: 4, right: 4, bottom: 36, left: 52 }}
-            axisBottom={{ tickSize: 0, tickPadding: 8 }}
-            axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => `$${v}` }}
-            gridYValues={4}
-            enableLabel={false}
-            isInteractive={true}
-            tooltip={({ value, indexValue }) => (
-              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
-                <strong>{indexValue}</strong>: {fmt((value as number) * 100)}
-              </div>
-            )}
-          />
+          {/* Revenue per day */}
+          <div>
+            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Revenue Per Day</p>
+            <div className="h-52">
+              <ResponsiveBar
+                data={revenueData}
+                keys={['Revenue']}
+                indexBy="date"
+                theme={theme}
+                colors={['#ffffff']}
+                borderRadius={2}
+                padding={0.35}
+                margin={{ top: 4, right: 4, bottom: 36, left: 52 }}
+                axisBottom={{ tickSize: 0, tickPadding: 8 }}
+                axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => `$${v}` }}
+                gridYValues={4}
+                enableLabel={false}
+                isInteractive={true}
+                tooltip={({ value, indexValue }) => (
+                  <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
+                    <strong>{indexValue}</strong>: {fmt((value as number) * 100)}
+                  </div>
+                )}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

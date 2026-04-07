@@ -7,7 +7,8 @@ import { verifyReportSession, reportCookieName } from '@/lib/report-session';
 import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
 import { getPromoterRate, getTierLabel, getNextTierInfo } from '@/lib/promoter-rate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import ReportCharts, { type DayData } from './ReportCharts';
+import type { DayData } from './ReportCharts';
+import ReportCharts from './ReportCharts';
 import ReportEmailGate from './ReportEmailGate';
 import TierBreakdown from './TierBreakdown';
 
@@ -125,7 +126,7 @@ export default async function PromoterReportPage({
           />
           <div className="text-right">
             <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-300">Promoter Report</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Live data — updates in real time</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">Refreshes with each page load</p>
           </div>
         </div>
 
