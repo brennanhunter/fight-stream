@@ -63,6 +63,7 @@ export default async function PromoterReportPage({
   const promoterCutCents = Math.round(grossRevenueCents * rate);
   const ourCutCents = grossRevenueCents - promoterCutCents;
   const nextTier = getNextTierInfo(totalCount);
+  const remaining = nextTier ? nextTier.nextThreshold - totalCount : 0;
   const avgPriceCents = totalCount > 0 ? Math.round(grossRevenueCents / totalCount) : 0;
   const projectedRevenueCents = nextTier && avgPriceCents > 0
     ? avgPriceCents * nextTier.nextThreshold
@@ -72,7 +73,6 @@ export default async function PromoterReportPage({
   const tierProgressPct = nextTier
     ? Math.min(remaining > 0 ? 99 : 100, Math.round(((totalCount - nextTier.currentFloor) / (nextTier.nextThreshold - nextTier.currentFloor)) * 100))
     : 100;
-  const remaining = nextTier ? nextTier.nextThreshold - totalCount : 0;
 
   // Group by calendar day for charts
   const dayMap = new Map<string, DayData>();

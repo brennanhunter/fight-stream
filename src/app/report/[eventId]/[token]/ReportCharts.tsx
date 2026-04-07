@@ -58,7 +58,7 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
 
   const filtered = filterByPeriod(days, period);
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  today.setUTCHours(0, 0, 0, 0);
   const chartDays = filtered.length > 0
     ? filtered
     : [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), ts: today.getTime(), count: 0, revenue: 0 }];
@@ -184,7 +184,7 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
                 padding={0.35}
                 margin={{ top: 4, right: 4, bottom: chartDays.length > 10 ? 56 : 36, left: 52 }}
                 axisBottom={{ tickSize: 0, tickPadding: 8, tickRotation: chartDays.length > 10 ? -45 : 0 }}
-                axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => `$${v}` }}
+                axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` }}
                 gridYValues={4}
                 enableLabel={false}
                 isInteractive={true}
