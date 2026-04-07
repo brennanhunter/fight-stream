@@ -41,7 +41,7 @@ export default function Hero() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length);
-    }, 2000);
+    }, 5000);
     return () => clearInterval(interval);
   }, [carouselImages.length]);
 
@@ -75,15 +75,16 @@ export default function Hero() {
                 variants={fadeUp}
                 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-bold leading-[0.9] tracking-[-0.03em]"
               >
-                <motion.span className="block" variants={fadeUp}>EVERY</motion.span>
-                <motion.span className="block" variants={fadeUp}>FIGHT.</motion.span>
-                <motion.span
-                  className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-600"
-                  variants={fadeUp}
-                >
+                <span className="block">EVERY</span>
+                <span className="block">FIGHT.</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-gray-600">
                   LIVE.
-                </motion.span>
+                </span>
               </motion.h1>
+
+              <p className="sr-only">
+                BoxStreamTV — live boxing streaming and pay-per-view events. Watch professional, amateur, and youth boxing online in HD.
+              </p>
 
               <motion.div variants={widthGrow} className="w-16 h-[2px] bg-white" />
 
@@ -106,7 +107,7 @@ export default function Hero() {
                   href="/work-with-us"
                   className="border border-white/30 text-white font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-all hover:border-white hover:bg-white/5"
                 >
-                  Learn More
+                  For Promoters
                 </Link>
               </motion.div>
             </motion.div>

@@ -84,7 +84,7 @@ const faqs = [
     items: [
       {
         q: 'Can I get a refund on a PPV purchase?',
-        a: 'All PPV purchases are final and non-refundable per our Terms of Service. If you experienced a technical issue that prevented you from watching, contact us and we\'ll review it on a case-by-case basis.',
+        a: 'If a technical issue on our end prevented you from accessing the stream, we\'ll issue a full refund — just email us with your purchase email and a description of the problem. Refunds don\'t apply to issues caused by your internet connection, device, or browser.',
         link: { label: 'Terms of Service →', href: '/terms' },
       },
       {

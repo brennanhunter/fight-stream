@@ -356,6 +356,12 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
             ) : accessState === 'needs-purchase' ? (
               /* Not purchased — show buy button + recovery */
               <div className="space-y-4">
+                <div className="flex items-center gap-2 text-gray-400">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <span className="text-xs font-bold tracking-[0.15em] uppercase">Full refund if you can&apos;t access the stream</span>
+                </div>
                 <div className="flex flex-wrap gap-4">
                   {stripePriceId && (
                     <button
@@ -376,10 +382,10 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                 {checkoutError && (
                   <p className="text-sm text-red-400">{checkoutError}</p>
                 )}
-                <p className="text-[11px] text-gray-600 leading-relaxed max-w-sm">
-                  If this event is cancelled or you experience a technical issue preventing access, contact us at{' '}
-                  <a href="mailto:hunter@boxstreamtv.com" className="underline hover:text-gray-400 transition-colors">hunter@boxstreamtv.com</a>{' '}
-                  and we&apos;ll review your case.
+                <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
+                  Issues? Email{' '}
+                  <a href="mailto:hunter@boxstreamtv.com" className="underline hover:text-gray-300 transition-colors">hunter@boxstreamtv.com</a>{' '}
+                  and we&apos;ll make it right.
                 </p>
                 <Link
                   href="/recover-access"

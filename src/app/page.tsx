@@ -161,6 +161,18 @@ export default async function Home() {
         <Hero />
       )}
       <HomeContent />
+
+      {/* Static server-rendered text — readable by Google without JS */}
+      <section className="sr-only" aria-hidden="false">
+        <h2>Live Boxing Streaming on BoxStreamTV</h2>
+        <p>
+          BoxStreamTV is an independent live boxing streaming platform serving professional, amateur, and youth boxing events.
+          Watch live pay-per-view fights in HD or catch full-fight replays on demand — no cable required.
+          Stream from any device including iPhone, Android, tablet, laptop, or smart TV.
+          Past events include Night of Prospects, Rumble at the Ritz, and Apocalypto.
+        </p>
+      </section>
+
       <Footer />
     </>
   );

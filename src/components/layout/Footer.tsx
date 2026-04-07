@@ -1,8 +1,5 @@
-'use client';
-
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 
 const nav = [
   {
@@ -34,13 +31,7 @@ const nav = [
 
 export default function Footer() {
   return (
-    <motion.footer
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="bg-black border-t border-white/10"
-    >
+    <footer className="bg-black border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
 
         {/* Top: Logo + tagline + nav */}
@@ -137,6 +128,6 @@ export default function Footer() {
         </div>
 
       </div>
-    </motion.footer>
+    </footer>
   );
 }

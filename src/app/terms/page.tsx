@@ -53,9 +53,9 @@ export default function TermsPage() {
                 PPV event purchases grant you a limited, non-exclusive, non-transferable license to stream the specific event for personal, non-commercial use. All purchases are final.
               </p>
               <p className="mb-3">
-                <span className="text-white font-semibold">Refund Policy.</span> PPV purchases are generally non-refundable. If you experienced a technical issue that prevented you from watching an event, contact us at{' '}
+                <span className="text-white font-semibold">Refund Policy.</span> PPV purchases are non-refundable except where a technical issue on our end prevented you from accessing the stream. If you were unable to watch due to a platform or streaming failure, contact us at{' '}
                 <a href="mailto:hunter@boxstreamtv.com" className="text-white hover:underline">hunter@boxstreamtv.com</a>{' '}
-                and we will review your request on a case-by-case basis. Where a refund is not issued, we will make reasonable efforts to provide replay access.
+                and we will issue a full refund. Refunds are not issued for issues caused by your internet connection, device, or browser.
               </p>
               <p className="mb-3">
                 Prices are listed in US dollars and are subject to change without notice. Applicable taxes may be added at checkout.
