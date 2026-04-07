@@ -22,10 +22,11 @@ const PERIODS: { label: string; value: Period }[] = [
 
 function filterByPeriod(days: DayData[], period: Period): DayData[] {
   if (period === 'all') return days;
+  // Use UTC dates to match server-generated ts values (Vercel runs UTC)
   const cutoff = new Date();
-  cutoff.setHours(0, 0, 0, 0);
-  if (period === 'week')  cutoff.setDate(cutoff.getDate() - 6);
-  if (period === 'month') cutoff.setDate(cutoff.getDate() - 29);
+  cutoff.setUTCHours(0, 0, 0, 0);
+  if (period === 'week')  cutoff.setUTCDate(cutoff.getUTCDate() - 6);
+  if (period === 'month') cutoff.setUTCDate(cutoff.getUTCDate() - 29);
   return days.filter((d) => d.ts >= cutoff.getTime());
 }
 
@@ -123,8 +124,8 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
                 colors={['#ffffff']}
                 borderRadius={2}
                 padding={0.35}
-                margin={{ top: 4, right: 4, bottom: 36, left: 36 }}
-                axisBottom={{ tickSize: 0, tickPadding: 8 }}
+                margin={{ top: 4, right: 4, bottom: chartDays.length > 10 ? 56 : 36, left: 36 }}
+                axisBottom={{ tickSize: 0, tickPadding: 8, tickRotation: chartDays.length > 10 ? -45 : 0 }}
                 axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => Number.isInteger(v) ? v : '' }}
                 gridYValues={4}
                 enableLabel={false}
@@ -146,10 +147,10 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
                 data={lineData}
                 theme={theme}
                 colors={['#ffffff']}
-                margin={{ top: 4, right: 4, bottom: 36, left: 36 }}
+                margin={{ top: 4, right: 4, bottom: chartDays.length > 10 ? 56 : 36, left: 36 }}
                 xScale={{ type: 'point' }}
                 yScale={{ type: 'linear', min: 0, max: 'auto', stacked: false }}
-                axisBottom={{ tickSize: 0, tickPadding: 8 }}
+                axisBottom={{ tickSize: 0, tickPadding: 8, tickRotation: chartDays.length > 10 ? -45 : 0 }}
                 axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => Number.isInteger(v) ? v : '' }}
                 gridYValues={4}
                 enablePoints={chartDays.length === 1}
@@ -181,8 +182,8 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
                 colors={['#ffffff']}
                 borderRadius={2}
                 padding={0.35}
-                margin={{ top: 4, right: 4, bottom: 36, left: 52 }}
-                axisBottom={{ tickSize: 0, tickPadding: 8 }}
+                margin={{ top: 4, right: 4, bottom: chartDays.length > 10 ? 56 : 36, left: 52 }}
+                axisBottom={{ tickSize: 0, tickPadding: 8, tickRotation: chartDays.length > 10 ? -45 : 0 }}
                 axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => `$${v}` }}
                 gridYValues={4}
                 enableLabel={false}

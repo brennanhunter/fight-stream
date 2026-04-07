@@ -70,7 +70,7 @@ export default async function PromoterReportPage({
   const projectedCutCents = nextTier ? Math.round(projectedRevenueCents * nextTier.nextRate) : 0;
   const projectedDeltaCents = projectedCutCents - promoterCutCents;
   const tierProgressPct = nextTier
-    ? Math.min(100, Math.round(((totalCount - nextTier.currentFloor) / (nextTier.nextThreshold - nextTier.currentFloor)) * 100))
+    ? Math.min(remaining > 0 ? 99 : 100, Math.round(((totalCount - nextTier.currentFloor) / (nextTier.nextThreshold - nextTier.currentFloor)) * 100))
     : 100;
   const remaining = nextTier ? nextTier.nextThreshold - totalCount : 0;
 
