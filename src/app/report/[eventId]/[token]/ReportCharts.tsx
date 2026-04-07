@@ -41,24 +41,27 @@ function fmt(cents: number) {
 }
 
 export default function ReportCharts({ days }: { days: DayData[] }) {
-  if (days.length === 0) {
-    return <p className="text-gray-600 text-sm">No purchase data to display yet.</p>;
-  }
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const chartDays = days.length > 0 ? days : [{ date: today, count: 0, revenue: 0 }];
+  const isEmpty = days.length === 0;
 
   // Build cumulative data for area chart
   let running = 0;
-  const cumulativeData = days.map((d) => {
+  const cumulativeData = chartDays.map((d) => {
     running += d.count;
     return { ...d, cumulative: running };
   });
 
-  const revenueData = days.map((d) => ({
+  const revenueData = chartDays.map((d) => ({
     ...d,
     revenueDollars: d.revenue / 100,
   }));
 
   return (
     <div className="space-y-10">
+      {isEmpty && (
+        <p className="text-[11px] text-gray-600">No sales yet — charts will populate as purchases come in.</p>
+      )}
 
       {/* Purchases per day */}
       <div>
@@ -66,7 +69,7 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
           Purchases Per Day
         </p>
         <ChartContainer config={purchaseConfig} className="h-52 w-full">
-          <BarChart data={days} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <BarChart data={chartDays} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
             <XAxis
               dataKey="date"

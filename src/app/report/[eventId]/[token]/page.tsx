@@ -231,12 +231,6 @@ export default async function PromoterReportPage({
           </p>
         </div>
 
-        {totalCount === 0 && (
-          <p className="text-[11px] text-gray-600 mb-6">
-            No purchases recorded yet — this report updates in real time as sales come in.
-          </p>
-        )}
-
         {/* Charts */}
         <Card className="bg-zinc-900 border-white/20 text-white mb-8">
           <CardContent className="px-5 py-6">
