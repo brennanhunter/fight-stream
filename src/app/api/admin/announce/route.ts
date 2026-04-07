@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
 
   for (let i = 0; i < recipients.length; i += 100) {
     const batch = recipients.slice(i, i + 100).map((to) => ({
-      from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+      from: 'BoxStreamTV <hunter@boxstreamtv.com>',
       replyTo: 'hunter@boxstreamtv.com',
       to,
       subject,

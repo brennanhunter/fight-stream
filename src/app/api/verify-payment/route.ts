@@ -208,7 +208,7 @@ export async function POST(req: NextRequest) {
           amountPaid: checkoutSession.amount_total || 0,
         });
         await resend.emails.send({
-          from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+          from: 'BoxStreamTV <hunter@boxstreamtv.com>',
           replyTo: 'hunter@boxstreamtv.com',
           to: customerEmail,
           subject: `You're in — ${eventName}`,

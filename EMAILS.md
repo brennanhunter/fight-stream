@@ -42,7 +42,7 @@
 
 ## Notes
 
-- All emails send from `noreply@boxstreamtv.com` with `reply-to: hunter@boxstreamtv.com`
+- All emails send from `hunter@boxstreamtv.com` with `reply-to: hunter@boxstreamtv.com`
 - Email templates live in `src/lib/emails/`
 - Resend is the sending provider — API key in `.env.local` as `RESEND_API_KEY`
 - #1 and #2 are controlled in the Supabase dashboard under **Authentication → Email Templates**

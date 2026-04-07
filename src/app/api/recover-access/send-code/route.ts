@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     const { html, text } = recoveryCodeEmail({ eventName: targetEvent.name, code });
 
     await resend.emails.send({
-      from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+      from: 'BoxStreamTV <hunter@boxstreamtv.com>',
       replyTo: 'hunter@boxstreamtv.com',
       to: trimmedEmail,
       subject: 'Your BoxStreamTV access code',

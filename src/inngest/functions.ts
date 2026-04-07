@@ -56,7 +56,7 @@ export const eventReminderFunction = inngest.createFunction(
         await Promise.all(
           batch.map((email) =>
             resend.emails.send({
-              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              from: 'BoxStreamTV <hunter@boxstreamtv.com>',
               replyTo: 'hunter@boxstreamtv.com',
               to: email,
               subject: `${event.name} is tomorrow — don't miss it`,
@@ -125,7 +125,7 @@ export const eventStartingFunction = inngest.createFunction(
         await Promise.all(
           batch.map((email) =>
             resend.emails.send({
-              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              from: 'BoxStreamTV <hunter@boxstreamtv.com>',
               replyTo: 'hunter@boxstreamtv.com',
               to: email,
               subject: `${event.name} is live now — watch now`,

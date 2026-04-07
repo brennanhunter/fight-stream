@@ -115,7 +115,7 @@ export async function POST(request: Request) {
                     purchaseType: 'vod',
                   });
                   await resend.emails.send({
-                    from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+                    from: 'BoxStreamTV <hunter@boxstreamtv.com>',
                     replyTo: 'hunter@boxstreamtv.com',
                     to: customerEmail,
                     subject: `Your purchase is confirmed — ${product.name}`,
@@ -225,7 +225,7 @@ export async function POST(request: Request) {
               currentPeriodEnd: periods.current_period_end,
             });
             await resend.emails.send({
-              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              from: 'BoxStreamTV <hunter@boxstreamtv.com>',
               replyTo: 'hunter@boxstreamtv.com',
               to: customerEmail,
               subject: `Welcome to Fight Pass ${tier === 'premium' ? 'Premium' : 'Basic'} — BoxStreamTV`,
@@ -302,7 +302,7 @@ export async function POST(request: Request) {
                 accessUntil,
               });
               await resend.emails.send({
-                from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+                from: 'BoxStreamTV <hunter@boxstreamtv.com>',
                 replyTo: 'hunter@boxstreamtv.com',
                 to: customerEmail,
                 subject: 'Your Fight Pass has been canceled',
@@ -337,7 +337,7 @@ export async function POST(request: Request) {
               accessUntil: periods.current_period_end,
             });
             await resend.emails.send({
-              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              from: 'BoxStreamTV <hunter@boxstreamtv.com>',
               replyTo: 'hunter@boxstreamtv.com',
               to: customerEmail,
               subject: 'Your Fight Pass has been canceled',
@@ -388,7 +388,7 @@ export async function POST(request: Request) {
               nextRenewal: sub?.current_period_end ?? null,
             });
             await resend.emails.send({
-              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              from: 'BoxStreamTV <hunter@boxstreamtv.com>',
               replyTo: 'hunter@boxstreamtv.com',
               to: customerEmail,
               subject: `Fight Pass ${tier === 'premium' ? 'Premium' : 'Basic'} renewed — BoxStreamTV`,
@@ -436,7 +436,7 @@ export async function POST(request: Request) {
 
               const { html, text } = paymentFailedEmail({ tier, nextRetryDate: nextRetry });
               await resend.emails.send({
-                from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+                from: 'BoxStreamTV <hunter@boxstreamtv.com>',
                 replyTo: 'hunter@boxstreamtv.com',
                 to: customerEmail,
                 subject: 'Action required — payment failed for your Fight Pass',

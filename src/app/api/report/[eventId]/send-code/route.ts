@@ -72,7 +72,7 @@ export async function POST(
 </html>`;
 
   await resend.emails.send({
-    from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+    from: 'BoxStreamTV <hunter@boxstreamtv.com>',
     replyTo: 'hunter@boxstreamtv.com',
     to: trimmed,
     subject: `Your promoter report code — ${event.name}`,

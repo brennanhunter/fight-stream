@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
           if (user?.email) {
             const { html, text } = welcomeEmail();
             await resend.emails.send({
-              from: 'BoxStreamTV <noreply@boxstreamtv.com>',
+              from: 'BoxStreamTV <hunter@boxstreamtv.com>',
               replyTo: 'hunter@boxstreamtv.com',
               to: user.email,
               subject: 'Welcome to BoxStreamTV — your ringside seat awaits',
