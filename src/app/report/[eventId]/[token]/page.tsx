@@ -132,9 +132,9 @@ export default async function PromoterReportPage({
             { label: `Your Cut`, value: fmt(promoterCutCents) },
             { label: 'Platform Cut', value: fmt(ourCutCents) },
           ].map((stat) => (
-            <Card key={stat.label} className="bg-white/[0.03] border-white/10 text-white">
+            <Card key={stat.label} className="bg-zinc-900 border-white/20 text-white">
               <CardHeader className="pb-1 pt-4 px-5">
-                <CardTitle className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500">
+                <CardTitle className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400">
                   {stat.label}
                 </CardTitle>
               </CardHeader>
@@ -146,7 +146,7 @@ export default async function PromoterReportPage({
         </div>
 
         {/* Tier */}
-        <Card className="bg-white/[0.03] border-white/10 text-white mb-4">
+        <Card className="bg-zinc-900 border-white/20 text-white mb-4">
           <CardContent className="px-5 py-4 flex items-center justify-between">
             <div>
               <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Current Tier</p>
@@ -173,7 +173,7 @@ export default async function PromoterReportPage({
         )}
 
         {/* Charts */}
-        <Card className="bg-white/[0.03] border-white/10 text-white mb-8">
+        <Card className="bg-zinc-900 border-white/20 text-white mb-8">
           <CardContent className="px-5 py-6">
             <ReportCharts days={days} />
           </CardContent>
