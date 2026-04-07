@@ -34,10 +34,11 @@ export default function TierBreakdown({ currentCount }: { currentCount: number }
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <button className="text-[10px] font-bold tracking-[0.15em] uppercase text-gray-400 hover:text-white underline underline-offset-2 transition-colors">
-          View all tiers →
-        </button>
+      <DialogTrigger
+        render={<button />}
+        className="text-[10px] font-bold tracking-[0.15em] uppercase text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
+      >
+        View all tiers →
       </DialogTrigger>
       <DialogContent className="bg-black border border-white/10 text-white max-w-md">
         <DialogHeader>

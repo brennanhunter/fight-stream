@@ -13,7 +13,6 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
 
-  if (pathname.startsWith('/report/')) return null;
   const supabase = createBrowserClient();
 
   useEffect(() => {
@@ -44,6 +43,8 @@ export default function Header() {
   ];
 
   const isActive = (href: string) => pathname === href;
+
+  if (pathname.startsWith('/report/')) return null;
 
   return (
     <header
