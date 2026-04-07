@@ -6,6 +6,7 @@ import { verifyReportToken } from '@/lib/report-token';
 import { verifyReportSession, reportCookieName } from '@/lib/report-session';
 import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
 import { getPromoterRate, getTierLabel } from '@/lib/promoter-rate';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReportCharts, { type DayData } from './ReportCharts';
 import ReportEmailGate from './ReportEmailGate';
 
@@ -123,36 +124,46 @@ export default async function PromoterReportPage({
         </div>
 
         {/* Key stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           {[
             { label: 'Paid Purchases', value: totalCount.toLocaleString() },
             { label: 'Gross Revenue', value: fmt(grossRevenueCents) },
-            { label: `Your Cut (${Math.round(rate * 100)}%)`, value: fmt(promoterCutCents) },
+            { label: `Your Cut`, value: fmt(promoterCutCents) },
             { label: 'Platform Cut', value: fmt(ourCutCents) },
           ].map((stat) => (
-            <div key={stat.label} className="border border-white/10 p-5">
-              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-2">{stat.label}</p>
-              <p className="text-2xl font-bold">{stat.value}</p>
-            </div>
+            <Card key={stat.label} className="bg-white/[0.03] border-white/10 text-white">
+              <CardHeader className="pb-1 pt-4 px-5">
+                <CardTitle className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500">
+                  {stat.label}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-4">
+                <p className="text-2xl font-bold">{stat.value}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
         {/* Tier */}
-        <div className="border border-white/10 p-5 mb-10 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Current Tier</p>
-            <p className="text-white font-semibold">{tierLabel}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Your Rate</p>
-            <p className="text-2xl font-bold">{Math.round(rate * 100)}%</p>
-          </div>
-        </div>
+        <Card className="bg-white/[0.03] border-white/10 text-white mb-8">
+          <CardContent className="px-5 py-4 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Current Tier</p>
+              <p className="text-white font-semibold">{tierLabel}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Your Rate</p>
+              <p className="text-3xl font-bold">{Math.round(rate * 100)}%</p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Charts */}
-        <div className="border border-white/10 p-6 mb-10">
-          <ReportCharts days={days} />
-        </div>
+        <Card className="bg-white/[0.03] border-white/10 text-white mb-8">
+          <CardContent className="px-5 py-6">
+            <ReportCharts days={days} />
+          </CardContent>
+        </Card>
 
         {/* Notes */}
         <p className="text-[11px] text-gray-600 leading-relaxed">

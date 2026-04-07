@@ -1,91 +1,171 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 
 export interface DayData {
-  date: string;   // e.g. "Apr 5"
+  date: string;
   count: number;
   revenue: number; // cents
 }
 
-function BarChart({
-  days,
-  valueKey,
-  formatValue,
-  animated,
-}: {
-  days: DayData[];
-  valueKey: 'count' | 'revenue';
-  formatValue: (v: number) => string;
-  animated: boolean;
-}) {
-  const values = days.map((d) => d[valueKey]);
-  const max = Math.max(...values, 1);
+const purchaseConfig: ChartConfig = {
+  count: {
+    label: 'Purchases',
+    color: '#ffffff',
+  },
+};
 
-  return (
-    <div className="flex items-end gap-1 h-36">
-      {days.map((day) => {
-        const val = day[valueKey];
-        const pct = (val / max) * 100;
-        return (
-          <div key={day.date} className="flex-1 flex flex-col items-center gap-1 min-w-0 group relative">
-            {/* Tooltip */}
-            {val > 0 && (
-              <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
-                <div className="bg-white text-black text-[10px] font-bold px-2 py-1 whitespace-nowrap">
-                  {formatValue(val)}
-                </div>
-                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white" />
-              </div>
-            )}
-            <div
-              className="w-full bg-white transition-all duration-700 ease-out"
-              style={{
-                height: animated ? `${pct}%` : '0%',
-                minHeight: val > 0 && animated ? '2px' : '0',
-              }}
-            />
-            <span className="text-[8px] text-gray-600 truncate w-full text-center">{day.date}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
+const revenueConfig: ChartConfig = {
+  revenue: {
+    label: 'Revenue',
+    color: '#ffffff',
+  },
+};
+
+function fmt(cents: number) {
+  return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export default function ReportCharts({ days }: { days: DayData[] }) {
-  const [animated, setAnimated] = useState(false);
-  useEffect(() => { setTimeout(() => setAnimated(true), 100); }, []);
-
   if (days.length === 0) {
-    return <p className="text-gray-600 text-sm">No purchase data to display.</p>;
+    return <p className="text-gray-600 text-sm">No purchase data to display yet.</p>;
   }
 
+  // Build cumulative data for area chart
+  let running = 0;
+  const cumulativeData = days.map((d) => {
+    running += d.count;
+    return { ...d, cumulative: running };
+  });
+
+  const revenueData = days.map((d) => ({
+    ...d,
+    revenueDollars: d.revenue / 100,
+  }));
+
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
+
+      {/* Purchases per day */}
       <div>
         <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-500 mb-4">
           Purchases Per Day
         </p>
-        <BarChart
-          days={days}
-          valueKey="count"
-          formatValue={(v) => `${v} purchase${v !== 1 ? 's' : ''}`}
-          animated={animated}
-        />
+        <ChartContainer config={purchaseConfig} className="h-52 w-full">
+          <BarChart data={days} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+            <XAxis
+              dataKey="date"
+              tick={{ fill: '#6b7280', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={{ fill: '#6b7280', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              allowDecimals={false}
+            />
+            <ChartTooltip
+              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+              content={<ChartTooltipContent />}
+            />
+            <Bar dataKey="count" fill="#ffffff" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        </ChartContainer>
       </div>
 
+      {/* Cumulative purchases */}
+      <div>
+        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-500 mb-4">
+          Cumulative Purchases
+        </p>
+        <ChartContainer config={purchaseConfig} className="h-52 w-full">
+          <AreaChart data={cumulativeData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="cumulativeGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ffffff" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="#ffffff" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+            <XAxis
+              dataKey="date"
+              tick={{ fill: '#6b7280', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={{ fill: '#6b7280', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              allowDecimals={false}
+            />
+            <ChartTooltip
+              cursor={{ stroke: 'rgba(255,255,255,0.1)' }}
+              content={<ChartTooltipContent indicator="line" />}
+            />
+            <Area
+              dataKey="cumulative"
+              stroke="#ffffff"
+              strokeWidth={2}
+              fill="url(#cumulativeGradient)"
+              dot={false}
+            />
+          </AreaChart>
+        </ChartContainer>
+      </div>
+
+      {/* Revenue per day */}
       <div>
         <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-500 mb-4">
           Revenue Per Day
         </p>
-        <BarChart
-          days={days}
-          valueKey="revenue"
-          formatValue={(v) => `$${(v / 100).toFixed(2)}`}
-          animated={animated}
-        />
+        <ChartContainer config={revenueConfig} className="h-52 w-full">
+          <BarChart data={revenueData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+            <XAxis
+              dataKey="date"
+              tick={{ fill: '#6b7280', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={{ fill: '#6b7280', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `$${v}`}
+            />
+            <ChartTooltip
+              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+              content={
+                <ChartTooltipContent
+                  formatter={(value) => [fmt((value as number) * 100), 'Revenue']}
+                />
+              }
+            />
+            <Bar dataKey="revenueDollars" fill="#ffffff" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        </ChartContainer>
       </div>
+
     </div>
   );
 }
