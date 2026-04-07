@@ -170,34 +170,6 @@ export default function HomeContent() {
         </div>
       </section>
 
-      {/* ════════════════════ STATS ════════════════════ */}
-      <section className="bg-black text-white py-16 border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
-          >
-            {[
-              { number: 'Wireless', label: 'Multi-Camera Coverage' },
-              { number: 'Simple', label: 'Watch Directly on Platform' },
-              { number: 'HD', label: 'Stream Quality' },
-              { number: '24/7', label: 'VOD Access' },
-            ].map((stat, i) => (
-              <motion.div key={i} variants={fadeUp}>
-                <div className="text-4xl md:text-5xl font-bold tracking-tight">
-                  {stat.number}
-                </div>
-                <div className="text-xs font-bold tracking-[0.2em] uppercase text-gray-500 mt-2">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
     </>
   );
 }
