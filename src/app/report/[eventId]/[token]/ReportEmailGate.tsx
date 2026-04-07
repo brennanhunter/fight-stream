@@ -30,11 +30,15 @@ export default function ReportEmailGate({
     setError('');
     setLoading(true);
     try {
-      await fetch(`/api/report/${eventId}/send-code`, {
+      const res = await fetch(`/api/report/${eventId}/send-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
+      if (res.status === 429) {
+        setError('Too many attempts. Please wait a minute and try again.');
+        return;
+      }
       setStep('code');
       startCooldown();
     } catch {
@@ -97,17 +101,28 @@ export default function ReportEmailGate({
     setCode(['', '', '', '', '', '']);
     setLoading(true);
     try {
-      await fetch(`/api/report/${eventId}/send-code`, {
+      const res = await fetch(`/api/report/${eventId}/send-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
+      if (res.status === 429) {
+        setError('Too many attempts. Please wait a minute and try again.');
+        return;
+      }
       startCooldown();
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleChangeEmail() {
+    setStep('email');
+    setCode(['', '', '', '', '', '']);
+    setError('');
+    setCooldown(0);
   }
 
   return (
@@ -186,12 +201,19 @@ export default function ReportEmailGate({
               {loading ? 'Verifying…' : 'View Report'}
             </button>
 
-            <div className="text-center">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={handleChangeEmail}
+                className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 hover:text-white transition-colors"
+              >
+                ← Change email
+              </button>
               <button
                 type="button"
                 onClick={handleResend}
                 disabled={cooldown > 0 || loading}
-                className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
               </button>
