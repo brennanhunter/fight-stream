@@ -1,21 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Bar,
-  BarChart,
-  Area,
-  AreaChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from 'recharts';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from '@/components/ui/chart';
+import { ResponsiveBar } from '@nivo/bar';
+import { ResponsiveLine } from '@nivo/line';
 
 export interface DayData {
   date: string;
@@ -26,61 +13,67 @@ export interface DayData {
 
 type Period = 'today' | 'week' | 'month' | 'all';
 
-const purchaseConfig: ChartConfig = {
-  count: {
-    label: 'Purchases',
-    color: '#ffffff',
-  },
-};
+const PERIODS: { label: string; value: Period }[] = [
+  { label: 'Today',      value: 'today' },
+  { label: 'This Week',  value: 'week'  },
+  { label: 'This Month', value: 'month' },
+  { label: 'All Time',   value: 'all'   },
+];
 
-const revenueConfig: ChartConfig = {
-  revenue: {
-    label: 'Revenue',
-    color: '#ffffff',
-  },
-};
+function filterByPeriod(days: DayData[], period: Period): DayData[] {
+  if (period === 'all') return days;
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  if (period === 'week')  cutoff.setDate(cutoff.getDate() - 6);
+  if (period === 'month') cutoff.setDate(cutoff.getDate() - 29);
+  return days.filter((d) => d.ts >= cutoff.getTime());
+}
 
 function fmt(cents: number) {
   return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-const PERIODS: { label: string; value: Period }[] = [
-  { label: 'Today', value: 'today' },
-  { label: 'This Week', value: 'week' },
-  { label: 'This Month', value: 'month' },
-  { label: 'All Time', value: 'all' },
-];
-
-function filterByPeriod(days: DayData[], period: Period): DayData[] {
-  if (period === 'all') return days;
-  const now = new Date();
-  const cutoff = new Date(now);
-  cutoff.setHours(0, 0, 0, 0);
-  if (period === 'week') cutoff.setDate(cutoff.getDate() - 6);
-  if (period === 'month') cutoff.setDate(cutoff.getDate() - 29);
-  return days.filter((d) => d.ts >= cutoff.getTime());
-}
+const theme = {
+  axis: {
+    ticks: { text: { fill: '#6b7280', fontSize: 11 } },
+    legend: { text: { fill: '#6b7280' } },
+  },
+  grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
+  tooltip: {
+    container: {
+      background: '#111',
+      border: '1px solid rgba(255,255,255,0.12)',
+      color: '#fff',
+      fontSize: 12,
+      borderRadius: 4,
+    },
+  },
+};
 
 export default function ReportCharts({ days }: { days: DayData[] }) {
   const [period, setPeriod] = useState<Period>('all');
 
   const filtered = filterByPeriod(days, period);
-  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const now = new Date(); now.setHours(0, 0, 0, 0);
-  const chartDays = filtered.length > 0 ? filtered : [{ date: today, ts: now.getTime(), count: 0, revenue: 0 }];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const chartDays = filtered.length > 0
+    ? filtered
+    : [{ date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), ts: today.getTime(), count: 0, revenue: 0 }];
   const isEmpty = filtered.length === 0;
 
-  // Build cumulative data for area chart
-  let running = 0;
-  const cumulativeData = chartDays.map((d) => {
-    running += d.count;
-    return { ...d, cumulative: running };
-  });
+  // Bar chart data
+  const barData = chartDays.map((d) => ({ date: d.date, Purchases: d.count }));
+  const revenueData = chartDays.map((d) => ({ date: d.date, Revenue: d.revenue / 100 }));
 
-  const revenueData = chartDays.map((d) => ({
-    ...d,
-    revenueDollars: d.revenue / 100,
-  }));
+  // Cumulative line data
+  let running = 0;
+  const lineData = [{
+    id: 'Cumulative',
+    data: chartDays.map((d) => {
+      running += d.count;
+      return { x: d.date, y: running };
+    }),
+  }];
 
   return (
     <div className="space-y-10">
@@ -102,115 +95,93 @@ export default function ReportCharts({ days }: { days: DayData[] }) {
       </div>
 
       {isEmpty && (
-        <p className="text-[11px] text-gray-600">No sales in this period — charts will populate as purchases come in.</p>
+        <p className="text-[11px] text-gray-500">No sales in this period — charts will populate as purchases come in.</p>
       )}
 
       {/* Purchases per day */}
       <div>
-        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-500 mb-4">
-          Purchases Per Day
-        </p>
-        <ChartContainer config={purchaseConfig} className="h-52 w-full">
-          <BarChart data={chartDays} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
-            <XAxis
-              dataKey="date"
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              interval="preserveStartEnd"
-            />
-            <YAxis
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              allowDecimals={false}
-            />
-            <ChartTooltip
-              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-              content={<ChartTooltipContent />}
-            />
-            <Bar dataKey="count" fill="#ffffff" radius={[2, 2, 0, 0]} />
-          </BarChart>
-        </ChartContainer>
+        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Purchases Per Day</p>
+        <div className="h-52">
+          <ResponsiveBar
+            data={barData}
+            keys={['Purchases']}
+            indexBy="date"
+            theme={theme}
+            colors={['#ffffff']}
+            borderRadius={2}
+            padding={0.35}
+            margin={{ top: 4, right: 4, bottom: 36, left: 36 }}
+            axisBottom={{ tickSize: 0, tickPadding: 8 }}
+            axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => Number.isInteger(v) ? v : '' }}
+            gridYValues={4}
+            enableLabel={false}
+            isInteractive={true}
+            tooltip={({ value, indexValue }) => (
+              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
+                <strong>{indexValue}</strong>: {value} {value === 1 ? 'purchase' : 'purchases'}
+              </div>
+            )}
+          />
+        </div>
       </div>
 
       {/* Cumulative purchases */}
       <div>
-        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-500 mb-4">
-          Cumulative Purchases
-        </p>
-        <ChartContainer config={purchaseConfig} className="h-52 w-full">
-          <AreaChart data={cumulativeData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="cumulativeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ffffff" stopOpacity={0.15} />
-                <stop offset="95%" stopColor="#ffffff" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
-            <XAxis
-              dataKey="date"
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              interval="preserveStartEnd"
-            />
-            <YAxis
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              allowDecimals={false}
-            />
-            <ChartTooltip
-              cursor={{ stroke: 'rgba(255,255,255,0.1)' }}
-              content={<ChartTooltipContent indicator="line" />}
-            />
-            <Area
-              dataKey="cumulative"
-              stroke="#ffffff"
-              strokeWidth={2}
-              fill="url(#cumulativeGradient)"
-              dot={false}
-            />
-          </AreaChart>
-        </ChartContainer>
+        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Cumulative Purchases</p>
+        <div className="h-52">
+          <ResponsiveLine
+            data={lineData}
+            theme={theme}
+            colors={['#ffffff']}
+            margin={{ top: 4, right: 4, bottom: 36, left: 36 }}
+            xScale={{ type: 'point' }}
+            yScale={{ type: 'linear', min: 0, max: 'auto', stacked: false }}
+            axisBottom={{ tickSize: 0, tickPadding: 8 }}
+            axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => Number.isInteger(v) ? v : '' }}
+            gridYValues={4}
+            enablePoints={chartDays.length === 1}
+            pointSize={6}
+            pointColor="#ffffff"
+            enableArea={true}
+            areaOpacity={0.08}
+            curve="monotoneX"
+            enableCrosshair={true}
+            useMesh={true}
+            tooltip={({ point }) => (
+              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
+                <strong>{point.data.xFormatted}</strong>: {point.data.y as number} total
+              </div>
+            )}
+          />
+        </div>
       </div>
 
       {/* Revenue per day */}
       <div>
-        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-500 mb-4">
-          Revenue Per Day
-        </p>
-        <ChartContainer config={revenueConfig} className="h-52 w-full">
-          <BarChart data={revenueData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
-            <XAxis
-              dataKey="date"
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              interval="preserveStartEnd"
-            />
-            <YAxis
-              tick={{ fill: '#6b7280', fontSize: 10 }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v) => `$${v}`}
-            />
-            <ChartTooltip
-              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-              content={
-                <ChartTooltipContent
-                  formatter={(value) => [fmt((value as number) * 100), 'Revenue']}
-                />
-              }
-            />
-            <Bar dataKey="revenueDollars" fill="#ffffff" radius={[2, 2, 0, 0]} />
-          </BarChart>
-        </ChartContainer>
+        <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-gray-400 mb-4">Revenue Per Day</p>
+        <div className="h-52">
+          <ResponsiveBar
+            data={revenueData}
+            keys={['Revenue']}
+            indexBy="date"
+            theme={theme}
+            colors={['#ffffff']}
+            borderRadius={2}
+            padding={0.35}
+            margin={{ top: 4, right: 4, bottom: 36, left: 52 }}
+            axisBottom={{ tickSize: 0, tickPadding: 8 }}
+            axisLeft={{ tickSize: 0, tickPadding: 8, tickValues: 4, format: (v) => `$${v}` }}
+            gridYValues={4}
+            enableLabel={false}
+            isInteractive={true}
+            tooltip={({ value, indexValue }) => (
+              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.12)', padding: '6px 10px', fontSize: 12, color: '#fff', borderRadius: 4 }}>
+                <strong>{indexValue}</strong>: {fmt((value as number) * 100)}
+              </div>
+            )}
+          />
+        </div>
       </div>
-
     </div>
   );
 }
