@@ -9,6 +9,7 @@ import { getPromoterRate, getTierLabel } from '@/lib/promoter-rate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReportCharts, { type DayData } from './ReportCharts';
 import ReportEmailGate from './ReportEmailGate';
+import TierBreakdown from './TierBreakdown';
 
 export const dynamic = 'force-dynamic';
 
@@ -145,7 +146,7 @@ export default async function PromoterReportPage({
         </div>
 
         {/* Tier */}
-        <Card className="bg-white/[0.03] border-white/10 text-white mb-8">
+        <Card className="bg-white/[0.03] border-white/10 text-white mb-4">
           <CardContent className="px-5 py-4 flex items-center justify-between">
             <div>
               <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Current Tier</p>
@@ -157,6 +158,13 @@ export default async function PromoterReportPage({
             </div>
           </CardContent>
         </Card>
+
+        <div className="flex items-center justify-between mb-8">
+          <TierBreakdown currentCount={totalCount} />
+          <p className="text-[10px] text-gray-600 max-w-xs text-right leading-relaxed">
+            Payouts are issued 14 days after the event. Final amounts may be adjusted for chargebacks or refunds processed during that window.
+          </p>
+        </div>
 
         {totalCount === 0 && (
           <p className="text-[11px] text-gray-600 mb-6">
