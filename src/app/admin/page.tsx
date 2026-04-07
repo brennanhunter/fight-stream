@@ -2,6 +2,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
 import { createServerClient } from '@/lib/supabase';
+import { generateReportToken } from '@/lib/report-token';
+import { getPromoterRate, getTierLabel } from '@/lib/promoter-rate';
 import AdminGrantForm from './AdminGrantForm';
 import AdminAnnounceForm from './AdminAnnounceForm';
 import AdminLogout from './AdminLogout';
@@ -56,6 +58,50 @@ export default async function AdminPage({
     .from('subscriptions')
     .select('id', { count: 'exact', head: true })
     .in('status', ['active', 'trialing']);
+
+  // Event payout summaries
+  const { data: allEvents } = await supabase
+    .from('events')
+    .select('id, name, date')
+    .order('date', { ascending: false })
+    .limit(10);
+
+  const eventIds = (allEvents || []).map((e) => e.id);
+  const { data: allPaidPurchases } = eventIds.length > 0
+    ? await supabase
+        .from('purchases')
+        .select('event_id, amount_paid')
+        .eq('purchase_type', 'ppv')
+        .gt('amount_paid', 0)
+        .in('event_id', eventIds)
+    : { data: [] };
+
+  const statsByEvent = new Map<string, { count: number; revenue: number }>();
+  for (const p of allPaidPurchases || []) {
+    const existing = statsByEvent.get(p.event_id) ?? { count: 0, revenue: 0 };
+    statsByEvent.set(p.event_id, {
+      count: existing.count + 1,
+      revenue: existing.revenue + p.amount_paid,
+    });
+  }
+
+  const BASE_URL = 'https://boxstreamtv.com';
+  const eventPayouts = await Promise.all(
+    (allEvents || []).map(async (event) => {
+      const stats = statsByEvent.get(event.id) ?? { count: 0, revenue: 0 };
+      const rate = getPromoterRate(stats.count);
+      const token = await generateReportToken(event.id);
+      return {
+        ...event,
+        ...stats,
+        rate,
+        tier: getTierLabel(stats.count),
+        promoterCut: Math.round(stats.revenue * rate),
+        ourCut: Math.round(stats.revenue * (1 - rate)),
+        reportUrl: `${BASE_URL}/report/${event.id}/${token}`,
+      };
+    })
+  );
 
   return (
     <main className="min-h-screen bg-black text-white px-6 py-10">
@@ -141,6 +187,50 @@ export default async function AdminPage({
             <p className="text-3xl font-bold">{subCount ?? 0}</p>
           </div>
         </div>
+
+        {/* Event Payouts */}
+        {eventPayouts.length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400">Event Payouts</h2>
+              <span className="text-[10px] text-gray-600">Paid PPV only — comps excluded</span>
+            </div>
+            <div className="border border-white/10 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    {['Event', 'Sales', 'Revenue', 'Tier', 'Promoter', 'You & Ryan', 'Report Link'].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500 whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {eventPayouts.map((ev) => (
+                    <tr key={ev.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <td className="px-4 py-3 text-white font-medium max-w-[200px] truncate">{ev.name}</td>
+                      <td className="px-4 py-3 text-gray-300">{ev.count.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-300">${(ev.revenue / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{Math.round(ev.rate * 100)}%</td>
+                      <td className="px-4 py-3 text-white font-semibold">${(ev.promoterCut / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-4 py-3 text-gray-300">${(ev.ourCut / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={ev.reportUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
+                        >
+                          View / Share →
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[10px] text-gray-700 mt-2">Share the Report Link directly with the promoter — no login required. The link is cryptographically unique per event.</p>
+          </div>
+        )}
 
         {/* Announce Event */}
         <div className="border border-red-900/40 p-6 mb-6">
