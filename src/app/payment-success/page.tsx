@@ -181,7 +181,7 @@ function PaymentSuccessContent() {
           href="/"
           className="inline-block bg-white text-black font-bold py-4 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
         >
-          Go to Stream Now
+          Go to Home
         </Link>
 
         <p className="mt-8 text-xs text-gray-600">

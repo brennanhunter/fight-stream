@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { stripeServer } from '@/lib/stripe';
-import { createSession } from '@/lib/session';
+import { createSession, getSession } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
 import { purchaseConfirmationEmail } from '@/lib/emails/purchase-confirmation';
@@ -132,6 +132,20 @@ export async function POST(req: NextRequest) {
           .from('purchases')
           .update({ session_claimed_at: new Date().toISOString(), session_version: sessionVersion })
           .eq('id', existingPurchase.id);
+      } else {
+        // Re-claim within grace window. Only re-issue cookies to the original
+        // buyer's browser (which already has the ppv_session cookie from the
+        // first claim). If there's no matching session cookie, this is likely
+        // a different device visiting the shared success URL — return success
+        // but don't issue new credentials.
+        const existingSession = await getSession();
+        if (!existingSession || existingSession.purchaseId !== deduplicationId) {
+          return NextResponse.json({
+            success: true,
+            message: 'Payment verified and access granted',
+            eventAccess: { eventId, eventName, expiresAt },
+          });
+        }
       }
     }
 

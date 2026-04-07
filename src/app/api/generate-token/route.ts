@@ -101,8 +101,31 @@ export async function POST(request: NextRequest) {
     }
 
     if (!hasCookieAccess && !hasPurchaseRecord && !hasPremium) {
+      // Distinguish between "never purchased" and "purchased but session invalid"
+      // so the client can show recover-access instead of a buy button.
+      const { cookies: getCookies } = await import('next/headers');
+      const cookieStore = await getCookies();
+      const customerEmail = cookieStore.get('customer_email')?.value;
+      let hasExistingPurchase = false;
+      if (customerEmail) {
+        const now = new Date().toISOString();
+        const { data: emailPurchase } = await supabase
+          .from('purchases')
+          .select('id')
+          .eq('email', customerEmail.toLowerCase())
+          .eq('event_id', activeEvent.id)
+          .eq('purchase_type', 'ppv')
+          .or(`expires_at.gt.${now},expires_at.is.null`)
+          .limit(1)
+          .maybeSingle();
+        hasExistingPurchase = !!emailPurchase;
+      }
+
       return NextResponse.json(
-        { error: 'Access denied. Please purchase the event to watch.' },
+        {
+          error: 'Access denied.',
+          reason: hasExistingPurchase ? 'session_invalid' : 'no_purchase',
+        },
         { status: 403 }
       );
     }
@@ -132,7 +155,7 @@ export async function POST(request: NextRequest) {
       {
         'aws:channel-arn': channelArn,
         'aws:access-control-allow-origin': process.env.NEXT_PUBLIC_SITE_URL,
-        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 2) // 2 hour expiry
+        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 12) // 12 hour expiry — covers longest possible live event
       },
       privateKey,
       {

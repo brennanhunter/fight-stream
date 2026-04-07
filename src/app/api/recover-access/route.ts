@@ -81,16 +81,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: genericError }, { status: 403 });
     }
 
-    // Code is valid — clear it so it can't be reused
+    // Code is valid — atomically claim it by filtering on the code itself.
+    // If two concurrent requests both pass the checks above, only the first
+    // UPDATE will match (recovery_code is still set); the second gets 0 rows
+    // back because the first already cleared it.
     const newSessionVersion = (purchase.session_version || 0) + 1;
-    await supabase
+    const { data: claimed } = await supabase
       .from('purchases')
       .update({
         session_version: newSessionVersion,
         recovery_code: null,
         recovery_code_expires_at: null,
       })
-      .eq('id', purchase.id);
+      .eq('id', purchase.id)
+      .eq('recovery_code', trimmedCode)
+      .select('session_version');
+
+    if (!claimed || claimed.length === 0) {
+      // Another concurrent request already consumed this code
+      return NextResponse.json({ error: genericError }, { status: 403 });
+    }
 
     const expiresAt = targetEvent.expires_at
       ? new Date(targetEvent.expires_at).toISOString()

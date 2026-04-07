@@ -22,40 +22,22 @@ interface EventCarouselProps {
 
 export default function EventCarousel({ events, subscriptionTier }: EventCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [streamLive, setStreamLive] = useState(false);
   const [userInteracting, setUserInteracting] = useState(false);
 
   const goToNext = useCallback(() => setActiveIndex((prev) => (prev === events.length - 1 ? 0 : prev + 1)), [events.length]);
   const goToPrev = () => setActiveIndex((prev) => (prev === 0 ? events.length - 1 : prev - 1));
 
-  // Auto-rotate every 5 seconds — pause when stream is live or user is interacting
+  // Auto-rotate every 5 seconds — pause when user is interacting
   useEffect(() => {
-    if (events.length <= 1 || streamLive || userInteracting) return;
+    if (events.length <= 1 || userInteracting) return;
     const timer = setInterval(goToNext, 5000);
     return () => clearInterval(timer);
-  }, [activeIndex, events.length, goToNext, streamLive, userInteracting]);
-
-  // When stream goes live, snap to the active event
-  const handleStreamLive = useCallback((isLive: boolean) => {
-    setStreamLive(isLive);
-    if (isLive) {
-      const activeIdx = events.findIndex((e) => e.is_active);
-      if (activeIdx !== -1) setActiveIndex(activeIdx);
-    }
-  }, [events]);
-
-  // Reset streamLive when navigating away from the active event
-  useEffect(() => {
-    const current = events[activeIndex];
-    if (current && !current.is_active && streamLive) {
-      setStreamLive(false);
-    }
-  }, [activeIndex, events, streamLive]);
+  }, [activeIndex, events.length, goToNext, userInteracting]);
 
   if (events.length === 0) return null;
 
   const currentEvent = events[activeIndex];
-  const showNav = events.length > 1 && !streamLive;
+  const showNav = events.length > 1;
 
   return (
     <div className="relative">
@@ -77,7 +59,6 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
             subscriptionTier={subscriptionTier}
             isActive={currentEvent.is_active}
             eventId={currentEvent.id}
-            onStreamLive={currentEvent.is_active ? handleStreamLive : undefined}
             onInteraction={setUserInteracting}
           />
         </motion.div>

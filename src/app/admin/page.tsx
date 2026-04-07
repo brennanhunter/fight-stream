@@ -36,6 +36,13 @@ export default async function AdminPage({
 
   const { data: purchases, error } = await query;
 
+  // Active event
+  const { data: activeEvent } = await supabase
+    .from('events')
+    .select('id, name, date, expires_at, ivs_playback_url, ivs_channel_arn')
+    .eq('is_active', true)
+    .maybeSingle();
+
   // Quick stats
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -61,6 +68,60 @@ export default async function AdminPage({
           </div>
           <AdminLogout />
         </div>
+
+        {/* Active Event Status */}
+        {activeEvent ? (() => {
+          const expiresAt = activeEvent.expires_at ? new Date(activeEvent.expires_at) : null;
+          const eventDate = new Date(activeEvent.date);
+          const now = new Date();
+          const expiresOk = expiresAt && expiresAt > eventDate;
+          const alreadyExpired = expiresAt && expiresAt < now;
+          return (
+            <div className={`border p-6 mb-6 ${expiresOk ? 'border-green-800/50' : 'border-red-700/60'}`}>
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-0.5">Active Event</p>
+                  <h2 className="text-white font-bold">{activeEvent.name}</h2>
+                </div>
+                <span className={`text-[10px] font-bold tracking-[0.15em] uppercase px-2 py-1 ${alreadyExpired ? 'bg-red-900/40 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
+                  {alreadyExpired ? 'Expired' : 'Live'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                <div>
+                  <p className="text-gray-500 mb-0.5">Event Date</p>
+                  <p className="text-white">{eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-0.5">Access Expires</p>
+                  {expiresAt
+                    ? <p className={expiresOk ? 'text-green-400' : 'text-red-400 font-bold'}>
+                        {expiresAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {!expiresOk && ' ⚠ before event'}
+                      </p>
+                    : <p className="text-red-400 font-bold">NOT SET — sessions expire 48h after purchase</p>
+                  }
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-0.5">IVS Playback URL</p>
+                  <p className={activeEvent.ivs_playback_url ? 'text-green-400' : 'text-red-400 font-bold'}>
+                    {activeEvent.ivs_playback_url ? 'Set' : 'NOT SET'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-0.5">IVS Channel ARN</p>
+                  <p className={activeEvent.ivs_channel_arn ? 'text-green-400' : 'text-yellow-400'}>
+                    {activeEvent.ivs_channel_arn ? 'Set' : 'Using env var'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })() : (
+          <div className="border border-yellow-800/50 p-4 mb-6 text-sm text-yellow-400">
+            No active event — set <code className="text-yellow-300">is_active = true</code> on an event in Supabase to enable purchases and streaming.
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-10">
