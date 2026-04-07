@@ -147,7 +147,6 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
 
   /* ── Countdown ── */
   const [timeLeft, setTimeLeft] = useState(getTimeRemaining(eventDate));
-  const eventStarted = !timeLeft;
 
   useEffect(() => {
     const timer = setInterval(() => setTimeLeft(getTimeRemaining(eventDate)), 1000);
@@ -302,10 +301,15 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                   ))}
                 </div>
               </motion.div>
-            ) : (
+            ) : isStreaming ? (
               <motion.div variants={fadeUp} className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                 <span className="text-sm font-bold tracking-[0.2em] uppercase text-red-400">Live Now</span>
+              </motion.div>
+            ) : (
+              <motion.div variants={fadeUp} className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-yellow-500 rounded-full animate-pulse" />
+                <span className="text-sm font-bold tracking-[0.2em] uppercase text-yellow-400">Almost Showtime</span>
               </motion.div>
             )}
           </motion.div>
@@ -336,7 +340,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                     : replayUrl
                       ? 'The event has ended. Watch the full replay.'
                       : isStreaming
-                        ? 'The event is live now.'
+                        ? "It's showtime — watch now."
                         : "You're all set. Watch Now will appear when the stream starts."}
                 </p>
                 {isActive && isStreaming && (
@@ -362,8 +366,8 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                       {checkoutLoading
                         ? 'Redirecting...'
                         : subscriptionTier === 'premium'
-                          ? eventStarted ? 'Watch Live — Free' : 'Get PPV Access — Free'
-                          : eventStarted
+                          ? isStreaming ? 'Watch Live — Free' : 'Get PPV Access — Free'
+                          : isStreaming
                             ? `Watch Live — ${ppvLabel}`
                             : `Get PPV Access — ${ppvLabel}`}
                     </button>

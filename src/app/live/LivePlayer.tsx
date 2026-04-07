@@ -310,7 +310,7 @@ export default function LivePlayer({
       setCheckoutError('Something went wrong. Please try again.');
       setCheckoutLoading(false);
     }
-  }, [stripePriceId]);
+  }, [stripePriceId, eventId]);
 
   const handlePurchase = () => {
     if (!stripePriceId) return;
