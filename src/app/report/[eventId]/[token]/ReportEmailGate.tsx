@@ -6,9 +6,11 @@ import Image from 'next/image';
 export default function ReportEmailGate({
   eventId,
   eventName,
+  promoterEmail,
 }: {
   eventId: string;
   eventName: string;
+  promoterEmail: string;
 }) {
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
@@ -136,6 +138,14 @@ export default function ReportEmailGate({
           <p className="text-[10px] font-bold tracking-[0.3em] uppercase text-gray-500 mb-2">Promoter Report</p>
           <h1 className="text-xl font-bold text-white tracking-tight">{eventName}</h1>
           <div className="w-10 h-[2px] bg-white mx-auto mt-4" />
+          <p className="text-xs text-gray-500 mt-4 leading-relaxed">
+            Enter the email address on file for your event
+            {(() => {
+              const [local, domain] = promoterEmail.split('@');
+              if (!domain) return '.';
+              return ` (${local[0]}${'•'.repeat(Math.max(local.length - 1, 2))}@${domain}).`;
+            })()}
+          </p>
         </div>
 
         {error && (
