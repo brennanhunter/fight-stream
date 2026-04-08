@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
-import Footer from '@/components/layout/Footer';
 import { PageTransition } from '@/components/motion';
 import VodContent from './VodContent';
 import { createServerClient } from '@/lib/supabase';
@@ -172,7 +171,6 @@ export default async function VodPage() {
           )}
         </div>
       </section>
-      <Footer />
     </PageTransition>
   );
 }

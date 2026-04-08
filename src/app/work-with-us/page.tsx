@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 
 export default function SlidingScalePage() {
   return (
+    <>
     <PageTransition>
     <div className="min-h-screen bg-black pt-24 pb-16 px-4">
       <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -184,5 +185,6 @@ export default function SlidingScalePage() {
       </div>
     </div>
     </PageTransition>
+    </>
   );
 }

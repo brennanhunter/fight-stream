@@ -1,6 +1,5 @@
 import Stripe from 'stripe';
 import type { Metadata } from 'next';
-import Footer from '@/components/layout/Footer';
 import { PageTransition, FadeInView } from '@/components/motion';
 import PricingCards from './PricingCards';
 
@@ -110,7 +109,6 @@ export default async function PricingPage() {
           </FadeInView>
         </div>
       </section>
-      <Footer />
     </PageTransition>
   );
 }

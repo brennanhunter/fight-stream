@@ -124,6 +124,7 @@ export default async function PromoterReportPage({
 
   return (
     <PromoterDashboard
+      eventId={eventId}
       promoterName={event.promoter_name ?? ''}
       eventName={event.name}
       eventDate={eventDate}

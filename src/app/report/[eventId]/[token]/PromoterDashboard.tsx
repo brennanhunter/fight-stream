@@ -12,6 +12,7 @@ type View = 'overview' | 'revenue' | 'sales' | 'growth' | 'tier';
 type Period = 'week' | 'month' | 'all';
 
 export interface PromoterDashboardProps {
+  eventId: string;
   promoterName: string;
   eventName: string;
   eventDate: string;
@@ -191,6 +192,7 @@ const TOUR_STEPS: TourStep[] = [
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function PromoterDashboard({
+  eventId,
   promoterName,
   eventName,
   eventDate,
@@ -212,7 +214,15 @@ export default function PromoterDashboard({
   const [period, setPeriod]     = useState<Period>('all');
   const [mounted, setMounted]   = useState(false);
   const [tourStep, setTourStep] = useState<number | null>(null);
-  useEffect(() => setMounted(true), []);
+
+  const tourSeenKey = `bstv_tour_seen_${eventId ?? 'report'}`;
+
+  useEffect(() => {
+    setMounted(true);
+    if (!localStorage.getItem(tourSeenKey)) {
+      setTourStep(0);
+    }
+  }, []);
 
   const tourActive       = tourStep !== null;
   const currentTourStep  = tourStep !== null ? TOUR_STEPS[tourStep] : null;
@@ -221,12 +231,19 @@ export default function PromoterDashboard({
   function advanceTour() {
     if (tourStep === null) return;
     const next = tourStep + 1;
-    if (next >= TOUR_STEPS.length) { setTourStep(null); return; }
+    if (next >= TOUR_STEPS.length) {
+      setTourStep(null);
+      localStorage.setItem(tourSeenKey, '1');
+      return;
+    }
     const step = TOUR_STEPS[next];
     if (step.activateView) setView(step.activateView);
     setTourStep(next);
   }
-  function skipTour() { setTourStep(null); }
+  function skipTour() {
+    setTourStep(null);
+    localStorage.setItem(tourSeenKey, '1');
+  }
 
   // Chart data
   const filtered     = filterDays(days, period);

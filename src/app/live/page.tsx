@@ -6,7 +6,6 @@ import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
 import { checkGeoRestriction } from '@/lib/geo';
 import LivePlayer from './LivePlayer';
-import Footer from '@/components/layout/Footer';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,7 +82,6 @@ export default async function LivePage() {
         replayUrl={activeEvent.replay_url}
         subscriptionTier={subscriptionTier}
       />
-      <Footer />
     </>
   );
 }

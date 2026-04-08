@@ -4,7 +4,6 @@ import Hero from '@/components/hero/Hero';
 import EventCarousel from '@/components/hero/EventCarousel';
 import type { CarouselEvent } from '@/components/hero/EventCarousel';
 import HomeContent from '@/components/hero/HomeContent';
-import Footer from '@/components/layout/Footer';
 import { createServerClient } from '@/lib/supabase';
 import { checkGeoRestriction } from '@/lib/geo';
 import { createAuthServerClient } from '@/lib/supabase-server';
@@ -173,7 +172,6 @@ export default async function Home() {
         </p>
       </section>
 
-      <Footer />
     </>
   );
 }

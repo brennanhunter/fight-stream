@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | BoxStreamTV',
@@ -162,7 +161,6 @@ export default function TermsPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | BoxStreamTV',
@@ -172,7 +171,6 @@ export default function PrivacyPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }
