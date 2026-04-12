@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import '@vidstack/react/player/styles/default/theme.css';
 import '@vidstack/react/player/styles/default/layouts/video.css';
 
-import { MediaPlayer, MediaProvider, isHLSProvider, type MediaPlayerInstance } from '@vidstack/react';
+import { MediaPlayer, MediaProvider, type MediaPlayerInstance } from '@vidstack/react';
 import {
   DefaultVideoLayout,
   defaultLayoutIcons,
@@ -70,17 +70,9 @@ export default function VodPlayer({ src, title, expiresAt }: VodPlayerProps) {
       src={src}
       viewType="video"
       streamType="on-demand"
-      crossOrigin="use-credentials"
       playsInline
       title={title || 'Fight Replay'}
       className="vod-player"
-      onProviderChange={(provider) => {
-        if (isHLSProvider(provider)) {
-          provider.config.xhrSetup = (xhr: XMLHttpRequest) => {
-            xhr.withCredentials = true;
-          };
-        }
-      }}
       onError={(e) => {
         if (e?.code === 2) {
           // MEDIA_ERR_NETWORK — could be a dropped connection or an expired signed URL.

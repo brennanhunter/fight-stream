@@ -50,5 +50,5 @@ export function getSignedCookiesForKey(s3Key: string, expiresInSeconds = 21600) 
     });
   }
 
-  return { cookies, videoUrl: `https://${CLOUDFRONT_DOMAIN}/${s3Key}` };
+  return { cookies, videoUrl: `/vod-cdn/${s3Key}` };
 }
