@@ -7,7 +7,7 @@ import { getSignedCookiesForKey } from '@/lib/cloudfront';
 const SIGN_SECRET = process.env.JWT_SECRET!;
 
 /** Create an HMAC token so only server-authorized s3Keys can be signed. */
-export function createSignToken(s3Key: string) {
+export async function createSignToken(s3Key: string) {
   return crypto.createHmac('sha256', SIGN_SECRET).update(s3Key).digest('hex');
 }
 

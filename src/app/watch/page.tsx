@@ -282,7 +282,7 @@ export default async function WatchPage({
     ? Math.max(300, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000))
     : CF_DEFAULT_SECONDS;
 
-  const signToken = createSignToken(s3Key);
+  const signToken = await createSignToken(s3Key);
 
   return (
     <WatchContent
