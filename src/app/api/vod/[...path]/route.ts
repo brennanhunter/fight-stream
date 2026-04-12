@@ -57,13 +57,22 @@ export async function GET(
   const headers = new Headers();
   const contentType = upstream.headers.get('content-type');
   if (contentType) headers.set('content-type', contentType);
+
+  // For HLS manifests, rewrite relative paths to include auth query params
+  // so that HLS.js sub-requests (sub-playlists, segments) also pass auth.
+  if (s3Path.endsWith('.m3u8')) {
+    const text = await upstream.text();
+    const qs = `?token=${token}&prefix=${encodeURIComponent(prefix)}`;
+    const rewritten = text.replace(/^(?!#)(\S+)$/gm, (match) => match + qs);
+    headers.set('content-type', 'application/vnd.apple.mpegurl');
+    headers.set('cache-control', 'private, max-age=5');
+    return new NextResponse(rewritten, { status: 200, headers });
+  }
+
   const contentLength = upstream.headers.get('content-length');
   if (contentLength) headers.set('content-length', contentLength);
 
-  // Cache HLS manifests briefly, segments longer
-  if (s3Path.endsWith('.m3u8')) {
-    headers.set('cache-control', 'private, max-age=5');
-  } else if (s3Path.endsWith('.ts')) {
+  if (s3Path.endsWith('.ts')) {
     headers.set('cache-control', 'private, max-age=3600');
   }
 
