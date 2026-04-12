@@ -1,15 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import VodPlayer from './VodPlayer';
 import SaveSession from './SaveSession';
 import ExpiryCountdown from '@/components/ExpiryCountdown';
-import { signAndSetCookies } from './actions';
 
 interface WatchContentProps {
-  s3Key: string;
-  signToken: string;
-  cfExpiresInSeconds: number;
+  videoUrl: string;
   contentName: string | null;
   expiresAt: string | null;
   isSubscriber: boolean;
@@ -17,51 +13,12 @@ interface WatchContentProps {
 }
 
 export default function WatchContent({
-  s3Key,
-  signToken,
-  cfExpiresInSeconds,
+  videoUrl,
   contentName,
   expiresAt,
   isSubscriber,
   sessionId,
 }: WatchContentProps) {
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    signAndSetCookies(s3Key, signToken, cfExpiresInSeconds)
-      .then(setVideoUrl)
-      .catch(() => setError(true));
-  }, [s3Key, signToken, cfExpiresInSeconds]);
-
-  if (error) {
-    return (
-      <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-white text-lg font-semibold mb-2">Something went wrong</p>
-          <p className="text-gray-400 text-sm mb-6">Unable to load the video. Please try again.</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-white text-black font-bold text-sm tracking-wide hover:bg-gray-200 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  if (!videoUrl) {
-    return (
-      <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Loading replay…</p>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
       {sessionId && <SaveSession sessionId={sessionId} />}

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import crypto from 'crypto';
 import WatchContent from './WatchContent';
-import { createSignToken } from './actions';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
@@ -273,22 +273,18 @@ export default async function WatchPage({
 
   if (!s3Key) redirect('/vod');
 
-  // ── Issue CloudFront signed cookies and build video URL ──────────────────
-  // If we have a known expiry (PPV replay), issue cookies that last until the
-  // window actually closes so they never expire before the UI countdown reaches zero.
-  // For subscribers and VOD (no fixed expiry), fall back to 6 hours.
-  const CF_DEFAULT_SECONDS = 6 * 60 * 60;
-  const cfExpiresInSeconds = expiresAt
-    ? Math.max(300, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000))
-    : CF_DEFAULT_SECONDS;
-
-  const signToken = await createSignToken(s3Key);
+  // ── Build signed proxy URL ────────────────────────────────────────────────
+  // The /api/vod/[...path] route proxies to CloudFront using signed URLs.
+  // We sign the HLS directory prefix so the proxy can authorize all sub-requests
+  // (master.m3u8, sub-playlists, .ts segments) under that path.
+  const isHls = s3Key.endsWith('.m3u8') || s3Key.includes('/hls/');
+  const prefix = isHls ? s3Key.substring(0, s3Key.lastIndexOf('/') + 1) : s3Key;
+  const token = crypto.createHmac('sha256', process.env.JWT_SECRET!).update(prefix).digest('hex');
+  const videoUrl = `/api/vod/${s3Key}?token=${token}&prefix=${encodeURIComponent(prefix)}`;
 
   return (
     <WatchContent
-      s3Key={s3Key}
-      signToken={signToken}
-      cfExpiresInSeconds={cfExpiresInSeconds}
+      videoUrl={videoUrl}
       contentName={contentName}
       expiresAt={expiresAt}
       isSubscriber={isSubscriber}

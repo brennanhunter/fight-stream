@@ -33,14 +33,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  async rewrites() {
-    return [
-      {
-        source: '/vod-cdn/:path*',
-        destination: 'https://cdn.boxstreamtv.com/:path*',
-      },
-    ];
-  },
 };
 
 export default nextConfig;
