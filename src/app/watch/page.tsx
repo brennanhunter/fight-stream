@@ -1,12 +1,10 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import SaveSession from './SaveSession';
-import VodPlayer from './VodPlayer';
-import ExpiryCountdown from '@/components/ExpiryCountdown';
+import WatchContent from './WatchContent';
+import { createSignToken } from './actions';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
-import { getSignedCookiesForKey } from '@/lib/cloudfront';
 import { normalizeEmail } from '@/lib/utils';
 import { REPLAY_WINDOW_DAYS } from '@/lib/constants';
 import { stripeServer } from '@/lib/stripe';
@@ -284,59 +282,17 @@ export default async function WatchPage({
     ? Math.max(300, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000))
     : CF_DEFAULT_SECONDS;
 
-  const { cookies: cfCookies, videoUrl } = getSignedCookiesForKey(s3Key, cfExpiresInSeconds);
-
-  // Set the three CloudFront signed cookies on the response
-  const cookieOptions = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none' as const,
-    domain: '.boxstreamtv.com',
-    path: '/',
-    maxAge: cfExpiresInSeconds,
-  };
-
-  if (cfCookies['CloudFront-Policy']) {
-    cookieStore.set('CloudFront-Policy', cfCookies['CloudFront-Policy'], cookieOptions);
-  }
-  if (cfCookies['CloudFront-Signature']) {
-    cookieStore.set('CloudFront-Signature', cfCookies['CloudFront-Signature'], cookieOptions);
-  }
-  if (cfCookies['CloudFront-Key-Pair-Id']) {
-    cookieStore.set('CloudFront-Key-Pair-Id', cfCookies['CloudFront-Key-Pair-Id'], cookieOptions);
-  }
+  const signToken = createSignToken(s3Key);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-secondary to-black">
-      {sessionId && <SaveSession sessionId={sessionId} />}
-      <div className="vod-watch-page max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-24 flex flex-col items-center">
-        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 text-center">
-          {contentName || 'Now Playing'}
-        </h1>
-        <p className="text-gray-400 mb-2 text-center">
-          {isSubscriber ? 'Enjoy your replay with Fight Pass.' : 'Enjoy your replay.'}
-        </p>
-        {expiresAt && (
-          <div className="mb-8 text-center">
-            <ExpiryCountdown expiresAt={expiresAt} />
-          </div>
-        )}
-
-        <div className="vod-player-wrapper w-full rounded-2xl overflow-hidden border-2 border-accent/30 shadow-2xl shadow-accent/10">
-          <VodPlayer src={videoUrl} expiresAt={expiresAt} />
-        </div>
-
-        <p className="text-sm text-gray-500 mt-6 text-center">
-          Having trouble? Try refreshing the page or{' '}
-          <a
-            href="mailto:hunter@boxstreamtv.com"
-            className="text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
-          >
-            contact support
-          </a>
-          .
-        </p>
-      </div>
-    </main>
+    <WatchContent
+      s3Key={s3Key}
+      signToken={signToken}
+      cfExpiresInSeconds={cfExpiresInSeconds}
+      contentName={contentName}
+      expiresAt={expiresAt}
+      isSubscriber={isSubscriber}
+      sessionId={sessionId}
+    />
   );
 }
