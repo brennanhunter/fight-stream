@@ -36,16 +36,16 @@ export async function signAndSetCookies(
   };
 
   if (cfCookies['CloudFront-Policy']) {
-    cookieStore.set('CloudFront-Policy', cfCookies['CloudFront-Policy'], cookieOptions);
+    cookieStore.set('CloudFront-Policy', String(cfCookies['CloudFront-Policy']), cookieOptions);
   }
   if (cfCookies['CloudFront-Expires']) {
     cookieStore.set('CloudFront-Expires', String(cfCookies['CloudFront-Expires']), cookieOptions);
   }
   if (cfCookies['CloudFront-Signature']) {
-    cookieStore.set('CloudFront-Signature', cfCookies['CloudFront-Signature'], cookieOptions);
+    cookieStore.set('CloudFront-Signature', String(cfCookies['CloudFront-Signature']), cookieOptions);
   }
   if (cfCookies['CloudFront-Key-Pair-Id']) {
-    cookieStore.set('CloudFront-Key-Pair-Id', cfCookies['CloudFront-Key-Pair-Id'], cookieOptions);
+    cookieStore.set('CloudFront-Key-Pair-Id', String(cfCookies['CloudFront-Key-Pair-Id']), cookieOptions);
   }
 
   return videoUrl;

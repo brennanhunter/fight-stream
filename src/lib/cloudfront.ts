@@ -1,4 +1,4 @@
-import { getSignedCookies } from '@aws-sdk/cloudfront-signer';
+import { getSignedCookies, type CloudfrontSignedCookiesOutput } from '@aws-sdk/cloudfront-signer';
 
 const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN!;
 const CLOUDFRONT_KEY_ID = process.env.CLOUDFRONT_KEY_ID!;
@@ -21,20 +21,34 @@ export function getSignedCookiesForKey(s3Key: string, expiresInSeconds = 21600) 
 
   const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
-  const signingParams: Parameters<typeof getSignedCookies>[0] = {
-    keyPairId: CLOUDFRONT_KEY_ID,
-    privateKey: CLOUDFRONT_PRIVATE_KEY,
-    url: resourceUrl,
-    dateLessThan: new Date(expiresAt * 1000).toISOString(),
-  };
+  let cookies: CloudfrontSignedCookiesOutput;
 
-  // Wildcard URLs require a custom policy. Adding dateGreaterThan forces the
-  // SDK to produce CloudFront-Policy instead of CloudFront-Expires.
   if (isHls) {
-    signingParams.dateGreaterThan = new Date(0).toISOString();
-  }
+    // Wildcards require a custom policy. We must pass the `policy` param
+    // directly — the SDK's url+dateLessThan always creates a canned policy
+    // (CloudFront-Expires) which doesn't support wildcards.
+    const policy = JSON.stringify({
+      Statement: [{
+        Resource: resourceUrl,
+        Condition: {
+          DateLessThan: { 'AWS:EpochTime': expiresAt },
+        },
+      }],
+    });
 
-  const cookies = getSignedCookies(signingParams);
+    cookies = getSignedCookies({
+      keyPairId: CLOUDFRONT_KEY_ID,
+      privateKey: CLOUDFRONT_PRIVATE_KEY,
+      policy,
+    });
+  } else {
+    cookies = getSignedCookies({
+      keyPairId: CLOUDFRONT_KEY_ID,
+      privateKey: CLOUDFRONT_PRIVATE_KEY,
+      url: resourceUrl,
+      dateLessThan: new Date(expiresAt * 1000).toISOString(),
+    });
+  }
 
   return { cookies, videoUrl: `https://${CLOUDFRONT_DOMAIN}/${s3Key}` };
 }
