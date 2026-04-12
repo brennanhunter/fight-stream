@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { stripeServer } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase';
+import { inngest } from '@/lib/inngest';
 import { subscriptionConfirmationEmail } from '@/lib/emails/subscription-confirmation';
 import { subscriptionCanceledEmail } from '@/lib/emails/subscription-canceled';
 import { paymentFailedEmail } from '@/lib/emails/payment-failed';
@@ -141,6 +142,18 @@ export async function POST(request: Request) {
                   });
                 } catch (emailErr) {
                   console.error('VOD confirmation email failed:', emailErr);
+                }
+
+                // Schedule survey email 1 hour after purchase
+                if (vodPurchase?.id) {
+                  inngest.send({
+                    name: 'survey/vod-purchased',
+                    data: {
+                      purchaseId: vodPurchase.id,
+                      email: customerEmail,
+                      productName: product.name,
+                    },
+                  }).catch((err) => console.error('VOD survey Inngest send failed:', err));
                 }
               }
             } else {

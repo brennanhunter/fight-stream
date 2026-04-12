@@ -195,6 +195,53 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
 -- No user-facing policies — only service role (RLS bypass) accesses this table.
 
+-- ─────────────────────────────────────────────────────────────
+-- COLUMN ADDITIONS (safe to re-run)
+-- ─────────────────────────────────────────────────────────────
+ALTER TABLE events    ADD COLUMN IF NOT EXISTS survey_sent_at  timestamptz;
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS survey_sent_at  timestamptz;
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: feedback
+-- Post-event / post-VOD survey responses.
+-- Approved rows surface as testimonials on the homepage.
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS feedback (
+  id                        uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at                timestamptz NOT NULL DEFAULT now(),
+
+  -- Who
+  email                     text        NOT NULL,
+  display_name              text,                          -- shown on homepage testimonial
+
+  -- Context
+  trigger_type              text        NOT NULL CHECK (trigger_type IN ('ppv', 'vod')),
+  event_id                  text        REFERENCES events(id) ON DELETE SET NULL,
+  purchase_id               uuid        REFERENCES purchases(id) ON DELETE SET NULL,
+  subject                   text        NOT NULL,          -- event or VOD name at time of survey
+
+  -- Ratings (1–5)
+  overall_rating            int         NOT NULL CHECK (overall_rating BETWEEN 1 AND 5),
+  quality_rating            int         CHECK (quality_rating BETWEEN 1 AND 5),
+  process_rating            int         CHECK (process_rating BETWEEN 1 AND 5),
+
+  -- Open text
+  comment                   text,                          -- testimonial copy
+  what_was_missing          text,
+
+  -- Testimonial management
+  approved_for_testimonial  boolean     NOT NULL DEFAULT false
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_email       ON feedback (email);
+CREATE INDEX IF NOT EXISTS idx_feedback_event_id    ON feedback (event_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_approved    ON feedback (approved_for_testimonial) WHERE approved_for_testimonial = true;
+
+ALTER TABLE feedback ENABLE ROW LEVEL SECURITY;
+-- Only service role accesses this table; no user-facing RLS policies needed.
+
+
 CREATE OR REPLACE FUNCTION check_rate_limit(
   p_key       text,
   p_limit     int,

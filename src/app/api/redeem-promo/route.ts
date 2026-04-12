@@ -84,19 +84,19 @@ export async function POST(req: NextRequest) {
       }, { onConflict: 'email,event_id,amount_paid', ignoreDuplicates: true })
       .select('id');
 
-    // If no row returned, it was a duplicate
-    if (!inserted?.length) {
-      return NextResponse.json(
-        { error: 'This email has already redeemed a promo code for this event.' },
-        { status: 400 }
-      );
-    }
-
     if (insertError) {
       console.error('Supabase promo save error:', insertError);
       return NextResponse.json(
         { error: 'Failed to redeem promo code' },
         { status: 500 }
+      );
+    }
+
+    // If no row returned, it was a duplicate
+    if (!inserted?.length) {
+      return NextResponse.json(
+        { error: 'This email has already redeemed a promo code for this event.' },
+        { status: 400 }
       );
     }
 

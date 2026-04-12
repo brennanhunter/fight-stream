@@ -4,6 +4,7 @@ import Hero from '@/components/hero/Hero';
 import EventCarousel from '@/components/hero/EventCarousel';
 import type { CarouselEvent } from '@/components/hero/EventCarousel';
 import HomeContent from '@/components/hero/HomeContent';
+import Testimonials from '@/components/Testimonials';
 import { createServerClient } from '@/lib/supabase';
 import { checkGeoRestriction } from '@/lib/geo';
 import { createAuthServerClient } from '@/lib/supabase-server';
@@ -160,6 +161,7 @@ export default async function Home() {
         <Hero />
       )}
       <HomeContent />
+      <Testimonials />
 
       {/* Static server-rendered text — readable by Google without JS */}
       <section className="sr-only" aria-hidden="false">

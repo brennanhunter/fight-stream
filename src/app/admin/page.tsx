@@ -10,6 +10,7 @@ import AdminAnnounceForm from './AdminAnnounceForm';
 import AdminLogout from './AdminLogout';
 import AdminStreamToggle from './AdminStreamToggle';
 import AdminCopyButton from './AdminCopyButton';
+import AdminFeedbackApprove from './AdminFeedbackApprove';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,13 @@ export default async function AdminPage({
   const searchEmail = q?.trim().toLowerCase() || '';
 
   const supabase = createServerClient();
+
+  // Feedback — most recent 20
+  const { data: feedbackRows } = await supabase
+    .from('feedback')
+    .select('id, created_at, email, subject, trigger_type, overall_rating, quality_rating, process_rating, comment, what_was_missing, approved_for_testimonial')
+    .order('created_at', { ascending: false })
+    .limit(20);
 
   // Fetch purchases — either search results or recent 50
   const query = supabase
@@ -246,6 +254,68 @@ export default async function AdminPage({
         <div className="border border-white/10 p-6 mb-10">
           <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-4">Grant Access</h2>
           <AdminGrantForm activeEventId={activeEvent?.id ?? null} activeEventName={activeEvent?.name ?? null} />
+        </div>
+
+        {/* Feedback */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400">Feedback</h2>
+            <span className="text-[10px] text-gray-600">{feedbackRows?.length ?? 0} recent</span>
+          </div>
+
+          {!feedbackRows?.length ? (
+            <div className="border border-white/10 px-5 py-8 text-sm text-gray-500">No feedback yet.</div>
+          ) : (
+            <div className="border border-white/10 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    {['Date', 'Email', 'Event / VOD', 'Type', 'Overall', 'Quality', 'Process', 'Comment', 'Testimonial'].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500 whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(feedbackRows ?? []).map((f) => (
+                    <tr key={f.id} className="border-b border-white/5 hover:bg-white/[0.02] align-top">
+                      <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
+                        {new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-3 text-gray-300 text-xs max-w-[140px] truncate">{f.email}</td>
+                      <td className="px-4 py-3 text-gray-400 text-xs max-w-[160px] truncate">{f.subject}</td>
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-gray-500 border border-white/10 px-2 py-0.5">
+                          {f.trigger_type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-amber-400 text-xs whitespace-nowrap">
+                        {'★'.repeat(f.overall_rating)}{'☆'.repeat(5 - f.overall_rating)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {f.quality_rating ? `${f.quality_rating}/5` : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {f.process_rating ? `${f.process_rating}/5` : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400 text-xs max-w-[220px]">
+                        {f.comment
+                          ? <span className="line-clamp-2">&ldquo;{f.comment}&rdquo;</span>
+                          : <span className="text-gray-700">—</span>}
+                        {f.what_was_missing && (
+                          <p className="text-gray-600 mt-1 text-[10px]">Missing: {f.what_was_missing}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {f.comment
+                          ? <AdminFeedbackApprove id={f.id} approved={!!f.approved_for_testimonial} />
+                          : <span className="text-gray-700 text-[10px]">No comment</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Search */}

@@ -106,7 +106,10 @@ const jsonLd = {
         "@type": "ImageObject",
         "url": "https://boxstreamtv.com/logos/BoxStreamThumbnail.png",
       },
-      "sameAs": [],
+      "sameAs": [
+        "https://www.instagram.com/boxstreamtv",
+        "https://www.youtube.com/@BoxStreamTV",
+      ],
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "customer support",
@@ -128,14 +131,6 @@ const jsonLd = {
         },
         "query-input": "required name=search_term_string",
       },
-    },
-    {
-      "@type": "VideoObject",
-      "name": "Live Boxing Streaming on BoxStreamTV",
-      "description": "Watch live boxing matches and PPV events online. BoxStreamTV streams professional, amateur, and youth boxing fights in HD.",
-      "thumbnailUrl": "https://boxstreamtv.com/logos/BoxStreamThumbnail.png",
-      "uploadDate": "2024-01-01",
-      "publisher": { "@id": "https://boxstreamtv.com/#organization" },
     },
   ],
 };

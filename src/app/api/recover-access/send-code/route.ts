@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     if (clientEventId) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, expires_at')
+        .select('id, name')
         .eq('id', clientEventId)
         .maybeSingle();
       targetEvent = data;
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     if (!targetEvent) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, expires_at')
+        .select('id, name')
         .eq('is_active', true)
         .maybeSingle();
       targetEvent = data;
