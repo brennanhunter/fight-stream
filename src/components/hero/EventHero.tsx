@@ -314,16 +314,10 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                 <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                 <span className="text-sm font-bold tracking-[0.2em] uppercase text-red-400">Live Now</span>
               </motion.div>
-            ) : new Date(eventDate).getTime() < Date.now() ? (
-              replayUrl ? (
-                <motion.div variants={fadeUp} className="flex items-center gap-2">
-                  <span className="text-sm font-bold tracking-[0.2em] uppercase text-gray-400">Replay Available</span>
-                </motion.div>
-              ) : (
-                <motion.div variants={fadeUp} className="flex items-center gap-2">
-                  <span className="text-sm font-bold tracking-[0.2em] uppercase text-gray-400">Event Ended</span>
-                </motion.div>
-              )
+            ) : replayUrl ? (
+              <motion.div variants={fadeUp} className="flex items-center gap-2">
+                <span className="text-sm font-bold tracking-[0.2em] uppercase text-gray-400">Replay Available</span>
+              </motion.div>
             ) : (
               <motion.div variants={fadeUp} className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 bg-yellow-500 rounded-full animate-pulse" />
