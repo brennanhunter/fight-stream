@@ -5,7 +5,7 @@ import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   // 3 attempts per 30 minutes per IP
-  const blocked = rateLimit(request, 'admin-login', 3, 30 * 60 * 1000);
+  const blocked = await rateLimit(request, 'admin-login', 3, 30 * 60 * 1000);
   if (blocked) return blocked;
 
   const { password } = await request.json();
@@ -13,13 +13,15 @@ export async function POST(request: NextRequest) {
   const expected = process.env.ADMIN_PASSWORD || '';
   const input = typeof password === 'string' ? password : '';
 
-  // Constant-time comparison to prevent timing attacks
-  const inputBuf = Buffer.from(input);
-  const expectedBuf = Buffer.from(expected);
+  // Constant-time comparison via HMAC to prevent timing attacks.
+  // HMAC produces fixed-length outputs regardless of input length,
+  // so timingSafeEqual never leaks password length via short-circuit.
+  const hmacKey = Buffer.from(expected.length > 0 ? expected : 'dummy-key');
+  const inputHash = crypto.createHmac('sha256', hmacKey).update(input).digest();
+  const expectedHash = crypto.createHmac('sha256', hmacKey).update(expected).digest();
   const isValid =
-    inputBuf.length === expectedBuf.length &&
-    crypto.timingSafeEqual(inputBuf, expectedBuf) &&
-    expected.length > 0;
+    expected.length > 0 &&
+    crypto.timingSafeEqual(inputHash, expectedHash);
 
   if (!isValid) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

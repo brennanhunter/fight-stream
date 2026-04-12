@@ -1,19 +1,25 @@
 import Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { stripeServer } from '@/lib/stripe';
 import { createServerClient } from '@/lib/supabase';
 import { subscriptionConfirmationEmail } from '@/lib/emails/subscription-confirmation';
 import { subscriptionCanceledEmail } from '@/lib/emails/subscription-canceled';
 import { paymentFailedEmail } from '@/lib/emails/payment-failed';
 import { subscriptionRenewedEmail } from '@/lib/emails/subscription-renewed';
 import { purchaseConfirmationEmail } from '@/lib/emails/purchase-confirmation';
+import { REPLAY_WINDOW_DAYS } from '@/lib/constants';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: Request) {
+  if (!stripeServer) {
+    console.error('Webhook: STRIPE_SECRET_KEY is not configured');
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+  }
+
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 
@@ -24,7 +30,7 @@ export async function POST(request: Request) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = stripeServer.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
     console.error('Webhook signature verification failed:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -53,7 +59,10 @@ export async function POST(request: Request) {
     if (insertError.code === '23505') {
       return NextResponse.json({ received: true, duplicate: true });
     }
+    // Non-unique error (e.g., Supabase down) — return 500 so Stripe retries later
+    // rather than processing without idempotency protection
     console.error('Failed to record stripe event:', insertError);
+    return NextResponse.json({ error: 'Failed to record event' }, { status: 500 });
   }
 
   try {
@@ -78,9 +87,15 @@ export async function POST(request: Request) {
           // VOD purchases — identified by metadata.purchase_type
           if (session.metadata?.purchase_type === 'vod') {
             // Retrieve line items to get product details
-            const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-              expand: ['line_items.data.price.product'],
-            });
+            let fullSession;
+            try {
+              fullSession = await stripeServer.checkout.sessions.retrieve(session.id, {
+                expand: ['line_items.data.price.product'],
+              });
+            } catch (stripeErr) {
+              console.error('Webhook: Failed to retrieve VOD session line items:', stripeErr);
+              break;
+            }
             const lineItem = fullSession.line_items?.data[0];
             const product = lineItem?.price?.product as Stripe.Product | undefined;
             const price = lineItem?.price;
@@ -91,6 +106,7 @@ export async function POST(request: Request) {
                 email: customerEmail,
                 purchase_type: 'vod' as const,
                 stripe_session_id: session.id,
+                stripe_payment_intent_id: paymentIntentId,
                 stripe_product_id: product.id,
                 product_name: product.name,
                 product_image: product.images?.[0] || null,
@@ -101,7 +117,7 @@ export async function POST(request: Request) {
                 user_id: session.metadata?.user_id || null,
                 session_version: 1,
               };
-              const { error: upsertError } = await supabase.from('purchases').upsert(vodRow, { onConflict: 'stripe_session_id' });
+              const { data: vodPurchase, error: upsertError } = await supabase.from('purchases').upsert(vodRow, { onConflict: 'stripe_session_id' }).select('id').single();
 
               if (upsertError) {
                 console.error('Webhook: VOD purchase save error:', upsertError);
@@ -113,6 +129,7 @@ export async function POST(request: Request) {
                     expiresAt: null,
                     amountPaid: price?.unit_amount || 0,
                     purchaseType: 'vod',
+                    vodPurchaseId: vodPurchase?.id,
                   });
                   await resend.emails.send({
                     from: 'BoxStreamTV <hunter@boxstreamtv.com>',
@@ -140,7 +157,7 @@ export async function POST(request: Request) {
           if (metadataEventId) {
             const { data } = await supabase
               .from('events')
-              .select('id, name, expires_at')
+              .select('id, name, date')
               .eq('id', metadataEventId)
               .maybeSingle();
             targetEvent = data;
@@ -149,16 +166,16 @@ export async function POST(request: Request) {
           if (!targetEvent && !metadataEventId) {
             const { data } = await supabase
               .from('events')
-              .select('id, name, expires_at')
+              .select('id, name, date')
               .eq('is_active', true)
               .maybeSingle();
             targetEvent = data;
           }
 
           if (targetEvent) {
-            const expiresAt = targetEvent.expires_at
-              ? new Date(targetEvent.expires_at).toISOString()
-              : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+            const expiresAt = targetEvent.date
+              ? new Date(new Date(targetEvent.date).getTime() + REPLAY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+              : null;
 
             // Upsert to handle race with verify-payment
             const ppvRow = {
@@ -180,6 +197,34 @@ export async function POST(request: Request) {
               console.error('Webhook: PPV purchase save error:', upsertError);
             } else {
               console.log('Webhook: PPV purchase saved for:', customerEmail);
+
+              // Send confirmation email if verify-payment hasn't already claimed & emailed.
+              // Check session_claimed_at: if null, the user hasn't hit the success page yet.
+              const { data: purchase } = await supabase
+                .from('purchases')
+                .select('session_claimed_at')
+                .eq('stripe_payment_intent_id', paymentIntentId)
+                .maybeSingle();
+
+              if (!purchase?.session_claimed_at) {
+                try {
+                  const { html, text } = purchaseConfirmationEmail({
+                    eventName: targetEvent.name,
+                    expiresAt,
+                    amountPaid: session.amount_total || 0,
+                  });
+                  await resend.emails.send({
+                    from: 'BoxStreamTV <hunter@boxstreamtv.com>',
+                    replyTo: 'hunter@boxstreamtv.com',
+                    to: customerEmail,
+                    subject: `You're in — ${targetEvent.name}`,
+                    html,
+                    text,
+                  });
+                } catch (emailErr) {
+                  console.error('PPV confirmation email failed:', emailErr);
+                }
+              }
             }
           } else {
             console.error('Webhook: No event found for PPV checkout', session.id);
@@ -195,7 +240,13 @@ export async function POST(request: Request) {
           ? session.subscription
           : session.subscription.id;
 
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        let subscription;
+        try {
+          subscription = await stripeServer.subscriptions.retrieve(subscriptionId);
+        } catch (stripeErr) {
+          console.error('Webhook: Failed to retrieve subscription:', stripeErr);
+          break;
+        }
         const userId = subscription.metadata.user_id || session.metadata?.user_id;
 
         if (!userId) {
@@ -206,7 +257,7 @@ export async function POST(request: Request) {
         const tier = determineTier(subscription);
         const periods = getPeriodDates(subscription);
 
-        await supabase.from('subscriptions').upsert({
+        const { error: subUpsertError } = await supabase.from('subscriptions').upsert({
           user_id: userId,
           stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id ?? '',
           stripe_subscription_id: subscriptionId,
@@ -215,6 +266,10 @@ export async function POST(request: Request) {
           ...periods,
           cancel_at_period_end: subscription.cancel_at_period_end,
         }, { onConflict: 'stripe_subscription_id' });
+
+        if (subUpsertError) {
+          console.error('Webhook: subscription upsert (checkout) failed:', subUpsertError);
+        }
 
         // Send subscription confirmation email
         const customerEmail = session.customer_details?.email?.toLowerCase().trim();
@@ -253,7 +308,7 @@ export async function POST(request: Request) {
         const effectivelyCanceling = subscription.cancel_at_period_end || !!cancelAt;
 
         if (userId) {
-          await supabase.from('subscriptions').upsert({
+          const { error: subUpdateError } = await supabase.from('subscriptions').upsert({
             user_id: userId,
             stripe_customer_id: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
             stripe_subscription_id: subscription.id,
@@ -262,6 +317,10 @@ export async function POST(request: Request) {
             ...periods,
             cancel_at_period_end: effectivelyCanceling,
           }, { onConflict: 'stripe_subscription_id' });
+
+          if (subUpdateError) {
+            console.error('Webhook: subscription upsert (updated) failed:', subUpdateError);
+          }
         } else {
           // No user_id in metadata — update existing row by stripe_subscription_id
           const { error: updateError } = await supabase
@@ -321,10 +380,14 @@ export async function POST(request: Request) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
 
-        await supabase
+        const { error: deleteUpdateError } = await supabase
           .from('subscriptions')
           .update({ status: 'canceled', cancel_at_period_end: false })
           .eq('stripe_subscription_id', subscription.id);
+
+        if (deleteUpdateError) {
+          console.error('Webhook: subscription update (deleted) failed:', deleteUpdateError);
+        }
 
         // Send cancellation confirmation email
         try {
@@ -413,10 +476,14 @@ export async function POST(request: Request) {
           : null;
 
         if (subscriptionId) {
-          await supabase
+          const { error: pastDueError } = await supabase
             .from('subscriptions')
             .update({ status: 'past_due' })
             .eq('stripe_subscription_id', subscriptionId);
+
+          if (pastDueError) {
+            console.error('Webhook: subscription update (past_due) failed:', pastDueError);
+          }
 
           // Send payment failed email
           try {
@@ -463,13 +530,12 @@ export async function POST(request: Request) {
           break;
         }
 
-        // Revoke access: bump session_version so existing JWTs are invalidated,
-        // and set expires_at to now so the purchase is treated as expired.
+        // Revoke access: set expires_at to now. check-purchase validates expires_at
+        // from the DB, so any active JWT session is denied on the next access check.
         const { data: updated, error: refundError } = await supabase
           .from('purchases')
           .update({
             expires_at: new Date().toISOString(),
-            session_version: 999,
           })
           .eq('stripe_payment_intent_id', paymentIntentId)
           .select('id, email, product_name');
@@ -479,7 +545,99 @@ export async function POST(request: Request) {
         } else if (updated?.length) {
           console.log(`Webhook: Refund processed — revoked access for ${updated.length} purchase(s) on PI ${paymentIntentId}`);
         } else {
-          console.warn(`Webhook: charge.refunded but no matching purchase for PI ${paymentIntentId}`);
+          // Fallback: older VOD purchases may not have stripe_payment_intent_id set.
+          // Try to find them via the Stripe checkout session linked to this payment intent.
+          try {
+            const sessions = await stripeServer.checkout.sessions.list({ payment_intent: paymentIntentId, limit: 1 });
+            const checkoutSessionId = sessions.data[0]?.id;
+            if (checkoutSessionId) {
+              const { data: vodUpdated, error: vodRefundError } = await supabase
+                .from('purchases')
+                .update({ expires_at: new Date().toISOString() })
+                .eq('stripe_session_id', checkoutSessionId)
+                .select('id, email, product_name');
+
+              if (vodRefundError) {
+                console.error('Webhook: VOD refund fallback error:', vodRefundError);
+              } else if (vodUpdated?.length) {
+                console.log(`Webhook: Refund (VOD fallback) — revoked access for ${vodUpdated.length} purchase(s) via session ${checkoutSessionId}`);
+              } else {
+                console.warn(`Webhook: charge.refunded but no matching purchase for PI ${paymentIntentId} or session ${checkoutSessionId}`);
+              }
+            } else {
+              console.warn(`Webhook: charge.refunded but no matching purchase for PI ${paymentIntentId}`);
+            }
+          } catch (fallbackErr) {
+            console.error('Webhook: refund VOD fallback lookup failed:', fallbackErr);
+          }
+        }
+
+        break;
+      }
+
+      case 'charge.dispute.created': {
+        const dispute = event.data.object as Stripe.Dispute;
+        const charge = typeof dispute.charge === 'string'
+          ? null
+          : dispute.charge;
+        const paymentIntentId = dispute.payment_intent
+          ? (typeof dispute.payment_intent === 'string'
+            ? dispute.payment_intent
+            : dispute.payment_intent.id)
+          : (charge?.payment_intent
+            ? (typeof charge.payment_intent === 'string'
+              ? charge.payment_intent
+              : charge.payment_intent?.id)
+            : null);
+
+        if (!paymentIntentId) {
+          console.error('Webhook: charge.dispute.created missing payment_intent', dispute.id);
+          break;
+        }
+
+        // Revoke access on dispute — same pattern as charge.refunded.
+        // If the dispute is later resolved in the merchant's favor, access
+        // can be re-granted manually via the admin grant tool.
+        const { data: disputed, error: disputeError } = await supabase
+          .from('purchases')
+          .update({
+            expires_at: new Date().toISOString(),
+          })
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .select('id, email, product_name');
+
+        if (disputeError) {
+          console.error('Webhook: dispute update error:', disputeError);
+        } else if (disputed?.length) {
+          console.log(`Webhook: Dispute — revoked access for ${disputed.length} purchase(s) on PI ${paymentIntentId} (reason: ${dispute.reason})`);
+        } else {
+          // Fallback: legacy VOD rows may lack stripe_payment_intent_id.
+          // Look up the checkout session that used this payment_intent, then match by session ID.
+          try {
+            const sessions = await stripeServer!.checkout.sessions.list({
+              payment_intent: paymentIntentId,
+              limit: 1,
+            });
+            const checkoutSessionId = sessions.data[0]?.id;
+            if (checkoutSessionId) {
+              const { data: legacy, error: legacyErr } = await supabase
+                .from('purchases')
+                .update({ expires_at: new Date().toISOString() })
+                .eq('stripe_session_id', checkoutSessionId)
+                .select('id, email, product_name');
+              if (legacyErr) {
+                console.error('Webhook: dispute VOD fallback update error:', legacyErr);
+              } else if (legacy?.length) {
+                console.log(`Webhook: Dispute fallback — revoked ${legacy.length} purchase(s) via session ${checkoutSessionId} (reason: ${dispute.reason})`);
+              } else {
+                console.warn(`Webhook: charge.dispute.created but no matching purchase for PI ${paymentIntentId} or session ${checkoutSessionId}`);
+              }
+            } else {
+              console.warn(`Webhook: charge.dispute.created but no matching purchase for PI ${paymentIntentId}`);
+            }
+          } catch (fallbackErr) {
+            console.error('Webhook: dispute VOD fallback lookup failed:', fallbackErr);
+          }
         }
 
         break;
@@ -497,7 +655,7 @@ export async function POST(request: Request) {
 async function getEmailForCustomer(customer: Stripe.Subscription['customer']): Promise<string | null> {
   try {
     const customerId = typeof customer === 'string' ? customer : customer.id;
-    const retrieved = await stripe.customers.retrieve(customerId);
+    const retrieved = await stripeServer!.customers.retrieve(customerId);
     if (retrieved.deleted) return null;
     return retrieved.email ?? null;
   } catch {

@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { stripeServer } from '@/lib/stripe';
 
 export interface VodProduct {
   id: string;
@@ -29,11 +30,10 @@ export interface EventGroup {
   products: VodProduct[];
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 export async function getProducts(): Promise<VodProduct[]> {
+  if (!stripeServer) return [];
   const products: Stripe.Product[] = [];
-  for await (const product of stripe.products.list({ active: true, expand: ['data.default_price'], limit: 100 })) {
+  for await (const product of stripeServer.products.list({ active: true, expand: ['data.default_price'], limit: 100 })) {
     products.push(product);
   }
 

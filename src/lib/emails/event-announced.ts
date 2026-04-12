@@ -1,12 +1,19 @@
+import { escapeHtml } from '@/lib/utils';
+
 export function eventAnnouncedEmail({
   eventName,
   eventDate,
   ppvPrice,
+  unsubscribeUrl,
 }: {
   eventName: string;
   eventDate: string;
   ppvPrice: string;
+  unsubscribeUrl?: string;
 }) {
+  const safeEventName = escapeHtml(eventName);
+  const safePpvPrice = escapeHtml(ppvPrice);
+
   const dateFormatted = new Date(eventDate).toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -19,7 +26,7 @@ export function eventAnnouncedEmail({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${eventName} – BoxStreamTV</title>
+  <title>${safeEventName} – BoxStreamTV</title>
 </head>
 <body style="margin:0;padding:0;background-color:#000000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;padding:40px 16px;">
@@ -49,7 +56,7 @@ export function eventAnnouncedEmail({
                       New Event
                     </p>
                     <h1 style="margin:0 0 8px;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;line-height:1.2;">
-                      ${eventName}
+                      ${safeEventName}
                     </h1>
                     <div style="width:40px;height:2px;background-color:#ef4444;margin:0 0 24px;"></div>
 
@@ -68,7 +75,7 @@ export function eventAnnouncedEmail({
                       <tr>
                         <td style="padding-top:16px;">
                           <p style="margin:0 0 2px;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;">PPV Price</p>
-                          <p style="margin:0;font-size:16px;font-weight:600;color:#ffffff;">${ppvPrice}</p>
+                          <p style="margin:0;font-size:16px;font-weight:600;color:#ffffff;">${safePpvPrice}</p>
                         </td>
                       </tr>
                     </table>
@@ -114,6 +121,7 @@ export function eventAnnouncedEmail({
                 <a href="https://boxstreamtv.com/account" style="color:#374151;text-decoration:underline;">My Account</a>
                 &middot;
                 <a href="https://boxstreamtv.com/privacy" style="color:#374151;text-decoration:underline;">Privacy</a>
+                ${unsubscribeUrl ? `&middot; <a href="${unsubscribeUrl}" style="color:#374151;text-decoration:underline;">Unsubscribe</a>` : ''}
               </p>
             </td>
           </tr>
@@ -135,7 +143,8 @@ Fight Pass Premium includes this event. Fight Pass Basic gets 25% off.
 Get access: https://boxstreamtv.com/
 View Fight Pass plans: https://boxstreamtv.com/pricing
 
-Questions? hunter@boxstreamtv.com`;
+Questions? hunter@boxstreamtv.com
+${unsubscribeUrl ? `\nUnsubscribe: ${unsubscribeUrl}` : ''}`;
 
   return { html, text };
 }

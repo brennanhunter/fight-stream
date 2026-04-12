@@ -14,6 +14,10 @@ const MAX_CACHE_SIZE = 100;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const geocodeCache = new Map<string, { coords: VenueCoords; expiresAt: number }>();
 
+const IP_CACHE_MAX_SIZE = 500;
+const IP_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const ipGeoCache = new Map<string, { lat: number; lon: number; expiresAt: number }>();
+
 /** Geocode an address to lat/lon using OpenStreetMap Nominatim. */
 async function geocodeAddress(address: string): Promise<VenueCoords | null> {
   const cached = geocodeCache.get(address);
@@ -86,19 +90,38 @@ export async function checkGeoRestriction(
     const clientIp = ip ?? await getClientIp();
     if (!clientIp) return { blocked: false, distanceMiles: null };
 
-    const res = await fetch(`http://ip-api.com/json/${encodeURIComponent(clientIp)}?fields=status,lat,lon,city,regionName`, {
-      cache: 'no-store',
-    });
+    // Check IP geo cache first to avoid hitting rate limits
+    let latitude: number;
+    let longitude: number;
+    const cachedIp = ipGeoCache.get(clientIp);
+    if (cachedIp && cachedIp.expiresAt > Date.now()) {
+      latitude = cachedIp.lat;
+      longitude = cachedIp.lon;
+    } else {
+      if (cachedIp) ipGeoCache.delete(clientIp); // expired — remove
 
-    if (!res.ok) return { blocked: false, distanceMiles: null };
+      // Use ipapi.co (HTTPS, free tier 1k/day) instead of ip-api.com (HTTP-only on free tier)
+      const res = await fetch(`https://ipapi.co/${encodeURIComponent(clientIp)}/json/`, {
+        cache: 'no-store',
+      });
 
-    const data = await res.json();
-    if (data.status !== 'success') return { blocked: false, distanceMiles: null };
-    const latitude = data.lat;
-    const longitude = data.lon;
+      if (!res.ok) return { blocked: false, distanceMiles: null };
 
-    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-      return { blocked: false, distanceMiles: null };
+      const data = await res.json();
+      latitude = data.latitude;
+      longitude = data.longitude;
+
+      if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+        return { blocked: false, distanceMiles: null };
+      }
+
+      ipGeoCache.set(clientIp, { lat: latitude, lon: longitude, expiresAt: Date.now() + IP_CACHE_TTL_MS });
+
+      // Evict oldest entries if cache exceeds max size
+      if (ipGeoCache.size > IP_CACHE_MAX_SIZE) {
+        const firstKey = ipGeoCache.keys().next().value;
+        if (firstKey) ipGeoCache.delete(firstKey);
+      }
     }
 
     const distance = haversineDistance(latitude, longitude, venue.lat, venue.lon);

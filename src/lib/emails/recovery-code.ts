@@ -1,3 +1,5 @@
+import { escapeHtml } from '@/lib/utils';
+
 export function recoveryCodeEmail({
   eventName,
   code,
@@ -5,6 +7,9 @@ export function recoveryCodeEmail({
   eventName: string;
   code: string;
 }) {
+  const safeEventName = escapeHtml(eventName);
+  const safeCode = escapeHtml(code);
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,7 +41,7 @@ export function recoveryCodeEmail({
 
               <p style="margin:0 0 28px;font-size:15px;color:#9ca3af;text-align:center;line-height:1.6;">
                 Enter this code to restore your access to
-                <strong style="color:#ffffff;">${eventName}</strong>.
+                <strong style="color:#ffffff;">${safeEventName}</strong>.
               </p>
 
               <!-- Code block -->
@@ -44,7 +49,7 @@ export function recoveryCodeEmail({
                 <tr>
                   <td align="center">
                     <div style="border:1px solid rgba(255,255,255,0.2);display:inline-block;padding:20px 40px;">
-                      <span style="font-size:36px;font-weight:700;color:#ffffff;letter-spacing:0.3em;">${code}</span>
+                      <span style="font-size:36px;font-weight:700;color:#ffffff;letter-spacing:0.3em;">${safeCode}</span>
                     </div>
                   </td>
                 </tr>

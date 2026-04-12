@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, 'contact', 3, 60 * 60 * 1000); // 3 per hour
-  if (limited) {
-    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
-  }
+  const limited = await rateLimit(req, 'contact', 3, 60 * 60 * 1000); // 3 per hour
+  if (limited) return limited;
 
   const body = await req.json();
 

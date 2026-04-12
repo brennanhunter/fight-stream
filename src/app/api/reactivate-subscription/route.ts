@@ -3,11 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripeServer } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, 'reactivate-subscription', 10);
+  if (!stripeServer) {
+    return NextResponse.json({ error: 'Payment service unavailable' }, { status: 500 });
+  }
+
+  const limited = await rateLimit(request, 'reactivate-subscription', 10);
   if (limited) return limited;
 
   try {
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
       .from('subscriptions')
       .select('stripe_subscription_id')
       .eq('user_id', user.id)
-      .in('status', ['active', 'trialing'])
+      .in('status', ['active', 'trialing', 'past_due'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -35,12 +38,11 @@ export async function POST(request: NextRequest) {
     // Retrieve live subscription to check which cancellation mechanism is active.
     // The billing portal can cancel via cancel_at (specific timestamp) instead of
     // cancel_at_period_end — both need to be cleared to fully reactivate.
-    const stripeSub = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
-    const cancelAt = (stripeSub as Stripe.Subscription & { cancel_at: number | null }).cancel_at;
+    const stripeSub = await stripeServer.subscriptions.retrieve(sub.stripe_subscription_id);
 
-    await stripe.subscriptions.update(sub.stripe_subscription_id, {
+    await stripeServer.subscriptions.update(sub.stripe_subscription_id, {
       cancel_at_period_end: false,
-      ...(cancelAt ? { cancel_at: '' as unknown as number } : {}),
+      ...(stripeSub.cancel_at ? { cancel_at: '' as Stripe.Emptyable<number> } : {}),
     });
 
     return NextResponse.json({ success: true });

@@ -5,11 +5,12 @@ import { createSession, getSession } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
 import { purchaseConfirmationEmail } from '@/lib/emails/purchase-confirmation';
+import { REPLAY_WINDOW_DAYS } from '@/lib/constants';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, 'verify-payment', 20);
+  const limited = await rateLimit(req, 'verify-payment', 20);
   if (limited) return limited;
 
   try {
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (metadataEventId) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, expires_at')
+        .select('id, name, date, is_streaming')
         .eq('id', metadataEventId)
         .maybeSingle();
       activeEvent = data;
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     if (!activeEvent && !metadataEventId) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, expires_at')
+        .select('id, name, date, is_streaming')
         .eq('is_active', true)
         .maybeSingle();
       activeEvent = data;
@@ -74,9 +75,10 @@ export async function POST(req: NextRequest) {
 
     const eventId = activeEvent.id;
     const eventName = activeEvent.name;
-    const expiresAt = activeEvent.expires_at
-      ? new Date(activeEvent.expires_at).toISOString()
-      : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const isStreaming = activeEvent.is_streaming ?? false;
+    const expiresAt = activeEvent.date
+      ? new Date(new Date(activeEvent.date).getTime() + REPLAY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      : null;
 
     const customerEmail = checkoutSession.customer_details?.email?.toLowerCase().trim();
     if (!customerEmail) {
@@ -118,7 +120,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           success: true,
           message: 'Payment verified and access granted',
-          eventAccess: { eventId, eventName, expiresAt },
+          eventAccess: { eventId, eventName, expiresAt, isStreaming },
         });
       }
 
@@ -127,11 +129,23 @@ export async function POST(req: NextRequest) {
       sessionVersion = existingPurchase.session_version || 1;
 
       if (claimedAt === null) {
-        // First actual claim — record the timestamp and ensure session_version is set.
-        await supabase
+        // First actual claim — use a conditional update (.is null guard) so only
+        // one concurrent request wins. If 0 rows come back, another tab already
+        // claimed it; return success without issuing new cookies.
+        const { data: claimed } = await supabase
           .from('purchases')
-          .update({ session_claimed_at: new Date().toISOString(), session_version: sessionVersion })
-          .eq('id', existingPurchase.id);
+          .update({ session_claimed_at: new Date().toISOString(), session_version: sessionVersion, expires_at: expiresAt })
+          .eq('id', existingPurchase.id)
+          .is('session_claimed_at', null)
+          .select('id');
+
+        if (!claimed || claimed.length === 0) {
+          return NextResponse.json({
+            success: true,
+            message: 'Payment verified and access granted',
+            eventAccess: { eventId, eventName, expiresAt, isStreaming },
+          });
+        }
       } else {
         // Re-claim within grace window. Only re-issue cookies to the original
         // buyer's browser (which already has the ppv_session cookie from the
@@ -143,7 +157,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             success: true,
             message: 'Payment verified and access granted',
-            eventAccess: { eventId, eventName, expiresAt },
+            eventAccess: { eventId, eventName, expiresAt, isStreaming },
           });
         }
       }
@@ -169,7 +183,7 @@ export async function POST(req: NextRequest) {
       secure: true,
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 365,
+      maxAge: 60 * 60 * 24 * 7, // 7 days — covers replay window
     });
 
     // isFirstClaim: true if this is the very first time the success page is hit
@@ -197,6 +211,14 @@ export async function POST(req: NextRequest) {
 
       if (upsertError) console.error('Supabase PPV save error:', upsertError);
       else console.log('Supabase PPV purchase saved for:', customerEmail);
+
+      // If the upsert was skipped (webhook inserted between our SELECT and upsert),
+      // ensure session_claimed_at is set so a second visitor can't claim cookies.
+      await supabase
+        .from('purchases')
+        .update({ session_claimed_at: new Date().toISOString() })
+        .eq('stripe_payment_intent_id', deduplicationId)
+        .is('session_claimed_at', null);
     }
 
     // Send confirmation email on the first claim regardless of insert/upsert path
@@ -227,6 +249,7 @@ export async function POST(req: NextRequest) {
         eventId: sessionData.eventId,
         eventName: sessionData.eventName,
         expiresAt: sessionData.expiresAt,
+        isStreaming,
       },
     });
   } catch (error) {

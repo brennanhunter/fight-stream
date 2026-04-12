@@ -74,7 +74,15 @@ export function paymentFailedEmail({
                         </td>
                       </tr>
                     </table>`
-                  : ''
+                  : `<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,255,255,0.1);margin-bottom:28px;">
+                      <tr>
+                        <td style="padding:16px 20px;">
+                          <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;">Next retry</p>
+                          <p style="margin:6px 0 0;font-size:15px;font-weight:600;color:#ffffff;">Within the next 3&ndash;5 days</p>
+                          <p style="margin:6px 0 0;font-size:13px;color:#9ca3af;">If it fails again, your access will be paused.</p>
+                        </td>
+                      </tr>
+                    </table>`
               }
 
               <!-- CTA -->
@@ -119,7 +127,7 @@ export function paymentFailedEmail({
 
 We weren't able to charge your card for your Fight Pass ${tierLabel} subscription.
 Your access is still active for now — please update your payment method to avoid losing it.
-${retryFormatted ? `\nNext retry: ${retryFormatted}` : ''}
+${retryFormatted ? `\nNext retry: ${retryFormatted}` : '\nStripe will retry your card within the next 3–5 days. If it fails again, your access will be paused.'}
 
 Update your payment method: https://boxstreamtv.com/account/subscription
 

@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation';
-import Stripe from 'stripe';
+import type { Stripe } from 'stripe';
 import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
 import { checkGeoRestriction } from '@/lib/geo';
+import { stripeServer } from '@/lib/stripe';
 import LivePlayer from './LivePlayer';
 
 export const dynamic = 'force-dynamic';
@@ -13,8 +14,6 @@ export const metadata: Metadata = {
   title: 'Watch Live | BoxStreamTV',
   description: 'Watch the live boxing event on BoxStreamTV.',
 };
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export default async function LivePage() {
   const supabase = createServerClient();
@@ -50,9 +49,9 @@ export default async function LivePage() {
   let posterImage: string | null = null;
   let priceCents = 0;
 
-  if (activeEvent.stripe_price_id) {
+  if (activeEvent.stripe_price_id && stripeServer) {
     try {
-      const price = await stripe.prices.retrieve(activeEvent.stripe_price_id, {
+      const price = await stripeServer.prices.retrieve(activeEvent.stripe_price_id, {
         expand: ['product'],
       });
       const product = price.product as Stripe.Product;

@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 
-export default function AdminGrantForm() {
+export default function AdminGrantForm({ activeEventId, activeEventName }: { activeEventId: string | null; activeEventName: string | null }) {
   const [email, setEmail] = useState('');
   const [productName, setProductName] = useState('');
   const [purchaseType, setPurchaseType] = useState<'ppv' | 'vod'>('ppv');
+  const [eventId, setEventId] = useState(activeEventId ?? '');
   const [expiresAt, setExpiresAt] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -18,13 +19,14 @@ export default function AdminGrantForm() {
     const res = await fetch('/api/admin/grant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, productName, purchaseType, expiresAt: expiresAt || null }),
+      body: JSON.stringify({ email, productName, purchaseType, eventId: eventId || null, expiresAt: expiresAt || null }),
     });
 
     if (res.ok) {
       setStatus('success');
       setEmail('');
       setProductName('');
+      setEventId(activeEventId ?? '');
       setExpiresAt('');
     } else {
       const data = await res.json();
@@ -62,6 +64,15 @@ export default function AdminGrantForm() {
           <option value="ppv">PPV</option>
           <option value="vod">VOD</option>
         </select>
+        <input
+          type="text"
+          placeholder={activeEventName ? `Event ID (default: ${activeEventName})` : 'Event ID (for PPV grants)'}
+          value={eventId}
+          onChange={(e) => setEventId(e.target.value)}
+          className="bg-white/5 border border-white/20 text-white placeholder-gray-600 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+        />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <input
           type="datetime-local"
           value={expiresAt}

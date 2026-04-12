@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSession } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
+import { REPLAY_WINDOW_DAYS } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, 'redeem-promo', 5);
+  const limited = await rateLimit(req, 'redeem-promo', 5);
   if (limited) return limited;
 
   try {
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient();
     const { data: activeEvent } = await supabase
       .from('events')
-      .select('id, name, expires_at')
+      .select('id, name, date')
       .eq('is_active', true)
       .maybeSingle();
 
@@ -58,9 +59,9 @@ export async function POST(req: NextRequest) {
 
     const eventId = activeEvent.id;
     const eventName = activeEvent.name;
-    const expiresAt = activeEvent.expires_at
-      ? new Date(activeEvent.expires_at).toISOString()
-      : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const expiresAt = activeEvent.date
+      ? new Date(new Date(activeEvent.date).getTime() + REPLAY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      : null;
 
     const promoEmail = email.trim().toLowerCase();
 

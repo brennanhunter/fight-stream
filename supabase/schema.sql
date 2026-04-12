@@ -1,6 +1,6 @@
 -- ============================================================
 -- BoxStreamTV — Master Supabase Schema
--- Source of truth. Reflects live DB as of 2026-04-07.
+-- Source of truth. Reflects live DB as of 2026-04-12.
 -- Safe to re-run (uses IF NOT EXISTS / IF NOT EXISTS guards).
 -- Run in Supabase SQL Editor to bootstrap a fresh project.
 -- ============================================================
@@ -20,7 +20,6 @@ CREATE TABLE IF NOT EXISTS events (
   replay_url            text,                          -- post-event replay URL
   venue_address         text,                          -- full address for geo-restriction
   blackout_radius_miles integer     DEFAULT 90,        -- geo-blackout radius in miles
-  expires_at            timestamptz,                   -- when buyer access expires
   is_active             boolean     NOT NULL DEFAULT false,
   is_streaming          boolean     NOT NULL DEFAULT false, -- controls Watch Now CTA visibility
   promoter_email        text,                          -- OTP gate for promoter report
@@ -32,7 +31,7 @@ CREATE TABLE IF NOT EXISTS events (
 
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Events public read"      ON events FOR SELECT USING (true);
-CREATE POLICY "Events service write"    ON events FOR ALL    USING (true) WITH CHECK (true);
+-- Service role bypasses RLS; no explicit 'service write' policy needed.
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -77,12 +76,14 @@ CREATE TABLE IF NOT EXISTS purchases (
 
 CREATE INDEX IF NOT EXISTS idx_purchases_email      ON purchases (email);
 CREATE INDEX IF NOT EXISTS idx_purchases_event_id   ON purchases (event_id);
-CREATE INDEX IF NOT EXISTS idx_purchases_stripe_session ON purchases (stripe_session_id);
-CREATE INDEX IF NOT EXISTS idx_purchases_stripe_pi  ON purchases (stripe_payment_intent_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_user_id    ON purchases (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_stripe_session ON purchases (stripe_session_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_stripe_pi  ON purchases (stripe_payment_intent_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_promo_dedup ON purchases (email, event_id, amount_paid) WHERE amount_paid = 0;
 
 ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Purchases service full access"   ON purchases FOR ALL    USING (true) WITH CHECK (true);
 CREATE POLICY "Purchases user read own"         ON purchases FOR SELECT USING (auth.jwt() ->> 'email' = email);
+CREATE POLICY "Purchases user read own by uid"  ON purchases FOR SELECT USING (auth.uid() = user_id);
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -99,7 +100,6 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Profiles service full access"  ON profiles FOR ALL    USING (true) WITH CHECK (true);
 CREATE POLICY "Profiles user read own"        ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Profiles user update own"      ON profiles FOR UPDATE USING (auth.uid() = id);
 
@@ -124,10 +124,9 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions (user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer ON subscriptions (stripe_customer_id);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_sub ON subscriptions (stripe_subscription_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_stripe_sub ON subscriptions (stripe_subscription_id);
 
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Subscriptions service full access" ON subscriptions FOR ALL    USING (true) WITH CHECK (true);
 CREATE POLICY "Subscriptions user read own"       ON subscriptions FOR SELECT USING (auth.uid() = user_id);
 
 
@@ -147,9 +146,9 @@ CREATE TABLE IF NOT EXISTS favorites (
 CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites (user_id);
 
 ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Favorites service full access" ON favorites FOR ALL    USING (true) WITH CHECK (true);
 CREATE POLICY "Favorites user read own"       ON favorites FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Favorites user write own"      ON favorites FOR ALL    USING (auth.uid() = user_id);
+CREATE POLICY "Favorites user add own"        ON favorites FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Favorites user remove own"     ON favorites FOR DELETE USING (auth.uid() = user_id);
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -164,9 +163,9 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 );
 
 ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "NotifPrefs service full access" ON notification_preferences FOR ALL    USING (true) WITH CHECK (true);
 CREATE POLICY "NotifPrefs user read own"       ON notification_preferences FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "NotifPrefs user write own"      ON notification_preferences FOR ALL    USING (auth.uid() = user_id);
+CREATE POLICY "NotifPrefs user insert own"     ON notification_preferences FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "NotifPrefs user update own"     ON notification_preferences FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -180,100 +179,52 @@ CREATE TABLE IF NOT EXISTS stripe_events (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE stripe_events ENABLE ROW LEVEL SECURITY;
+-- No user-facing policies — only service role (RLS bypass) accesses this table.
 
--- 1. Purchases table
---    Unified table for both VoD and PPV purchases.
---    Keyed by customer email so purchases survive cookie clears
---    and work across devices.
-CREATE TABLE IF NOT EXISTS purchases (
-  id              uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  email           text NOT NULL,
-  purchase_type   text NOT NULL CHECK (purchase_type IN ('vod', 'ppv')),
 
-  -- Stripe references
-  stripe_session_id       text,          -- Checkout Session ID (VoD)
-  stripe_payment_intent_id text,         -- PaymentIntent ID (PPV)
-  stripe_product_id       text,          -- Stripe product ID
-
-  -- Cached product details (avoids Stripe API calls on every page load)
-  product_name    text NOT NULL,
-  product_image   text,                  -- product image URL
-  s3_key          text,                  -- S3 key for VoD playback
-  event_id        text,                  -- PPV event identifier (e.g., 'havoc-hilton-3-2026')
-
-  -- Pricing
-  amount_paid     integer NOT NULL,      -- in cents
-  currency        text NOT NULL DEFAULT 'usd',
-
-  -- Timestamps
-  purchased_at    timestamptz NOT NULL DEFAULT now(),
-  expires_at      timestamptz,           -- PPV access expiration (null = never expires)
-  session_version integer NOT NULL DEFAULT 1, -- bumped on each session creation to enforce single active viewer
-  created_at      timestamptz NOT NULL DEFAULT now()
+-- ─────────────────────────────────────────────────────────────
+-- Rate limiting (serverless-safe)
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key       text PRIMARY KEY,
+  count     int  NOT NULL DEFAULT 1,
+  reset_at  bigint NOT NULL  -- Unix timestamp in ms
 );
 
--- Indexes for fast lookups
-CREATE INDEX idx_purchases_email ON purchases (email);
-CREATE INDEX idx_purchases_event_id ON purchases (event_id);
-CREATE INDEX idx_purchases_stripe_session ON purchases (stripe_session_id);
-CREATE INDEX idx_purchases_stripe_pi ON purchases (stripe_payment_intent_id);
+ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+-- No user-facing policies — only service role (RLS bypass) accesses this table.
 
--- 2. Enable Row Level Security
-ALTER TABLE purchases ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION check_rate_limit(
+  p_key       text,
+  p_limit     int,
+  p_window_ms bigint
+) RETURNS jsonb AS $$
+DECLARE
+  v_now      bigint := (EXTRACT(EPOCH FROM now()) * 1000)::bigint;
+  v_count    int;
+  v_reset_at bigint;
+BEGIN
+  INSERT INTO rate_limits (key, count, reset_at)
+  VALUES (p_key, 1, v_now + p_window_ms)
+  ON CONFLICT (key) DO UPDATE
+    SET count = CASE
+          WHEN rate_limits.reset_at < v_now THEN 1
+          ELSE rate_limits.count + 1
+        END,
+        reset_at = CASE
+          WHEN rate_limits.reset_at < v_now THEN v_now + p_window_ms
+          ELSE rate_limits.reset_at
+        END
+  RETURNING count, reset_at INTO v_count, v_reset_at;
 
--- Policy: service role (server-side) can do everything
--- (The anon/public key won't be used for writes — only the service role key)
-CREATE POLICY "Service role full access"
-  ON purchases
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+  IF v_count > p_limit THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'retry_after', ((v_reset_at - v_now) / 1000)::int
+    );
+  END IF;
 
--- Policy: authenticated users can read their own purchases
-CREATE POLICY "Users can view own purchases"
-  ON purchases
-  FOR SELECT
-  USING (auth.jwt() ->> 'email' = email);
-
--- 3. Events table
---    Stores event config. Price, poster image, and currency are
---    pulled from Stripe via stripe_price_id at runtime.
-CREATE TABLE IF NOT EXISTS events (
-  id              text PRIMARY KEY,      -- e.g., 'havoc-hilton-3-2026'
-  name            text NOT NULL,         -- 'Havoc at the Hilton 3'
-  date            timestamptz NOT NULL,  -- event date/time
-  stripe_price_id text,                  -- Stripe Price ID (image + price pulled from here)
-  ivs_channel_arn text,                  -- IVS channel ARN for this event
-  ivs_playback_url text,                 -- IVS playback URL
-  replay_url      text,                  -- IVS recording URL for post-event replay
-  venue_address   text,                  -- full venue address for geo-restriction
-  blackout_radius_miles integer,         -- geo-restriction radius in miles
-  expires_at      timestamptz,           -- when access expires
-  is_active       boolean NOT NULL DEFAULT false, -- is this the current live event?
-  created_at      timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE events ENABLE ROW LEVEL SECURITY;
-
--- Events are public-readable (everyone can see event info)
-CREATE POLICY "Events are publicly readable"
-  ON events
-  FOR SELECT
-  USING (true);
-
--- Only service role can insert/update events
-CREATE POLICY "Service role manages events"
-  ON events
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
-
--- 4. Seed the current event
-INSERT INTO events (id, name, date, expires_at, is_active)
-VALUES (
-  'havoc-hilton-3-2026',
-  'Havoc at the Hilton 3',
-  '2026-03-07T19:00:00-05:00',
-  '2026-03-08T23:59:59-05:00',
-  false  -- set to true when you're ready to go live
-);
+  RETURN jsonb_build_object('allowed', true);
+END;
+$$ LANGUAGE plpgsql;

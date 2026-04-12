@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { createBrowserClient } from '@/lib/supabase';
 
 export default function ForgotPasswordPage() {
@@ -9,6 +10,8 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const supabase = createBrowserClient();
 
@@ -19,6 +22,7 @@ export default function ForgotPasswordPage() {
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/confirm?type=recovery`,
+      captchaToken: captchaToken ?? undefined,
     });
 
     if (error) {
@@ -29,6 +33,7 @@ export default function ForgotPasswordPage() {
 
     setSuccess(true);
     setLoading(false);
+    turnstileRef.current?.reset();
   }
 
   if (success) {
@@ -81,6 +86,16 @@ export default function ForgotPasswordPage() {
             placeholder="you@example.com"
           />
         </div>
+
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            onSuccess={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            options={{ theme: 'dark', size: 'flexible' }}
+          />
+        )}
 
         <button
           type="submit"

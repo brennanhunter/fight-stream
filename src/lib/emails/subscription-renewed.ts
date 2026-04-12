@@ -1,3 +1,5 @@
+import { escapeHtml } from '@/lib/utils';
+
 export function subscriptionRenewedEmail({
   tier,
   amountPaid,
@@ -8,6 +10,7 @@ export function subscriptionRenewedEmail({
   nextRenewal: string | null;
 }) {
   const tierLabel = tier === 'premium' ? 'Premium' : 'Basic';
+  const safeAmountPaid = escapeHtml(amountPaid);
   const nextRenewalFormatted = nextRenewal
     ? new Date(nextRenewal).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : null;
@@ -66,7 +69,7 @@ export function subscriptionRenewedEmail({
                       <tr>
                         <td style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
                           <p style="margin:0 0 2px;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;">Amount Charged</p>
-                          <p style="margin:0;font-size:15px;font-weight:600;color:#ffffff;">${amountPaid}</p>
+                          <p style="margin:0;font-size:15px;font-weight:600;color:#ffffff;">${safeAmountPaid}</p>
                         </td>
                       </tr>
                       ${nextRenewalFormatted ? `

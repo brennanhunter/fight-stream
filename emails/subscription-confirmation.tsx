@@ -50,11 +50,17 @@ export default function SubscriptionConfirmation({
                 ))}
               </Section>
 
-              {renewalFormatted && (
+              {renewalFormatted ? (
                 <Text style={renewalText}>
                   Renews{' '}
                   <strong style={{ color: '#ffffff' }}>{renewalFormatted}</strong>.
                   Cancel anytime from your account.
+                </Text>
+              ) : (
+                <Text style={renewalText}>
+                  Your billing date will appear in your{' '}
+                  <Link href="https://boxstreamtv.com/account/subscription" style={{ color: '#9ca3af', textDecoration: 'underline' }}>account settings</Link>.
+                  Cancel anytime.
                 </Text>
               )}
 

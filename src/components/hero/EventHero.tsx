@@ -169,7 +169,8 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   }, [isActive]);
 
   /* ── Purchase / access state ── */
-  const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'has-access'>('checking');
+  const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'needs-recovery' | 'has-access'>('checking');
+  const [isSubscriber, setIsSubscriber] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   /* ── Check access on mount ── */
@@ -186,7 +187,14 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
           body: JSON.stringify({ eventId }),
         });
         const data = await res.json();
-        setAccessState(data.purchased ? 'has-access' : 'needs-purchase');
+        if (data.purchased) {
+          setAccessState('has-access');
+          setIsSubscriber(data.isSubscriber ?? false);
+        } else if (data.needsRecovery) {
+          setAccessState('needs-recovery');
+        } else {
+          setAccessState('needs-purchase');
+        }
       } catch {
         setAccessState('needs-purchase');
       }
@@ -343,7 +351,31 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                         ? "It's showtime — watch now."
                         : "You're all set. Watch Now will appear when the stream starts."}
                 </p>
-                {isActive && isStreaming && (
+                {replayUrl ? (
+                  <>
+                    <Link
+                      href={eventId ? `/watch?event_id=${eventId}` : '/'}
+                      className="group inline-flex items-center gap-2 bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
+                    >
+                      Watch Replay
+                      <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+                    </Link>
+                    {eventDate && (
+                      <p className="text-xs text-gray-500">
+                        Replay available until{' '}
+                        <span className="text-gray-300">
+                          {new Date(new Date(eventDate).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </p>
+                    )}
+                  </>
+                ) : isActive && isStreaming ? (
                   <Link
                     href="/live"
                     className="group inline-flex items-center gap-2 bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
@@ -351,7 +383,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                     Watch Now
                     <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
                   </Link>
-                )}
+                ) : null}
               </div>
             ) : accessState === 'needs-purchase' ? (
               /* Not purchased — show buy button + recovery */
@@ -372,15 +404,31 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                       {checkoutLoading
                         ? 'Redirecting...'
                         : subscriptionTier === 'premium'
-                          ? isStreaming ? 'Watch Live — Free' : 'Get PPV Access — Free'
-                          : isStreaming
-                            ? `Watch Live — ${ppvLabel}`
-                            : `Get PPV Access — ${ppvLabel}`}
+                          ? replayUrl ? 'Buy Replay — Free' : isStreaming ? 'Watch Live — Free' : 'Get PPV Access — Free'
+                          : replayUrl
+                            ? `Buy Replay — ${ppvLabel}`
+                            : isStreaming
+                              ? `Watch Live — ${ppvLabel}`
+                              : `Get PPV Access — ${ppvLabel}`}
                     </button>
                   )}
                 </div>
                 {checkoutError && (
                   <p className="text-sm text-red-400">{checkoutError}</p>
+                )}
+                {replayUrl && eventDate && (
+                  <p className="text-xs text-gray-500">
+                    Replay available until{' '}
+                    <span className="text-gray-300">
+                      {new Date(new Date(eventDate).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </p>
                 )}
                 <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
                   Issues? Email{' '}
@@ -393,6 +441,31 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                 >
                   Already purchased? Recover access
                 </Link>
+              </div>
+            ) : accessState === 'needs-recovery' ? (
+              /* Purchased but session expired — prompt recovery */
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <span className="text-white font-bold text-sm tracking-[0.15em] uppercase">Session Expired</span>
+                </div>
+                <p className="text-gray-400 text-sm">
+                  We found your purchase but your viewing session has expired. Recover access to continue watching.
+                </p>
+                <Link
+                  href="/recover-access"
+                  className="group inline-flex items-center gap-2 bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
+                >
+                  Recover Access
+                  <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+                </Link>
+                <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
+                  Issues? Email{' '}
+                  <a href="mailto:hunter@boxstreamtv.com" className="underline hover:text-gray-300 transition-colors">hunter@boxstreamtv.com</a>{' '}
+                  and we&apos;ll make it right.
+                </p>
               </div>
             ) : (
               /* Checking access… */

@@ -11,11 +11,23 @@ export default async function PurchasesPage() {
   if (!user) return null;
 
   const adminClient = createServerClient();
-  const { data: purchases } = await adminClient
-    .from('purchases')
-    .select('*')
-    .or(`user_id.eq.${user.id},email.eq.${user.email}`)
-    .order('created_at', { ascending: false });
+  const [{ data: purchasesByUser }, { data: purchasesByEmail }] = await Promise.all([
+    adminClient
+      .from('purchases')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+    adminClient
+      .from('purchases')
+      .select('*')
+      .eq('email', user.email!)
+      .order('created_at', { ascending: false }),
+  ]);
+
+  const seen = new Set<string>();
+  const purchases = [...(purchasesByUser || []), ...(purchasesByEmail || [])]
+    .filter(p => seen.has(p.id) ? false : (seen.add(p.id), true))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <PageTransition>

@@ -1,13 +1,15 @@
-import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripeServer } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, 'billing-portal', 10);
+  if (!stripeServer) {
+    return NextResponse.json({ error: 'Payment service unavailable' }, { status: 500 });
+  }
+
+  const limited = await rateLimit(request, 'billing-portal', 10);
   if (limited) return limited;
 
   try {
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No subscription found' }, { status: 404 });
     }
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await stripeServer.billingPortal.sessions.create({
       customer: sub.stripe_customer_id,
       return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/account/subscription`,
     });

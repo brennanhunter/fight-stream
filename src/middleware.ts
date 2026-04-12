@@ -74,11 +74,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
+  // Note: /reset-password is intentionally excluded — the recovery flow
+  // (via /auth/confirm?type=recovery) establishes an authenticated session
+  // BEFORE redirecting here, so the user must be logged in to reset.
   if (user && (
     request.nextUrl.pathname === '/login' ||
     request.nextUrl.pathname === '/signup' ||
-    request.nextUrl.pathname === '/forgot-password' ||
-    request.nextUrl.pathname === '/reset-password'
+    request.nextUrl.pathname === '/forgot-password'
   )) {
     const url = request.nextUrl.clone();
     url.pathname = '/account';

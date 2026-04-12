@@ -5,18 +5,25 @@ import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
 import { rateLimit } from '@/lib/rate-limit';
+import { REPLAY_WINDOW_DAYS } from '@/lib/constants';
+import { normalizeEmail } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, 'generate-token', 30);
+  const limited = await rateLimit(request, 'generate-token', 30);
   if (limited) return limited;
 
   try {
-    // Find the active event
+    // Find the active event, or a recently-deactivated event still in its replay window
+    const replayCutoff = new Date(Date.now() - REPLAY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
     const supabase = createServerClient();
     const { data: activeEvent } = await supabase
       .from('events')
       .select('id, ivs_channel_arn, ivs_playback_url')
-      .eq('is_active', true)
+      .or(`is_active.eq.true,date.gte.${replayCutoff}`)
+      .order('is_active', { ascending: false })
+      .order('date', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (!activeEvent) {
@@ -66,12 +73,14 @@ export async function POST(request: NextRequest) {
 
       // Check by logged-in user
       if (user) {
+        const now = new Date().toISOString();
         const { data: byId } = await supabase
           .from('purchases')
           .select('id')
           .eq('user_id', user.id)
           .eq('event_id', activeEvent.id)
           .eq('purchase_type', 'ppv')
+          .or(`expires_at.gt.${now},expires_at.is.null`)
           .limit(1)
           .maybeSingle();
         if (byId) hasPurchaseRecord = true;
@@ -80,9 +89,10 @@ export async function POST(request: NextRequest) {
           const { data: byEmail } = await supabase
             .from('purchases')
             .select('id')
-            .eq('email', user.email.toLowerCase())
+            .eq('email', normalizeEmail(user.email))
             .eq('event_id', activeEvent.id)
             .eq('purchase_type', 'ppv')
+            .or(`expires_at.gt.${now},expires_at.is.null`)
             .limit(1)
             .maybeSingle();
           if (byEmail) hasPurchaseRecord = true;
@@ -112,7 +122,7 @@ export async function POST(request: NextRequest) {
         const { data: emailPurchase } = await supabase
           .from('purchases')
           .select('id')
-          .eq('email', customerEmail.toLowerCase())
+          .eq('email', normalizeEmail(customerEmail))
           .eq('event_id', activeEvent.id)
           .eq('purchase_type', 'ppv')
           .or(`expires_at.gt.${now},expires_at.is.null`)

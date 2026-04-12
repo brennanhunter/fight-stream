@@ -4,6 +4,7 @@ import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
 import { createServerClient } from '@/lib/supabase';
 import { generateReportToken } from '@/lib/report-token';
 import { getPromoterRate, getTierLabel } from '@/lib/promoter-rate';
+import { PURCHASE_WINDOW_DAYS, REPLAY_WINDOW_DAYS } from '@/lib/constants';
 import AdminGrantForm from './AdminGrantForm';
 import AdminAnnounceForm from './AdminAnnounceForm';
 import AdminLogout from './AdminLogout';
@@ -43,7 +44,7 @@ export default async function AdminPage({
   // Active event
   const { data: activeEvent } = await supabase
     .from('events')
-    .select('id, name, date, expires_at, ivs_playback_url, ivs_channel_arn, is_streaming')
+    .select('id, name, date, ivs_playback_url, ivs_channel_arn, is_streaming')
     .eq('is_active', true)
     .maybeSingle();
 
@@ -119,20 +120,20 @@ export default async function AdminPage({
 
         {/* Active Event Status */}
         {activeEvent ? (() => {
-          const expiresAt = activeEvent.expires_at ? new Date(activeEvent.expires_at) : null;
           const eventDate = new Date(activeEvent.date);
+          const replayDeadline = new Date(eventDate.getTime() + REPLAY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+          const purchaseDeadline = new Date(eventDate.getTime() + PURCHASE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
           const now = new Date();
-          const expiresOk = expiresAt && expiresAt > eventDate;
-          const alreadyExpired = expiresAt && expiresAt < now;
+          const replayExpired = replayDeadline < now;
           return (
-            <div className={`border p-6 mb-6 ${expiresOk ? 'border-green-800/50' : 'border-red-700/60'}`}>
+            <div className={`border p-6 mb-6 ${!replayExpired ? 'border-green-800/50' : 'border-red-700/60'}`}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-0.5">Active Event</p>
                   <h2 className="text-white font-bold">{activeEvent.name}</h2>
                 </div>
-                <span className={`text-[10px] font-bold tracking-[0.15em] uppercase px-2 py-1 ${alreadyExpired ? 'bg-red-900/40 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
-                  {alreadyExpired ? 'Expired' : 'Live'}
+                <span className={`text-[10px] font-bold tracking-[0.15em] uppercase px-2 py-1 ${replayExpired ? 'bg-red-900/40 text-red-400' : 'bg-green-900/30 text-green-400'}`}>
+                  {replayExpired ? 'Expired' : 'Live'}
                 </span>
               </div>
               <div className="mb-4">
@@ -147,25 +148,23 @@ export default async function AdminPage({
                   <p className="text-white">{eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500 mb-0.5">Access Expires</p>
-                  {expiresAt
-                    ? <p className={expiresOk ? 'text-green-400' : 'text-red-400 font-bold'}>
-                        {expiresAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        {!expiresOk && ' ⚠ before event'}
-                      </p>
-                    : <p className="text-red-400 font-bold">NOT SET — sessions expire 48h after purchase</p>
-                  }
+                  <p className="text-gray-500 mb-0.5">Purchase Deadline</p>
+                  <p className={purchaseDeadline > now ? 'text-green-400' : 'text-red-400'}>
+                    {purchaseDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {purchaseDeadline < now && ' (closed)'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 mb-0.5">Replay Until</p>
+                  <p className={!replayExpired ? 'text-green-400' : 'text-red-400'}>
+                    {replayDeadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {replayExpired && ' (expired)'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-500 mb-0.5">IVS Playback URL</p>
                   <p className={activeEvent.ivs_playback_url ? 'text-green-400' : 'text-red-400 font-bold'}>
                     {activeEvent.ivs_playback_url ? 'Set' : 'NOT SET'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500 mb-0.5">IVS Channel ARN</p>
-                  <p className={activeEvent.ivs_channel_arn ? 'text-green-400' : 'text-yellow-400'}>
-                    {activeEvent.ivs_channel_arn ? 'Set' : 'Using env var'}
                   </p>
                 </div>
               </div>
@@ -246,7 +245,7 @@ export default async function AdminPage({
         {/* Grant Access */}
         <div className="border border-white/10 p-6 mb-10">
           <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-4">Grant Access</h2>
-          <AdminGrantForm />
+          <AdminGrantForm activeEventId={activeEvent?.id ?? null} activeEventName={activeEvent?.name ?? null} />
         </div>
 
         {/* Search */}

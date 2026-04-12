@@ -13,7 +13,7 @@ function generateCode(): string {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, 'send-recovery-code', 5);
+  const limited = await rateLimit(req, 'send-recovery-code', 5);
   if (limited) return limited;
 
   try {
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const trimmedEmail = email.trim().toLowerCase();
 
     // Per-email rate limit: 3 code requests per hour
-    const emailLimited = rateLimit(req, 'send-recovery-code-email', 3, 60 * 60 * 1000, trimmedEmail);
+    const emailLimited = await rateLimit(req, 'send-recovery-code-email', 3, 60 * 60 * 1000, trimmedEmail);
     if (emailLimited) return emailLimited;
 
     const supabase = createServerClient();

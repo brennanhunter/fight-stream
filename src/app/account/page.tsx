@@ -10,13 +10,19 @@ export default async function AccountPage() {
   if (!user) return null;
 
   const adminClient = createServerClient();
-  const [{ data: profile }, { data: purchases }, { data: subscription }, { data: nextEvent }] =
+  const [{ data: profile }, { data: purchasesByUser }, { data: purchasesByEmail }, { data: subscription }, { data: nextEvent }] =
     await Promise.all([
       adminClient.from('profiles').select('display_name').eq('id', user.id).maybeSingle(),
       adminClient
         .from('purchases')
         .select('id, product_name, purchase_type, amount_paid, created_at, expires_at')
-        .or(`user_id.eq.${user.id},email.eq.${user.email}`)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      adminClient
+        .from('purchases')
+        .select('id, product_name, purchase_type, amount_paid, created_at, expires_at')
+        .eq('email', user.email!)
         .order('created_at', { ascending: false })
         .limit(5),
       adminClient
@@ -36,6 +42,12 @@ export default async function AccountPage() {
         .limit(1)
         .maybeSingle(),
     ]);
+
+  const seen = new Set<string>();
+  const purchases = [...(purchasesByUser || []), ...(purchasesByEmail || [])]
+    .filter(p => seen.has(p.id) ? false : (seen.add(p.id), true))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
 
   const displayName =
     profile?.display_name ||

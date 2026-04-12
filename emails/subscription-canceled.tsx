@@ -49,12 +49,17 @@ export default function SubscriptionCanceled({
                 </Section>
               )}
 
-              <Link href="https://boxstreamtv.com/pricing" style={fullButton}>
-                RESUBSCRIBE →
+              <Link href="https://boxstreamtv.com/vod" style={fullButton}>
+                VIEW YOUR CONTENT →
               </Link>
 
+              <Text style={{ fontSize: '13px', color: '#6b7280', textAlign: 'center' as const, margin: '0 0 24px' }}>
+                Changed your mind?{' '}
+                <Link href="https://boxstreamtv.com/pricing" style={{ color: '#9ca3af', textDecoration: 'underline' }}>Rejoin anytime</Link>
+              </Text>
+
               <Text style={supportText}>
-                Changed your mind? Come back anytime.{' '}
+                Questions?{' '}
                 <Link href="mailto:hunter@boxstreamtv.com" style={supportLink}>hunter@boxstreamtv.com</Link>
               </Text>
             </Section>

@@ -71,20 +71,23 @@ export function subscriptionCanceledEmail({
                   : ''
               }
 
-              <!-- Resubscribe CTA -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <!-- CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
                 <tr>
                   <td align="center">
-                    <a href="https://boxstreamtv.com/pricing" style="display:inline-block;background-color:#ffffff;color:#000000;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;padding:14px 36px;">
-                      Resubscribe
+                    <a href="https://boxstreamtv.com/vod" style="display:inline-block;background-color:#ffffff;color:#000000;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;padding:14px 36px;">
+                      View Your Content
                     </a>
                   </td>
                 </tr>
               </table>
 
+              <p style="margin:0 0 24px;font-size:13px;color:#6b7280;text-align:center;">
+                Changed your mind?
+                <a href="https://boxstreamtv.com/pricing" style="color:#9ca3af;text-decoration:underline;">Rejoin anytime</a>
+              </p>
+
               <p style="margin:0;font-size:12px;color:#4b5563;text-align:center;line-height:1.6;">
-                Changed your mind? You can resubscribe anytime at
-                <a href="https://boxstreamtv.com/pricing" style="color:#9ca3af;text-decoration:underline;">boxstreamtv.com/pricing</a>.<br />
                 Questions? Email <a href="mailto:hunter@boxstreamtv.com" style="color:#9ca3af;text-decoration:underline;">hunter@boxstreamtv.com</a>
               </p>
 
@@ -119,7 +122,9 @@ ${
     : 'Your access will remain active until the end of your current billing period.'
 }
 
-Changed your mind? Resubscribe anytime at https://boxstreamtv.com/pricing
+Changed your mind? Rejoin anytime at https://boxstreamtv.com/pricing
+
+View your content: https://boxstreamtv.com/vod
 
 Questions? Email hunter@boxstreamtv.com`;
 

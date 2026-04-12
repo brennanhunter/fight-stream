@@ -1,11 +1,9 @@
-import Stripe from 'stripe';
 import type { Metadata } from 'next';
+import { stripeServer } from '@/lib/stripe';
 import { PageTransition, FadeInView } from '@/components/motion';
 import PricingCards from './PricingCards';
 
 export const dynamic = 'force-dynamic';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export const metadata: Metadata = {
   title: 'Fight Pass Pricing | BoxStreamTV Subscription Plans',
@@ -43,13 +41,13 @@ async function getStripePrices() {
   };
 
   try {
-    if (basicPriceId) {
-      const price = await stripe.prices.retrieve(basicPriceId);
+    if (stripeServer && basicPriceId) {
+      const price = await stripeServer.prices.retrieve(basicPriceId);
       prices.basic = price.unit_amount ? `$${(price.unit_amount / 100).toFixed(2)}` : null;
       prices.basicInterval = price.recurring?.interval || 'month';
     }
-    if (premiumPriceId) {
-      const price = await stripe.prices.retrieve(premiumPriceId);
+    if (stripeServer && premiumPriceId) {
+      const price = await stripeServer.prices.retrieve(premiumPriceId);
       prices.premium = price.unit_amount ? `$${(price.unit_amount / 100).toFixed(2)}` : null;
       prices.premiumInterval = price.recurring?.interval || 'month';
     }

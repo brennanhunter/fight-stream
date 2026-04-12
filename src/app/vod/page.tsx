@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
 import { getProducts, groupByEvent } from '@/lib/vod';
+import { normalizeEmail } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,7 +73,7 @@ async function getOwnedProducts(): Promise<Record<string, { purchaseId: string; 
       const { data: purchases } = await supabase
         .from('purchases')
         .select('id, stripe_product_id, stripe_session_id, expires_at')
-        .eq('email', decodeURIComponent(email).toLowerCase())
+        .eq('email', normalizeEmail(decodeURIComponent(email)))
         .eq('purchase_type', 'vod');
 
       if (purchases?.length) {

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { createBrowserClient } from '@/lib/supabase';
 
 export default function SignupPage() {
@@ -11,6 +12,8 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const supabase = createBrowserClient();
 
@@ -25,11 +28,12 @@ export default function SignupPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        captchaToken: captchaToken ?? undefined,
       },
     });
 
@@ -43,8 +47,17 @@ export default function SignupPage() {
       return;
     }
 
+    // With email confirmation enabled, Supabase returns success with empty
+    // identities when the email is already registered (no error is thrown)
+    if (data.user?.identities?.length === 0) {
+      setError('Unable to create account. Please try signing in instead.');
+      setLoading(false);
+      return;
+    }
+
     setSuccess(true);
     setLoading(false);
+    turnstileRef.current?.reset();
   }
 
   async function handleGoogleSignup() {
@@ -120,7 +133,7 @@ export default function SignupPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="new-password"
-            minLength={6}
+            minLength={8}
             className="w-full bg-white/5 border border-white/10 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-white/30 transition-colors"
             placeholder="••••••••"
           />
@@ -137,11 +150,21 @@ export default function SignupPage() {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             autoComplete="new-password"
-            minLength={6}
+            minLength={8}
             className="w-full bg-white/5 border border-white/10 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-white/30 transition-colors"
             placeholder="••••••••"
           />
         </div>
+
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            onSuccess={setCaptchaToken}
+            onExpire={() => setCaptchaToken(null)}
+            options={{ theme: 'dark', size: 'flexible' }}
+          />
+        )}
 
         <button
           type="submit"

@@ -1,18 +1,40 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function RecoverAccessPage() {
   const router = useRouter();
-  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [step, setStep] = useState<'email' | 'code' | 'success'>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [recoveredEvent, setRecoveredEvent] = useState<{
+    eventId: string;
+    eventName: string;
+    isStreaming: boolean;
+  } | null>(null);
+
+  const redirectAfterSuccess = useCallback((eventId?: string, isStreaming?: boolean) => {
+    const timer = setTimeout(() => {
+      if (isStreaming && eventId) {
+        router.push(`/watch?event_id=${eventId}`);
+      } else {
+        router.push('/');
+      }
+    }, 3000);
+    return timer;
+  }, [router]);
+
+  useEffect(() => {
+    if (step !== 'success' || !recoveredEvent) return;
+    const timer = redirectAfterSuccess(recoveredEvent.eventId, recoveredEvent.isStreaming);
+    return () => clearTimeout(timer);
+  }, [step, recoveredEvent, redirectAfterSuccess]);
 
   async function handleSendCode(e: React.FormEvent) {
     e.preventDefault();
@@ -60,7 +82,12 @@ export default function RecoverAccessPage() {
         return;
       }
 
-      router.push('/');
+      setRecoveredEvent({
+        eventId: data.eventId,
+        eventName: data.eventName,
+        isStreaming: data.isStreaming,
+      });
+      setStep('success');
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -129,12 +156,17 @@ export default function RecoverAccessPage() {
             BoxStreamTV
           </p>
           <h1 className="text-2xl font-bold text-white tracking-tight">
-            {step === 'email' ? 'Recover Access' : 'Enter Your Code'}
+            {step === 'email' ? 'Recover Access' : step === 'code' ? 'Enter Your Code' : 'Access Restored'}
           </h1>
           <div className="w-12 h-[2px] bg-white mx-auto mt-4" />
+          {step === 'email' && (
+            <p className="mt-4 text-sm text-gray-400">
+              Enter the email you used at checkout and we&apos;ll send a code to restore your event access.
+            </p>
+          )}
         </div>
 
-        {error && (
+        {error && step !== 'success' && (
           <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center">
             {error}
           </div>
@@ -166,7 +198,7 @@ export default function RecoverAccessPage() {
               {loading ? 'Sending…' : 'Send Code'}
             </button>
           </form>
-        ) : (
+        ) : step === 'code' ? (
           <form onSubmit={handleVerifyCode} className="space-y-6">
             <p className="text-sm text-gray-400 text-center">
               We sent a 6-digit code to{' '}
@@ -211,13 +243,43 @@ export default function RecoverAccessPage() {
               </button>
             </div>
           </form>
+        ) : (
+          <div className="space-y-6 text-center">
+            <div className="p-3 bg-green-500/10 border border-green-500/30 text-green-400 text-sm">
+              You&apos;re all set. Your access to{' '}
+              <span className="font-semibold text-white">{recoveredEvent?.eventName}</span>{' '}
+              has been restored.
+            </div>
+
+            {recoveredEvent?.isStreaming ? (
+              <Link
+                href={`/watch?event_id=${recoveredEvent.eventId}`}
+                className="block w-full py-2.5 text-[10px] font-bold tracking-[0.2em] uppercase border border-white text-white hover:bg-white hover:text-black transition-all duration-200 text-center"
+              >
+                Watch Now
+              </Link>
+            ) : (
+              <Link
+                href="/"
+                className="block w-full py-2.5 text-[10px] font-bold tracking-[0.2em] uppercase border border-white text-white hover:bg-white hover:text-black transition-all duration-200 text-center"
+              >
+                Go to Home
+              </Link>
+            )}
+
+            <p className="text-xs text-gray-500">
+              Redirecting automatically&hellip;
+            </p>
+          </div>
         )}
 
-        <p className="mt-8 text-center text-xs text-gray-600">
-          <Link href="/" className="hover:text-white transition-colors">
-            Back to home
-          </Link>
-        </p>
+        {step !== 'success' && (
+          <p className="mt-8 text-center text-xs text-gray-600">
+            <Link href="/" className="hover:text-white transition-colors">
+              Back to home
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

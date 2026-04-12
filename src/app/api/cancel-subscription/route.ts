@@ -1,13 +1,15 @@
-import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripeServer } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, 'cancel-subscription', 10);
+  if (!stripeServer) {
+    return NextResponse.json({ error: 'Payment service unavailable' }, { status: 500 });
+  }
+
+  const limited = await rateLimit(request, 'cancel-subscription', 10);
   if (limited) return limited;
 
   try {
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
       .from('subscriptions')
       .select('stripe_subscription_id')
       .eq('user_id', user.id)
-      .in('status', ['active', 'trialing'])
+      .in('status', ['active', 'trialing', 'past_due'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 404 });
     }
 
-    await stripe.subscriptions.update(sub.stripe_subscription_id, {
+    await stripeServer.subscriptions.update(sub.stripe_subscription_id, {
       cancel_at_period_end: true,
     });
 

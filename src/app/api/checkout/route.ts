@@ -3,18 +3,32 @@ import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { rateLimit } from '@/lib/rate-limit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripeServer } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, 'checkout', 20);
+  if (!stripeServer) {
+    console.error('Stripe is not configured - STRIPE_SECRET_KEY is missing');
+    return NextResponse.json(
+      { error: 'Payment system is not configured. Please contact support.' },
+      { status: 500 }
+    );
+  }
+
+  const limited = await rateLimit(request, 'checkout', 20);
   if (limited) return limited;
 
   try {
     const { priceId } = await request.json();
 
-    if (!priceId) {
+    if (!priceId || typeof priceId !== 'string') {
       return NextResponse.json({ error: 'Missing priceId' }, { status: 400 });
+    }
+
+    // Validate that priceId belongs to a VOD product on our site
+    const price = await stripeServer.prices.retrieve(priceId, { expand: ['product'] });
+    const product = price.product as Stripe.Product;
+    if (!product || product.metadata?.site !== 'boxstreamtv' || !product.metadata?.s3_key) {
+      return NextResponse.json({ error: 'Invalid product' }, { status: 400 });
     }
 
     // Attach user_id if logged in (optional — anonymous checkout still works)
@@ -32,7 +46,7 @@ export async function POST(request: NextRequest) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim();
     const userAgent = request.headers.get('user-agent');
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await stripeServer.checkout.sessions.create({
       payment_method_types: ['card'],
       allow_promotion_codes: true,
       line_items: [{ price: priceId, quantity: 1 }],
@@ -54,7 +68,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Checkout error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Checkout failed' },
+      { error: 'Checkout failed. Please try again.' },
       { status: 500 }
     );
   }

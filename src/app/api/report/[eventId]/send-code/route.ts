@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
 import { generateReportOtp } from '@/lib/report-otp';
+import { escapeHtml } from '@/lib/utils';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -10,7 +11,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ eventId: string }> },
 ) {
-  const limited = rateLimit(req, 'report-send-code', 5);
+  const limited = await rateLimit(req, 'report-send-code', 5);
   if (limited) return limited;
 
   const { eventId } = await params;
@@ -22,7 +23,7 @@ export async function POST(
 
   const trimmed = email.trim().toLowerCase();
 
-  const emailLimited = rateLimit(req, 'report-send-code-email', 3, 60 * 60 * 1000, trimmed);
+  const emailLimited = await rateLimit(req, 'report-send-code-email', 3, 60 * 60 * 1000, trimmed);
   if (emailLimited) return emailLimited;
 
   const supabase = createServerClient();
@@ -53,7 +54,7 @@ export async function POST(
           <h1 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#fff;text-align:center;">Promoter Report Access</h1>
           <div style="width:32px;height:2px;background:#fff;margin:0 auto 20px;"></div>
           <p style="margin:0 0 24px;font-size:14px;color:#9ca3af;text-align:center;line-height:1.6;">
-            Your access code for the <strong style="color:#fff;">${event.name}</strong> report:
+            Your access code for the <strong style="color:#fff;">${escapeHtml(event.name)}</strong> report:
           </p>
           <div style="background:#111;border:1px solid rgba(255,255,255,0.1);padding:20px;text-align:center;margin-bottom:24px;">
             <span style="font-size:36px;font-weight:700;color:#fff;letter-spacing:0.3em;">${code}</span>

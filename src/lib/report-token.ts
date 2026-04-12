@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'crypto';
+
 export async function generateReportToken(eventId: string): Promise<string> {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET not set');
@@ -19,7 +21,8 @@ export async function generateReportToken(eventId: string): Promise<string> {
 export async function verifyReportToken(eventId: string, token: string): Promise<boolean> {
   try {
     const expected = await generateReportToken(eventId);
-    return token === expected;
+    if (token.length !== expected.length) return false;
+    return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
   } catch {
     return false;
   }

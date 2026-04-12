@@ -13,13 +13,16 @@ import {
 interface VodPlayerProps {
   src: string;
   title?: string;
+  expiresAt?: string | null;
 }
 
-export default function VodPlayer({ src, title }: VodPlayerProps) {
-  const [expired, setExpired] = useState(false);
+type ErrorState = 'expired' | 'network';
+
+export default function VodPlayer({ src, title, expiresAt }: VodPlayerProps) {
+  const [error, setError] = useState<ErrorState | null>(null);
   const playerRef = useRef<MediaPlayerInstance>(null);
 
-  if (expired) {
+  if (error === 'expired') {
     return (
       <div className="flex flex-col items-center justify-center bg-black/80 py-16 px-6 text-center">
         <p className="text-white text-lg font-semibold mb-2">Playback link expired</p>
@@ -44,6 +47,23 @@ export default function VodPlayer({ src, title }: VodPlayerProps) {
     );
   }
 
+  if (error === 'network') {
+    return (
+      <div className="flex flex-col items-center justify-center bg-black/80 py-16 px-6 text-center">
+        <p className="text-white text-lg font-semibold mb-2">Playback interrupted</p>
+        <p className="text-gray-400 text-sm mb-6">
+          Check your connection and try refreshing the page.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-white text-black font-bold text-sm tracking-wide hover:bg-gray-200 transition-colors"
+        >
+          Refresh Page
+        </button>
+      </div>
+    );
+  }
+
   return (
     <MediaPlayer
       ref={playerRef}
@@ -54,9 +74,15 @@ export default function VodPlayer({ src, title }: VodPlayerProps) {
       title={title || 'Fight Replay'}
       className="vod-player"
       onError={(e) => {
-        // MediaError code 2 = MEDIA_ERR_NETWORK (likely expired signed URL)
         if (e?.code === 2) {
-          setExpired(true);
+          // MEDIA_ERR_NETWORK — could be a dropped connection or an expired signed URL.
+          // Use expiresAt to distinguish: if the window has closed it's truly expired,
+          // otherwise it's likely a transient network issue.
+          const isExpired = expiresAt ? new Date(expiresAt) < new Date() : false;
+          setError(isExpired ? 'expired' : 'network');
+        } else if (e?.code != null) {
+          // MEDIA_ERR_DECODE (3), MEDIA_ERR_SRC_NOT_SUPPORTED (4), etc.
+          setError('network');
         }
       }}
     >

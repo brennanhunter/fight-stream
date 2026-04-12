@@ -8,7 +8,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ eventId: string }> },
 ) {
-  const limited = rateLimit(req, 'report-verify-code', 10);
+  const limited = await rateLimit(req, 'report-verify-code', 10);
   if (limited) return limited;
 
   const { eventId } = await params;
@@ -29,7 +29,7 @@ export async function POST(
     .maybeSingle();
 
   if (!event || event.promoter_email?.toLowerCase() !== trimmed) {
-    return NextResponse.json({ error: 'Invalid code.' }, { status: 401 });
+    return NextResponse.json({ error: 'Invalid or expired code.' }, { status: 401 });
   }
 
   const valid = await verifyReportOtp(eventId, trimmed, code);

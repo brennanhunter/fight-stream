@@ -1,14 +1,16 @@
-import Stripe from 'stripe';
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripeServer } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, 'subscribe', 20);
+  if (!stripeServer) {
+    return NextResponse.json({ error: 'Payment service unavailable' }, { status: 500 });
+  }
+
+  const limited = await rateLimit(request, 'subscribe', 20);
   if (limited) return limited;
 
   try {
@@ -24,6 +26,16 @@ export async function POST(request: NextRequest) {
 
     if (!priceId) {
       return NextResponse.json({ error: 'Missing priceId' }, { status: 400 });
+    }
+
+    // Validate priceId against known subscription prices
+    const allowedPriceIds = [
+      process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID,
+      process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID,
+    ].filter(Boolean);
+
+    if (!allowedPriceIds.includes(priceId)) {
+      return NextResponse.json({ error: 'Invalid price selected' }, { status: 400 });
     }
 
     // Check for existing active subscription
@@ -57,12 +69,21 @@ export async function POST(request: NextRequest) {
     if (prevSub?.stripe_customer_id) {
       customerId = prevSub.stripe_customer_id;
     } else {
-      // Create a new Stripe Customer
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: { user_id: user.id },
+      // Search Stripe for an existing customer by email (covers abandoned checkouts)
+      const existingCustomers = await stripeServer.customers.list({
+        email: user.email!,
+        limit: 1,
       });
-      customerId = customer.id;
+
+      if (existingCustomers.data.length > 0) {
+        customerId = existingCustomers.data[0].id;
+      } else {
+        const customer = await stripeServer.customers.create({
+          email: user.email,
+          metadata: { user_id: user.id },
+        });
+        customerId = customer.id;
+      }
     }
 
     // Idempotency key: hash of user + priceId + minute window to prevent double-click duplicates
@@ -70,7 +91,7 @@ export async function POST(request: NextRequest) {
     const idempotencyKey = crypto.createHash('sha256').update(idempotencySource).digest('hex');
 
     // Create Stripe Checkout Session in subscription mode
-    const session = await stripe.checkout.sessions.create({
+    const session = await stripeServer.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
@@ -88,7 +109,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Subscribe error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Subscription checkout failed' },
+      { error: 'Subscription checkout failed' },
       { status: 500 }
     );
   }

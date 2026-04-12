@@ -51,6 +51,10 @@ export default function LivePlayer({
   const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'recover-access' | 'has-access'>('checking');
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
 
+  /* ── Token refresh ── */
+  const tokenFetchedAtRef = useRef<number>(0);
+  const TOKEN_REFRESH_MS = 10 * 60 * 60 * 1000; // Refresh after 10 hours (token expires at 12h)
+
   /* ── IVS player state ── */
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -103,6 +107,7 @@ export default function LivePlayer({
         const data = await res.json();
         const url = data.token ? `${data.playbackUrl}?token=${data.token}` : data.playbackUrl;
         setPlaybackUrl(url);
+        tokenFetchedAtRef.current = Date.now();
         setAccessState('has-access');
       } catch {
         setAccessState('needs-purchase');
@@ -110,12 +115,30 @@ export default function LivePlayer({
     })();
   }, []);
 
+  /* ── Token refresh helper (called before reconnection when token may be stale) ── */
+  const refreshToken = useCallback(async (): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/generate-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const url = data.token ? `${data.playbackUrl}?token=${data.token}` : data.playbackUrl;
+      setPlaybackUrl(url);
+      tokenFetchedAtRef.current = Date.now();
+      return url;
+    } catch {
+      return null;
+    }
+  }, []);
+
   /* ── Load IVS script when has access ── */
   useEffect(() => {
     if (accessState !== 'has-access') return;
     if (window.IVSPlayer) { setPlayerLoaded(true); return; }
     const script = document.createElement('script');
-    script.src = 'https://player.live-video.net/1.26.0/amazon-ivs-player.min.js';
+    script.src = 'https://player.live-video.net/1.33.0/amazon-ivs-player.min.js';
     script.async = true;
     script.onload = () => setPlayerLoaded(true);
     script.onerror = () => console.error('Failed to load IVS Player script');
@@ -229,11 +252,21 @@ export default function LivePlayer({
   // at that point, so the effect bails early and never restarts.
   useEffect(() => {
     if (!playerRef.current || !playbackUrl) return;
-    const poll = setInterval(() => {
-      if (playerRef.current && !isStreamLive) playerRef.current.load(playbackUrl);
+    const poll = setInterval(async () => {
+      if (playerRef.current && !isStreamLive) {
+        // If the token is older than TOKEN_REFRESH_MS, fetch a fresh one
+        // before attempting to reconnect — otherwise IVS rejects the stale token.
+        const tokenAge = Date.now() - tokenFetchedAtRef.current;
+        if (tokenAge > TOKEN_REFRESH_MS) {
+          const freshUrl = await refreshToken();
+          if (freshUrl && playerRef.current) playerRef.current.load(freshUrl);
+        } else {
+          playerRef.current.load(playbackUrl);
+        }
+      }
     }, 5000);
     return () => clearInterval(poll);
-  }, [playbackUrl, isStreamLive, playerLoaded]);
+  }, [playbackUrl, isStreamLive, playerLoaded, refreshToken]);
 
   /* ── Player controls ── */
   const activeVideo = isStreamLive ? videoRef.current : replayRef.current;

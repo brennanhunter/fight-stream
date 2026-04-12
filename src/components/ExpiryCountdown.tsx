@@ -21,10 +21,15 @@ function getTimeLeft(expiresAt: string) {
 export default function ExpiryCountdown({ expiresAt, className }: { expiresAt: string; className?: string }) {
   const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(expiresAt));
 
+  const intervalMs =
+    timeLeft?.urgency === 'high' ? 10_000 :
+    timeLeft?.urgency === 'medium' ? 30_000 :
+    60_000;
+
   useEffect(() => {
-    const interval = setInterval(() => setTimeLeft(getTimeLeft(expiresAt)), 60_000);
+    const interval = setInterval(() => setTimeLeft(getTimeLeft(expiresAt)), intervalMs);
     return () => clearInterval(interval);
-  }, [expiresAt]);
+  }, [expiresAt, intervalMs]);
 
   if (!timeLeft) return null;
 

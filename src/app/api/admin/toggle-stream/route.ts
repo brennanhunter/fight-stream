@@ -10,11 +10,12 @@ export async function POST(req: NextRequest) {
   }
 
   const { live } = await req.json();
+  const isLive = live === true;
 
   const supabase = createServerClient();
   const { error } = await supabase
     .from('events')
-    .update({ is_streaming: live })
+    .update({ is_streaming: isLive })
     .eq('is_active', true);
 
   if (error) {
@@ -22,5 +23,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to update stream status' }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, live });
+  return NextResponse.json({ success: true, live: isLive });
 }

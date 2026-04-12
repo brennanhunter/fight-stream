@@ -1,4 +1,4 @@
-export function welcomeEmail() {
+export function welcomeEmail({ unsubscribeUrl }: { unsubscribeUrl?: string } = {}) {
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,6 +83,7 @@ export function welcomeEmail() {
                 <a href="https://boxstreamtv.com/account" style="color:#374151;text-decoration:underline;">My Account</a>
                 &middot;
                 <a href="https://boxstreamtv.com/privacy" style="color:#374151;text-decoration:underline;">Privacy</a>
+                ${unsubscribeUrl ? `&middot; <a href="${unsubscribeUrl}" style="color:#374151;text-decoration:underline;">Unsubscribe</a>` : ''}
               </p>
             </td>
           </tr>
@@ -105,7 +106,8 @@ You're in. Here's what you can do:
 Browse VOD: https://boxstreamtv.com/vod
 Get Fight Pass: https://boxstreamtv.com/pricing
 
-Questions? hunter@boxstreamtv.com`;
+Questions? hunter@boxstreamtv.com
+${unsubscribeUrl ? `\nUnsubscribe: ${unsubscribeUrl}` : ''}`;
 
   return { html, text };
 }

@@ -1,14 +1,19 @@
+import { escapeHtml } from '@/lib/utils';
+
 export function purchaseConfirmationEmail({
   eventName,
   expiresAt,
   amountPaid,
   purchaseType = 'ppv',
+  vodPurchaseId,
 }: {
   eventName: string;
   expiresAt: string | null;
   amountPaid: number; // cents
   purchaseType?: 'ppv' | 'vod';
+  vodPurchaseId?: string;
 }) {
+  const safeEventName = escapeHtml(eventName);
   const isVod = purchaseType === 'vod';
 
   const expiryFormatted = expiresAt
@@ -18,7 +23,9 @@ export function purchaseConfirmationEmail({
         day: 'numeric',
         year: 'numeric',
       })
-    : 'Lifetime access';
+    : isVod
+      ? 'Lifetime access'
+      : 'Active — check boxstreamtv.com/account for details';
 
   const amountFormatted =
     amountPaid > 0
@@ -27,10 +34,14 @@ export function purchaseConfirmationEmail({
 
   const headline = isVod ? 'Your video is ready.' : 'You\'re in.';
   const subtext = isVod
-    ? `<strong style="color:#ffffff;">${eventName}</strong> is available to watch now in your VOD library.`
-    : `Your purchase for <strong style="color:#ffffff;">${eventName}</strong> has been confirmed. Head to the home page when the fight starts — your access is ready.`;
+    ? `<strong style="color:#ffffff;">${safeEventName}</strong> is available to watch now in your VOD library.`
+    : `Your purchase for <strong style="color:#ffffff;">${safeEventName}</strong> has been confirmed. Head to the home page when the fight starts — your access is ready.`;
   const ctaLabel = isVod ? 'Watch Now' : 'Go to BoxStreamTV';
-  const ctaUrl = isVod ? 'https://boxstreamtv.com/vod' : 'https://boxstreamtv.com';
+  const ctaUrl = isVod && vodPurchaseId
+    ? `https://boxstreamtv.com/watch?purchase_id=${encodeURIComponent(vodPurchaseId)}`
+    : isVod
+      ? 'https://boxstreamtv.com/vod'
+      : 'https://boxstreamtv.com';
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -81,7 +92,7 @@ export function purchaseConfirmationEmail({
                 <tr>
                   <td style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);">
                     <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#6b7280;">${isVod ? 'Video' : 'Event'}</p>
-                    <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#ffffff;">${eventName}</p>
+                    <p style="margin:4px 0 0;font-size:15px;font-weight:600;color:#ffffff;">${safeEventName}</p>
                   </td>
                 </tr>
                 <tr>
@@ -147,7 +158,7 @@ Video: ${eventName}
 Access: ${expiryFormatted}
 Amount Paid: ${amountFormatted}
 
-Watch now at https://boxstreamtv.com/vod
+Watch now at ${vodPurchaseId ? `https://boxstreamtv.com/watch?purchase_id=${vodPurchaseId}` : 'https://boxstreamtv.com/vod'}
 
 Having trouble? Email hunter@boxstreamtv.com and we'll make it right.
 

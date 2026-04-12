@@ -1,4 +1,8 @@
-export function eventStartingEmail({ eventName }: { eventName: string }) {
+import { escapeHtml } from '@/lib/utils';
+
+export function eventStartingEmail({ eventName, unsubscribeUrl }: { eventName: string; unsubscribeUrl?: string }) {
+  const safeEventName = escapeHtml(eventName);
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,7 +27,7 @@ export function eventStartingEmail({ eventName }: { eventName: string }) {
 
               <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:#ef4444;text-align:center;">Live Now</p>
               <h1 style="margin:0 0 8px;font-size:26px;font-weight:700;color:#ffffff;text-align:center;letter-spacing:-0.02em;">
-                ${eventName}
+                ${safeEventName}
               </h1>
               <div style="width:40px;height:2px;background-color:#ffffff;margin:0 auto 24px;"></div>
 
@@ -53,6 +57,7 @@ export function eventStartingEmail({ eventName }: { eventName: string }) {
               <p style="margin:0;font-size:11px;color:#374151;">
                 &copy; ${new Date().getFullYear()} BoxStreamTV &middot;
                 <a href="https://boxstreamtv.com/privacy" style="color:#374151;text-decoration:underline;">Privacy</a>
+                ${unsubscribeUrl ? `&middot; <a href="${unsubscribeUrl}" style="color:#374151;text-decoration:underline;">Unsubscribe</a>` : ''}
               </p>
             </td>
           </tr>
@@ -70,7 +75,8 @@ The fight is starting now. Head to BoxStreamTV to watch live.
 
 Watch at https://boxstreamtv.com
 
-Having trouble? Email hunter@boxstreamtv.com`;
+Having trouble? Email hunter@boxstreamtv.com
+${unsubscribeUrl ? `\nUnsubscribe: ${unsubscribeUrl}` : ''}`;
 
   return { html, text };
 }

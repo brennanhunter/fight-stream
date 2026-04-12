@@ -39,10 +39,16 @@ export default function PaymentFailed({
                 Your access is still active — update your payment method before the next retry to keep it.
               </Text>
 
-              {retryFormatted && (
+              {retryFormatted ? (
                 <Section style={detailsWrap}>
                   <Text style={detailLabel}>Next retry</Text>
                   <Text style={detailValue}>{retryFormatted}</Text>
+                </Section>
+              ) : (
+                <Section style={detailsWrap}>
+                  <Text style={detailLabel}>Next retry</Text>
+                  <Text style={detailValue}>Within the next 3–5 days</Text>
+                  <Text style={{ fontSize: '13px', color: '#9ca3af', margin: '6px 0 0' }}>If it fails again, your access will be paused.</Text>
                 </Section>
               )}
 

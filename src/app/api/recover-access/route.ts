@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSession } from '@/lib/session';
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
+import { REPLAY_WINDOW_DAYS } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, 'recover-access', 10);
+  const limited = await rateLimit(req, 'recover-access', 10);
   if (limited) return limited;
 
   try {
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     const trimmedCode = code.trim();
 
     // Per-email rate limit: 5 attempts per hour
-    const emailLimited = rateLimit(req, 'recover-access-email', 5, 60 * 60 * 1000, trimmedEmail);
+    const emailLimited = await rateLimit(req, 'recover-access-email', 5, 60 * 60 * 1000, trimmedEmail);
     if (emailLimited) return emailLimited;
 
     const supabase = createServerClient();
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (clientEventId) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, expires_at')
+        .select('id, name, date, is_streaming')
         .eq('id', clientEventId)
         .maybeSingle();
       targetEvent = data;
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     if (!targetEvent) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, expires_at')
+        .select('id, name, date, is_streaming')
         .eq('is_active', true)
         .maybeSingle();
       targetEvent = data;
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     const { data: purchases } = await supabase
       .from('purchases')
-      .select('id, email, event_id, expires_at, session_version, recovery_code, recovery_code_expires_at')
+      .select('id, email, event_id, expires_at, session_version, recovery_code, recovery_code_expires_at, stripe_payment_intent_id')
       .eq('email', trimmedEmail)
       .eq('event_id', targetEvent.id)
       .eq('purchase_type', 'ppv')
@@ -102,12 +103,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: genericError }, { status: 403 });
     }
 
-    const expiresAt = targetEvent.expires_at
-      ? new Date(targetEvent.expires_at).toISOString()
-      : new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const expiresAt = targetEvent.date
+      ? new Date(new Date(targetEvent.date).getTime() + REPLAY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+      : null;
 
     const sessionData = {
-      purchaseId: purchase.id,
+      purchaseId: purchase.stripe_payment_intent_id || purchase.id,
       email: trimmedEmail,
       eventId: targetEvent.id,
       eventName: targetEvent.name,
@@ -125,13 +126,15 @@ export async function POST(req: NextRequest) {
       secure: true,
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 365,
+      maxAge: 60 * 60 * 24 * 7, // 7 days — covers replay window
     });
 
     return NextResponse.json({
       success: true,
       message: 'Access restored!',
+      eventId: targetEvent.id,
       eventName: targetEvent.name,
+      isStreaming: targetEvent.is_streaming ?? false,
     });
   } catch (error) {
     console.error('Access recovery error:', error);

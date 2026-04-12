@@ -5,12 +5,20 @@ import { checkGeoRestriction } from '@/lib/geo';
 import { createServerClient } from '@/lib/supabase';
 import { getPpvDiscount } from '@/lib/access';
 import { rateLimit } from '@/lib/rate-limit';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripeServer } from '@/lib/stripe';
+import { PURCHASE_WINDOW_DAYS } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, 'ppv-checkout', 20);
+  const limited = await rateLimit(request, 'ppv-checkout', 20);
   if (limited) return limited;
+
+  if (!stripeServer) {
+    console.error('Stripe is not configured - STRIPE_SECRET_KEY is missing');
+    return NextResponse.json(
+      { error: 'Payment system is not configured. Please contact support.' },
+      { status: 500 }
+    );
+  }
 
   try {
     const supabase = createServerClient();
@@ -25,14 +33,14 @@ export async function POST(request: NextRequest) {
     if (clientEventId) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, stripe_price_id, venue_address, blackout_radius_miles')
+        .select('id, name, stripe_price_id, venue_address, blackout_radius_miles, date')
         .eq('id', clientEventId)
         .maybeSingle();
       event = data;
     } else {
       const { data } = await supabase
         .from('events')
-        .select('id, name, stripe_price_id, venue_address, blackout_radius_miles')
+        .select('id, name, stripe_price_id, venue_address, blackout_radius_miles, date')
         .eq('is_active', true)
         .maybeSingle();
       event = data;
@@ -69,6 +77,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Block purchases after the replay purchase window has closed (PURCHASE_WINDOW_DAYS after event start).
+    if (event.date && Date.now() > new Date(event.date).getTime() + PURCHASE_WINDOW_DAYS * 24 * 60 * 60 * 1000) {
+      return NextResponse.json(
+        { error: 'The replay window for this event has closed. Purchases are no longer available.' },
+        { status: 410 }
+      );
+    }
+
     // Attach user_id if logged in (optional — anonymous checkout still works)
     const { createAuthServerClient } = await import('@/lib/supabase-server');
     const authClient = await createAuthServerClient();
@@ -88,15 +104,21 @@ export async function POST(request: NextRequest) {
     if (user) {
       const { discountPercent, tier } = await getPpvDiscount(user.id);
 
+      if (discountPercent === 100) {
+        // Premium subscribers get free access — skip Stripe checkout entirely.
+        // The watch page grants access via subscription check, no purchase record needed.
+        return NextResponse.json({ url: `${process.env.NEXT_PUBLIC_BASE_URL}/watch?event_id=${event.id}` });
+      }
+
       if (discountPercent > 0) {
         // Use a stable reusable coupon per tier instead of creating single-use ones
         const couponId = `fight-pass-${tier}-${discountPercent}pct`;
         try {
-          await stripe.coupons.retrieve(couponId);
+          await stripeServer.coupons.retrieve(couponId);
         } catch {
           // Coupon doesn't exist yet — create it
           try {
-            await stripe.coupons.create({
+            await stripeServer.coupons.create({
               id: couponId,
               percent_off: discountPercent,
               duration: 'once',
@@ -104,7 +126,7 @@ export async function POST(request: NextRequest) {
             });
           } catch {
             // Another request may have created it concurrently — verify it exists
-            await stripe.coupons.retrieve(couponId);
+            await stripeServer.coupons.retrieve(couponId);
           }
         }
         discounts = [{ coupon: couponId }];
@@ -162,7 +184,7 @@ export async function POST(request: NextRequest) {
     const idempotencySource = `${user?.id || request.headers.get('x-forwarded-for') || 'anon'}:${event.id}:${Math.floor(Date.now() / 60000)}`;
     const idempotencyKey = crypto.createHash('sha256').update(idempotencySource).digest('hex');
 
-    const session = await stripe.checkout.sessions.create(sessionParams, { idempotencyKey });
+    const session = await stripeServer.checkout.sessions.create(sessionParams, { idempotencyKey });
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

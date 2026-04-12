@@ -97,7 +97,11 @@ export function subscriptionConfirmationEmail({
                       Your subscription renews on <strong style="color:#9ca3af;">${renewalFormatted}</strong>.
                       Cancel anytime from your account settings.
                     </p>`
-                  : ''
+                  : `<p style="margin:0 0 28px;font-size:13px;color:#6b7280;text-align:center;">
+                      Your billing date will appear in your
+                      <a href="https://boxstreamtv.com/account/subscription" style="color:#9ca3af;text-decoration:underline;">account settings</a>.
+                      Cancel anytime.
+                    </p>`
               }
 
               <!-- CTA -->
@@ -145,7 +149,7 @@ Your Fight Pass ${tierLabel} subscription is active.
 
 What's included:
 ${perks.map((p) => `- ${p}`).join('\n')}
-${renewalFormatted ? `\nYour subscription renews on ${renewalFormatted}. Cancel anytime from your account settings.` : ''}
+${renewalFormatted ? `\nYour subscription renews on ${renewalFormatted}. Cancel anytime from your account settings.` : '\nYour billing date will appear in your account at boxstreamtv.com/account/subscription. Cancel anytime.'}
 
 Watch now at https://boxstreamtv.com/vod
 

@@ -10,7 +10,7 @@ function PaymentSuccessContent() {
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorType, setErrorType] = useState<'incomplete' | 'system' | 'no_session'>('system');
-  const [eventInfo, setEventInfo] = useState<{ eventName: string; expiresAt: string } | null>(null);
+  const [eventInfo, setEventInfo] = useState<{ eventId: string; eventName: string; expiresAt: string; isStreaming: boolean } | null>(null);
   const [countdown, setCountdown] = useState(8);
   const redirectTimer = useRef<NodeJS.Timeout | null>(null);
   const countdownTimer = useRef<NodeJS.Timeout | null>(null);
@@ -41,13 +41,14 @@ function PaymentSuccessContent() {
         return;
       }
 
-      setEventInfo(data.eventAccess ? { eventName: data.eventAccess.eventName, expiresAt: data.eventAccess.expiresAt } : null);
+      setEventInfo(data.eventAccess ? { eventId: data.eventAccess.eventId, eventName: data.eventAccess.eventName, expiresAt: data.eventAccess.expiresAt, isStreaming: data.eventAccess.isStreaming ?? false } : null);
       setStatus('success');
       setCountdown(8);
 
-      // Redirect to home page after 8 seconds
+      // Redirect to watch page only if actively streaming, otherwise home
+      const redirectUrl = data.eventAccess?.isStreaming ? `/watch?event_id=${data.eventAccess.eventId}` : '/';
       redirectTimer.current = setTimeout(() => {
-        router.push('/');
+        router.push(redirectUrl);
       }, 8000);
 
       // Tick countdown every second
@@ -167,22 +168,46 @@ function PaymentSuccessContent() {
         {/* Next Steps */}
         <div className="border border-white/10 p-4 mb-8 text-sm text-gray-400 space-y-2">
           <p>Your purchase has been confirmed</p>
-          <p>You can now watch the live stream when it starts</p>
-          <p>Access is valid until the day after the event</p>
+          {eventInfo?.isStreaming ? (
+            <p>The event is live now — head to the watch page to start watching</p>
+          ) : eventInfo ? (
+            <p>You&apos;ll be able to watch the live stream and replay when the event starts</p>
+          ) : (
+            <p>You can start watching now from your library</p>
+          )}
         </div>
 
         {/* Redirect Message */}
         <p className="text-gray-500 text-sm mb-6 tracking-wide">
-          Redirecting you to the home page in {countdown} second{countdown !== 1 ? 's' : ''}...
+          Redirecting you {eventInfo?.isStreaming ? 'to the watch page' : 'home'} in {countdown} second{countdown !== 1 ? 's' : ''}...
         </p>
 
-        {/* CTA Button */}
-        <Link
-          href="/"
-          className="inline-block bg-white text-black font-bold py-4 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
-        >
-          Go to Home
-        </Link>
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          {eventInfo?.isStreaming ? (
+            <>
+              <Link
+                href={`/watch?event_id=${eventInfo.eventId}`}
+                className="inline-block bg-white text-black font-bold py-4 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200 text-center"
+              >
+                Watch Now
+              </Link>
+              <Link
+                href="/"
+                className="inline-block border border-white/20 text-white font-bold py-4 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:border-white text-center"
+              >
+                Go to Home
+              </Link>
+            </>
+          ) : (
+            <Link
+              href="/"
+              className="inline-block bg-white text-black font-bold py-4 px-8 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200 text-center"
+            >
+              Go to Home
+            </Link>
+          )}
+        </div>
 
         <p className="mt-8 text-xs text-gray-600">
           Questions about your purchase?{' '}

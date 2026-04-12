@@ -8,7 +8,7 @@ export interface SessionData {
   eventId: string;           // Event identifier (e.g., "havoc-hilton-2025")
   eventName: string;         // Human-readable event name
   purchasedAt: string;       // ISO timestamp of purchase
-  expiresAt: string;         // ISO timestamp when access expires
+  expiresAt: string | null;  // ISO timestamp when access expires (null = no fixed expiry)
   sessionVersion?: number;   // Matches purchases.session_version — enforces single active viewer
 }
 
@@ -26,9 +26,14 @@ const getSecretKey = () => {
  * Create a signed JWT session token and set it as a cookie
  */
 export async function createSession(data: SessionData): Promise<string> {
-  // Convert ISO date string to Unix timestamp (seconds since epoch)
-  const expirationTimestamp = Math.floor(new Date(data.expiresAt).getTime() / 1000);
-  
+  // When expiresAt is null (no fixed event end time) fall back to 7 days so the
+  // JWT and cookie are not immediately discarded. The null payload value is preserved
+  // so check-purchase knows there is no hard expiry constraint.
+  const cookieExpiry = data.expiresAt
+    ? new Date(data.expiresAt)
+    : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const expirationTimestamp = Math.floor(cookieExpiry.getTime() / 1000);
+
   const token = await new SignJWT({ ...data })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -41,7 +46,7 @@ export async function createSession(data: SessionData): Promise<string> {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    expires: new Date(data.expiresAt),
+    expires: cookieExpiry,
     path: '/',
   });
 
@@ -55,12 +60,11 @@ export async function verifySession(token: string): Promise<SessionData | null> 
   try {
     const { payload } = await jwtVerify(token, getSecretKey());
     
-    // Verify the token hasn't expired
-    const now = new Date();
-    const expiresAt = new Date(payload.expiresAt as string);
-    
-    if (now > expiresAt) {
-      return null; // Session expired
+    // Verify the token hasn't expired (payload.expiresAt may be null for open-ended
+    // events — in that case rely solely on the JWT's built-in exp claim above).
+    if (payload.expiresAt) {
+      const expiresAt = new Date(payload.expiresAt as string);
+      if (new Date() > expiresAt) return null;
     }
 
     return payload as unknown as SessionData;
@@ -99,11 +103,8 @@ export async function hasEventAccess(eventId: string): Promise<{ valid: boolean;
     return { valid: false };
   }
 
-  // Check if access hasn't expired
-  const now = new Date();
-  const expiresAt = new Date(session.expiresAt);
-  
-  if (now > expiresAt) {
+  // Check if access hasn't expired (null = no fixed expiry)
+  if (session.expiresAt && new Date() > new Date(session.expiresAt)) {
     return { valid: false };
   }
 

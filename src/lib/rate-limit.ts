@@ -1,19 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const store = new Map<string, RateLimitEntry>();
-
-// Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of store) {
-    if (now > entry.resetAt) store.delete(key);
-  }
-}, 5 * 60 * 1000);
+import { createServerClient } from './supabase';
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -23,46 +9,42 @@ function getClientIp(req: NextRequest): string {
   );
 }
 
-/**
- * Simple sliding-window rate limiter.
- * Returns null if allowed, or a 429 Response if blocked.
- *
- * @param req       - Incoming request (used to extract IP)
- * @param endpoint   - Unique identifier for the endpoint (e.g., 'recover-access')
- * @param limit      - Max requests allowed in the window
- * @param windowMs   - Window size in milliseconds (default: 60 000 = 1 min)
- * @param identifier - Optional override for the key suffix (default: client IP)
- */
-export function rateLimit(
+export async function rateLimit(
   req: NextRequest,
   endpoint: string,
   limit: number,
   windowMs = 60_000,
   identifier?: string,
-): NextResponse | null {
+): Promise<NextResponse | null> {
   const id = identifier || getClientIp(req);
   const key = `${endpoint}:${id}`;
-  const now = Date.now();
 
-  const entry = store.get(key);
+  try {
+    const supabase = createServerClient();
+    const { data, error } = await supabase.rpc('check_rate_limit', {
+      p_key: key,
+      p_limit: limit,
+      p_window_ms: windowMs,
+    });
 
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
+    if (error) {
+      console.error('Rate limit check failed:', error);
+      return null; // fail open
+    }
+
+    if (!data.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(data.retry_after) },
+        },
+      );
+    }
+
     return null;
+  } catch (err) {
+    console.error('Rate limit error:', err);
+    return null; // fail open
   }
-
-  entry.count++;
-
-  if (entry.count > limit) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(retryAfter) },
-      },
-    );
-  }
-
-  return null;
 }
