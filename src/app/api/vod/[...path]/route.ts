@@ -46,10 +46,17 @@ export async function GET(
     dateLessThan: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
   });
 
-  // Fetch from CloudFront
-  const upstream = await fetch(signedUrl);
+  // Forward Range header for byte-range requests (needed for MP4 seeking)
+  const fetchHeaders: HeadersInit = {};
+  const rangeHeader = request.headers.get('range');
+  if (rangeHeader) {
+    fetchHeaders['Range'] = rangeHeader;
+  }
 
-  if (!upstream.ok) {
+  // Fetch from CloudFront
+  const upstream = await fetch(signedUrl, { headers: fetchHeaders });
+
+  if (!upstream.ok && upstream.status !== 206) {
     return new NextResponse(upstream.body, { status: upstream.status });
   }
 
@@ -72,9 +79,15 @@ export async function GET(
   const contentLength = upstream.headers.get('content-length');
   if (contentLength) headers.set('content-length', contentLength);
 
+  // Pass through range response headers for seeking support
+  const contentRange = upstream.headers.get('content-range');
+  if (contentRange) headers.set('content-range', contentRange);
+  const acceptRanges = upstream.headers.get('accept-ranges');
+  if (acceptRanges) headers.set('accept-ranges', acceptRanges);
+
   if (s3Path.endsWith('.ts')) {
     headers.set('cache-control', 'private, max-age=3600');
   }
 
-  return new NextResponse(upstream.body, { status: 200, headers });
+  return new NextResponse(upstream.body, { status: upstream.status, headers });
 }
