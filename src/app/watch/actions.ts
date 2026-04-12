@@ -38,6 +38,9 @@ export async function signAndSetCookies(
   if (cfCookies['CloudFront-Policy']) {
     cookieStore.set('CloudFront-Policy', cfCookies['CloudFront-Policy'], cookieOptions);
   }
+  if (cfCookies['CloudFront-Expires']) {
+    cookieStore.set('CloudFront-Expires', String(cfCookies['CloudFront-Expires']), cookieOptions);
+  }
   if (cfCookies['CloudFront-Signature']) {
     cookieStore.set('CloudFront-Signature', cfCookies['CloudFront-Signature'], cookieOptions);
   }

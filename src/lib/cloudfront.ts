@@ -21,12 +21,20 @@ export function getSignedCookiesForKey(s3Key: string, expiresInSeconds = 21600) 
 
   const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
-  const cookies = getSignedCookies({
+  const signingParams: Parameters<typeof getSignedCookies>[0] = {
     keyPairId: CLOUDFRONT_KEY_ID,
     privateKey: CLOUDFRONT_PRIVATE_KEY,
     url: resourceUrl,
     dateLessThan: new Date(expiresAt * 1000).toISOString(),
-  });
+  };
+
+  // Wildcard URLs require a custom policy. Adding dateGreaterThan forces the
+  // SDK to produce CloudFront-Policy instead of CloudFront-Expires.
+  if (isHls) {
+    signingParams.dateGreaterThan = new Date(0).toISOString();
+  }
+
+  const cookies = getSignedCookies(signingParams);
 
   return { cookies, videoUrl: `https://${CLOUDFRONT_DOMAIN}/${s3Key}` };
 }
