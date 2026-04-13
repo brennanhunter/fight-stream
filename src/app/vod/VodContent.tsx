@@ -201,6 +201,18 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
             {/* Watchlist Button */}
             <WatchlistButton productId={product.id} isInWatchlist={watchlist.has(product.id)} onToggle={toggleWatchlist} />
 
+            {/* Purchased Badge */}
+            {(ownedProducts[product.id] || subscriptionTier) && (
+              <div className="absolute top-4 right-14 z-20">
+                <div className="flex items-center gap-1.5 bg-green-500/20 border border-green-500/40 px-3 py-1.5 backdrop-blur-sm">
+                  <svg aria-hidden="true" className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-green-400">Purchased</span>
+                </div>
+              </div>
+            )}
+
             {/* Full poster display - constrained height */}
             {product.image ? (
               <div className="bg-black flex justify-center">
@@ -294,6 +306,18 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
 
               {/* Watchlist Button */}
               <WatchlistButton productId={product.id} isInWatchlist={watchlist.has(product.id)} onToggle={toggleWatchlist} />
+
+              {/* Purchased Badge */}
+              {(ownedProducts[product.id] || subscriptionTier) && (
+                <div className="absolute top-3 right-14 z-20">
+                  <div className="flex items-center gap-1.5 bg-green-500/20 border border-green-500/40 px-2.5 py-1 backdrop-blur-sm">
+                    <svg aria-hidden="true" className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-green-400">Purchased</span>
+                  </div>
+                </div>
+              )}
 
               {/* Product Image */}
               {product.image ? (

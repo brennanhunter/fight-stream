@@ -113,10 +113,10 @@ Next.js 15 + React 19 sports streaming platform (boxing PPV and VOD). Core pages
 
 ## Copy & Microcopy
 
-- Terminology inconsistent: "Fight Pass", "subscription", "membership", "tier", "plan" — pick one set
+- ~~Terminology inconsistent: "Fight Pass", "subscription", "membership", "tier", "plan" — pick one set~~ - fixed ("Fight Pass" in UI, "subscription" only in legal/billing emails)
 - ~~"Enter the email you used at checkout" implies purchase required; free accounts exist — should say "associated with your purchase or account"~~ - fixed
 - ~~Recover Access code field doesn't say "6 digits" — should be "6-digit code expires in 15 minutes"~~ - already shows "6-digit code" + "expires in 15 minutes" on code step
-- Pricing card descriptions vague: "The full experience" doesn't explain what's included at a glance
+- ~~Pricing card descriptions vague: "The full experience" doesn't explain what's included at a glance~~ - fixed
 - ~~`hunter@boxstreamtv.com` hardcoded in 5+ places — should be one `/contact` link~~ - fixed
 - ~~Inconsistent capitalization: "Sign In" vs "Sign in" vs "sign in"~~ - fixed
 
@@ -133,7 +133,7 @@ Next.js 15 + React 19 sports streaming platform (boxing PPV and VOD). Core pages
 ### Sign-In
 - ~~Google OAuth "or" divider looks like a separator, not a prompt — should say "Or sign in with Google"~~ - fixed ("Or continue with")
 - ~~`?redirect` param accepts any path starting with `/` — doesn't prevent open redirect via `//__proto__` style paths~~ - fixed
-- "Sign up" link at bottom of login page is easy to miss — should have equal visual weight to Sign In CTA
+- ~~"Sign up" link at bottom of login page is easy to miss — should have equal visual weight to Sign In CTA~~ - fixed (full-width bordered button on both login/signup)
 
 ### PPV Purchase
 - ~~`markFightPassPromptSeen()` fires when user clicks "Continue to Checkout" (`LivePlayer:461`) — if they cancel Stripe, the prompt never shows again. Should clear after 24h or on page reload~~ - fixed (24h expiry)
@@ -141,7 +141,7 @@ Next.js 15 + React 19 sports streaming platform (boxing PPV and VOD). Core pages
 - Stripe error handling shows generic "Something went wrong" — should handle specific error types
 
 ### VOD Purchase
-- VOD grid has no visual indicator for already-purchased items vs available vs coming soon — needs a badge system
+- ~~VOD grid has no visual indicator for already-purchased items vs available vs coming soon — needs a badge system~~ - fixed (green "✓ Purchased" badge on owned cards)
 - `VodBuyButton` redirects to Stripe with no confirmation modal
 - Purchase expiry countdown is only on the individual product card — not visible in the grid
 

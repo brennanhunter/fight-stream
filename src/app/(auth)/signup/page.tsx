@@ -212,12 +212,15 @@ export default function SignupPage() {
         Continue with Google
       </button>
 
-      <p className="mt-8 text-center text-xs text-gray-500">
-        Already have an account?{' '}
-        <Link href="/login" className="text-white hover:underline">
+      <div className="mt-8 text-center">
+        <p className="text-xs text-gray-500 mb-3">Already have an account?</p>
+        <Link
+          href="/login"
+          className="inline-block w-full text-center text-[10px] font-bold tracking-[0.2em] uppercase px-5 py-3 border border-white/20 text-gray-400 hover:text-white hover:border-white/40 transition-all duration-200"
+        >
           Sign In
         </Link>
-      </p>
+      </div>
     </>
   );
 }

@@ -24,7 +24,7 @@ export default function PricingCards({ prices }: PricingProps) {
       price: prices.basic || '$9.99',
       priceId: prices.basicPriceId,
       interval: prices.basicInterval,
-      description: 'VOD library + PPV savings',
+      description: 'VOD replays + 25% off PPV',
       features: [
         'Unlimited VOD replays',
         '25% off all PPV events',
@@ -40,7 +40,7 @@ export default function PricingCards({ prices }: PricingProps) {
       price: prices.premium || '$19.99',
       priceId: prices.premiumPriceId,
       interval: prices.premiumInterval,
-      description: 'The full experience',
+      description: 'VOD replays + free PPV events',
       features: [
         'Unlimited VOD replays',
         'Free PPV events included',

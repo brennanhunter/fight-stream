@@ -88,14 +88,14 @@ export default async function PricingPage() {
             <div className="space-y-6">
               <div className="border border-white/10 p-6">
                 <h3 className="text-white font-semibold mb-2">Can I still buy individual fights?</h3>
-                <p className="text-gray-400 text-sm">Yes. Individual VOD purchases and PPV events are always available without a subscription.</p>
+                <p className="text-gray-400 text-sm">Yes. Individual VOD purchases and PPV events are always available without Fight Pass.</p>
               </div>
               <div className="border border-white/10 p-6">
                 <h3 className="text-white font-semibold mb-2">What happens if I cancel?</h3>
                 <p className="text-gray-400 text-sm">You keep access until the end of your current billing period. No refunds for partial months.</p>
               </div>
               <div className="border border-white/10 p-6">
-                <h3 className="text-white font-semibold mb-2">Can I switch plans?</h3>
+                <h3 className="text-white font-semibold mb-2">Can I switch Fight Pass tiers?</h3>
                 <p className="text-gray-400 text-sm">Yes — upgrade or downgrade anytime from your account. Changes take effect on your next billing cycle.</p>
               </div>
               <div className="border border-white/10 p-6">

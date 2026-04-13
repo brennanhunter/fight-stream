@@ -15,7 +15,7 @@ const nav = [
     links: [
       { name: 'My Account', href: '/account' },
       { name: 'Purchases', href: '/account/purchases' },
-      { name: 'Subscription', href: '/account/subscription' },
+      { name: 'Fight Pass', href: '/account/subscription' },
       { name: 'Recover Access', href: '/recover-access' },
     ],
   },
