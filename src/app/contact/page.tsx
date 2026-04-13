@@ -51,6 +51,7 @@ export default function ContactPage() {
       if (response.ok) {
         setStatus('success');
         setFormData({ name: '', email: '', phone: '', subject: '', message: '', _gotcha: '' });
+        setTouched({});
       } else {
         setStatus('error');
       }
