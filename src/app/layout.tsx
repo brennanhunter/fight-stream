@@ -27,6 +27,7 @@ export const metadata: Metadata = {
   description: "Watch live boxing matches, championship fights, and exclusive PPV events in HD. Stream professional, amateur, and youth boxing online with BoxStreamTV.",
   keywords: [
     "BoxStreamTV",
+    "boxstream tv",
     "Box Stream TV",
     "boxstreamtv.com",
     "live boxing stream",
@@ -131,6 +132,19 @@ const jsonLd = {
         },
         "query-input": "required name=search_term_string",
       },
+    },
+    {
+      "@type": "SiteNavigationElement",
+      "@id": "https://boxstreamtv.com/#navigation",
+      "name": "Main Navigation",
+      "hasPart": [
+        { "@type": "WebPage", "name": "Home", "url": "https://boxstreamtv.com" },
+        { "@type": "WebPage", "name": "Replays", "url": "https://boxstreamtv.com/vod" },
+        { "@type": "WebPage", "name": "Pricing", "url": "https://boxstreamtv.com/pricing" },
+        { "@type": "WebPage", "name": "FAQ", "url": "https://boxstreamtv.com/faq" },
+        { "@type": "WebPage", "name": "Contact", "url": "https://boxstreamtv.com/contact" },
+        { "@type": "WebPage", "name": "Work With Us", "url": "https://boxstreamtv.com/work-with-us" },
+      ],
     },
   ],
 };
