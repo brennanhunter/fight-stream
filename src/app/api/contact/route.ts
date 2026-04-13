@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Resend } from 'resend';
 import { rateLimit } from '@/lib/rate-limit';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, 'contact', 3, 60 * 60 * 1000); // 3 per hour
@@ -18,13 +21,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Name, email, and message are required.' }, { status: 400 });
   }
 
-  const res = await fetch('https://formspree.io/f/xwpolbjr', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, phone, subject, message }),
+  const { error } = await resend.emails.send({
+    from: 'BoxStreamTV <hunter@boxstreamtv.com>',
+    to: 'hunter@boxstreamtv.com',
+    replyTo: email,
+    subject: `Contact: ${subject || 'No subject'}`,
+    text: [
+      `Name: ${name}`,
+      `Email: ${email}`,
+      phone ? `Phone: ${phone}` : '',
+      `Subject: ${subject || 'N/A'}`,
+      '',
+      message,
+    ].filter(Boolean).join('\n'),
   });
 
-  if (!res.ok) {
+  if (error) {
+    console.error('Resend contact error:', error);
     return NextResponse.json({ error: 'Failed to send message.' }, { status: 502 });
   }
 
