@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS events (
   replay_url            text,                          -- post-event replay URL
   venue_address         text,                          -- full address for geo-restriction
   blackout_radius_miles integer     DEFAULT 90,        -- geo-blackout radius in miles
+  ticket_url            text,                          -- external URL for in-person ticket purchases (shown during blackout)
   is_active             boolean     NOT NULL DEFAULT false,
   is_streaming          boolean     NOT NULL DEFAULT false, -- controls Watch Now CTA visibility
   promoter_email        text,                          -- OTP gate for promoter report

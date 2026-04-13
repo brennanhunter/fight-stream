@@ -38,7 +38,7 @@ export default async function LivePage() {
               This event is blacked out in your area due to local broadcast restrictions.
             </p>
             <p className="text-gray-500 text-sm">
-              Please attend the event in person or check back after the broadcast window ends.
+              Attend the event in person or check back after the broadcast to purchase the replay.
             </p>
           </div>
         </div>

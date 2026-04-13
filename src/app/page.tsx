@@ -34,7 +34,7 @@ async function getAllEvents(): Promise<CarouselEvent[]> {
     // Fetch active events
     const { data: activeEvents, error: activeErr } = await supabase
       .from('events')
-      .select('id, name, date, stripe_price_id, replay_url, is_active, is_streaming')
+      .select('id, name, date, stripe_price_id, replay_url, is_active, is_streaming, ticket_url')
       .eq('is_active', true);
 
     if (activeErr) console.error('Supabase active events error:', activeErr);
@@ -42,7 +42,7 @@ async function getAllEvents(): Promise<CarouselEvent[]> {
     // Fetch upcoming events (future date, not active)
     const { data: upcomingEvents, error: upcomingErr } = await supabase
       .from('events')
-      .select('id, name, date, stripe_price_id, replay_url, is_active')
+      .select('id, name, date, stripe_price_id, replay_url, is_active, ticket_url')
       .eq('is_active', false)
       .gt('date', new Date().toISOString())
       .order('date', { ascending: true });
@@ -98,6 +98,7 @@ async function getAllEvents(): Promise<CarouselEvent[]> {
         priceCents,
         is_active: event.is_active,
         is_streaming: (event as { is_streaming?: boolean }).is_streaming ?? false,
+        ticket_url: (event as { ticket_url?: string | null }).ticket_url ?? null,
       };
     });
 
@@ -142,21 +143,8 @@ export default async function Home() {
 
   return (
     <>
-      {activeEvent && geoBlocked ? (
-        /* Geo-restricted — blackout message */
-        <div className="min-h-screen flex items-center justify-center bg-black px-6">
-          <div className="max-w-lg text-center">
-            <h1 className="text-4xl font-bold text-white mb-4">Blackout Restriction</h1>
-            <p className="text-gray-400 text-lg mb-2">
-              This event is blacked out in your area due to local broadcast restrictions.
-            </p>
-            <p className="text-gray-500 text-sm">
-              Please attend the event in person or check back after the broadcast window ends.
-            </p>
-          </div>
-        </div>
-      ) : events.length > 0 ? (
-        <EventCarousel events={events} subscriptionTier={subscriptionTier} />
+      {events.length > 0 ? (
+        <EventCarousel events={events} subscriptionTier={subscriptionTier} geoBlockedEventId={geoBlocked && activeEvent ? activeEvent.id : null} />
       ) : (
         <Hero />
       )}

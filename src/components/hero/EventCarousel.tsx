@@ -14,14 +14,16 @@ export interface CarouselEvent {
   priceCents: number;
   is_active: boolean;
   is_streaming: boolean;
+  ticket_url: string | null;
 }
 
 interface EventCarouselProps {
   events: CarouselEvent[];
   subscriptionTier: 'basic' | 'premium' | null;
+  geoBlockedEventId?: string | null;
 }
 
-export default function EventCarousel({ events, subscriptionTier }: EventCarouselProps) {
+export default function EventCarousel({ events, subscriptionTier, geoBlockedEventId }: EventCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [userInteracting, setUserInteracting] = useState(false);
 
@@ -62,6 +64,8 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
             isStreaming={currentEvent.is_streaming}
             eventId={currentEvent.id}
             onInteraction={setUserInteracting}
+            geoBlocked={currentEvent.id === geoBlockedEventId}
+            ticketUrl={currentEvent.ticket_url}
           />
         </motion.div>
       </AnimatePresence>

@@ -34,6 +34,8 @@ interface EventHeroProps {
   isStreaming?: boolean;
   eventId?: string;
   onInteraction?: (interacting: boolean) => void;
+  geoBlocked?: boolean;
+  ticketUrl?: string | null;
 }
 
 /* ── 3D Tilt + Float Poster Card ── */
@@ -131,7 +133,7 @@ function getTimeRemaining(targetDate: string) {
   return { days, hours, minutes, seconds };
 }
 
-export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, isStreaming: initialIsStreaming = false, eventId, onInteraction }: EventHeroProps) {
+export default function EventHero({ eventName, eventDate, posterImage, priceCents, stripePriceId, replayUrl, subscriptionTier, isActive = true, isStreaming: initialIsStreaming = false, eventId, onInteraction, geoBlocked = false, ticketUrl }: EventHeroProps) {
   const priceDisplay = `$${(priceCents / 100).toFixed(2)}`;
 
   // Calculate discounted price display
@@ -337,7 +339,39 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
 
           {/* CTA — mobile: after poster; desktop: left col row 2 */}
           <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-4 pt-2 lg:col-start-1 lg:row-start-2">
-            {accessState === 'has-access' ? (
+            {geoBlocked && !replayUrl ? (
+              /* Geo-blackout — no live access from this location */
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <svg aria-hidden="true" className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  <span className="text-white font-bold text-sm tracking-[0.15em] uppercase">Blackout Restriction</span>
+                </div>
+                <p className="text-gray-400 text-sm max-w-sm">
+                  This event is blacked out in your area due to local broadcast restrictions. Attend the event in person or check back after the broadcast to purchase the replay.
+                </p>
+                {ticketUrl ? (
+                  <a
+                    href={ticketUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-2 bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
+                  >
+                    Buy Live Tickets
+                    <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
+                  </a>
+                ) : (
+                  <div className="inline-flex items-center gap-2 bg-white/[0.05] border border-white/10 px-6 py-4 text-sm font-bold tracking-[0.15em] uppercase text-gray-500 cursor-not-allowed">
+                    Blacked Out
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
+                  Questions?{' '}
+                  <Link href="/contact" className="underline hover:text-gray-300 transition-colors">Contact us</Link>
+                </p>
+              </div>
+            ) : accessState === 'has-access' ? (
               /* Purchased — show Watch Now */
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
