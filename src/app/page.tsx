@@ -125,6 +125,7 @@ export default async function Home() {
 
     if (eventGeo?.venue_address) {
       const geo = await checkGeoRestriction(eventGeo.venue_address, eventGeo.blackout_radius_miles ?? 90);
+      console.log('[GEO DEBUG]', { venue: eventGeo.venue_address, radius: eventGeo.blackout_radius_miles, blocked: geo.blocked, distanceMiles: geo.distanceMiles });
       geoBlocked = geo.blocked;
     }
   }

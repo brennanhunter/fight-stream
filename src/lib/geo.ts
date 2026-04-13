@@ -74,6 +74,7 @@ function haversineDistance(
 /**
  * Checks whether the current request originates within the blackout radius.
  * Intended for use in server components and API routes.
+ * Uses Vercel's geo headers (free, no rate limit) with ipapi.co as fallback.
  * Falls back to allowing access if geolocation lookup fails.
  */
 export async function checkGeoRestriction(
@@ -87,41 +88,66 @@ export async function checkGeoRestriction(
     const venue = await geocodeAddress(venueAddress);
     if (!venue) return { blocked: false, distanceMiles: null };
 
-    const clientIp = ip ?? await getClientIp();
-    if (!clientIp) return { blocked: false, distanceMiles: null };
+    // Try Vercel's built-in geo headers first (free, unlimited)
+    const h = await headers();
+    let latitude: number | null = null;
+    let longitude: number | null = null;
 
-    // Check IP geo cache first to avoid hitting rate limits
-    let latitude: number;
-    let longitude: number;
-    const cachedIp = ipGeoCache.get(clientIp);
-    if (cachedIp && cachedIp.expiresAt > Date.now()) {
-      latitude = cachedIp.lat;
-      longitude = cachedIp.lon;
-    } else {
-      if (cachedIp) ipGeoCache.delete(clientIp); // expired — remove
-
-      // Use ipapi.co (HTTPS, free tier 1k/day) instead of ip-api.com (HTTP-only on free tier)
-      const res = await fetch(`https://ipapi.co/${encodeURIComponent(clientIp)}/json/`, {
-        cache: 'no-store',
-      });
-
-      if (!res.ok) return { blocked: false, distanceMiles: null };
-
-      const data = await res.json();
-      latitude = data.latitude;
-      longitude = data.longitude;
-
-      if (typeof latitude !== 'number' || typeof longitude !== 'number') {
-        return { blocked: false, distanceMiles: null };
+    const vercelLat = h.get('x-vercel-ip-latitude');
+    const vercelLon = h.get('x-vercel-ip-longitude');
+    if (vercelLat && vercelLon) {
+      latitude = parseFloat(vercelLat);
+      longitude = parseFloat(vercelLon);
+      if (isNaN(latitude) || isNaN(longitude)) {
+        latitude = null;
+        longitude = null;
       }
+    }
 
-      ipGeoCache.set(clientIp, { lat: latitude, lon: longitude, expiresAt: Date.now() + IP_CACHE_TTL_MS });
+    // Fallback to ipapi.co if Vercel headers not available (e.g. local dev)
+    if (latitude === null || longitude === null) {
+      const clientIp = ip ?? getClientIpFromHeaders(h);
+      if (!clientIp) return { blocked: false, distanceMiles: null };
 
-      // Evict oldest entries if cache exceeds max size
-      if (ipGeoCache.size > IP_CACHE_MAX_SIZE) {
-        const firstKey = ipGeoCache.keys().next().value;
-        if (firstKey) ipGeoCache.delete(firstKey);
+      const cachedIp = ipGeoCache.get(clientIp);
+      if (cachedIp && cachedIp.expiresAt > Date.now()) {
+        latitude = cachedIp.lat;
+        longitude = cachedIp.lon;
+      } else {
+        if (cachedIp) ipGeoCache.delete(clientIp);
+
+        const res = await fetch(`https://ipapi.co/${encodeURIComponent(clientIp)}/json/`, {
+          cache: 'no-store',
+        });
+
+        if (!res.ok) return { blocked: false, distanceMiles: null };
+
+        const data = await res.json();
+
+        // ipapi.co returns { error: true } on rate limit (still 200 status)
+        if (data.error) {
+          console.warn('[GEO] ipapi.co error:', data.reason ?? 'unknown');
+          return { blocked: false, distanceMiles: null };
+        }
+
+        latitude = data.latitude;
+        longitude = data.longitude;
+
+        if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+          return { blocked: false, distanceMiles: null };
+        }
+
+        ipGeoCache.set(clientIp, { lat: latitude, lon: longitude, expiresAt: Date.now() + IP_CACHE_TTL_MS });
+
+        if (ipGeoCache.size > IP_CACHE_MAX_SIZE) {
+          const firstKey = ipGeoCache.keys().next().value;
+          if (firstKey) ipGeoCache.delete(firstKey);
+        }
       }
+    }
+
+    if (latitude === null || longitude === null) {
+      return { blocked: false, distanceMiles: null };
     }
 
     const distance = haversineDistance(latitude, longitude, venue.lat, venue.lon);
@@ -131,14 +157,12 @@ export async function checkGeoRestriction(
       distanceMiles: Math.round(distance),
     };
   } catch {
-    // If geo lookup fails, allow access rather than blocking legitimate users
     return { blocked: false, distanceMiles: null };
   }
 }
 
 /** Extract client IP from request headers. */
-async function getClientIp(): Promise<string | null> {
-  const h = await headers();
+function getClientIpFromHeaders(h: Headers): string | null {
   return (
     h.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     h.get('x-real-ip') ||
