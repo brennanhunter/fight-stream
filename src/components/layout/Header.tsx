@@ -88,6 +88,7 @@ export default function Header() {
               <Link
                 key={item.name}
                 href={item.href}
+                aria-current={isActive(item.href) ? 'page' : undefined}
                 className={`relative px-4 py-2 text-[11px] font-bold tracking-[0.2em] uppercase transition-all duration-200 ${
                   isActive(item.href)
                     ? 'text-white'
@@ -158,6 +159,7 @@ export default function Header() {
                 key={item.name}
                 href={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
+                aria-current={isActive(item.href) ? 'page' : undefined}
                 className={`px-2 py-3 text-xs font-bold tracking-[0.2em] uppercase transition-colors ${
                   isActive(item.href)
                     ? 'text-white'

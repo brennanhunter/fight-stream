@@ -40,12 +40,12 @@ export default function NotFound() {
 
         <p className="mt-10 text-xs text-gray-600">
           Need help?{' '}
-          <a
-            href="mailto:hunter@boxstreamtv.com"
+          <Link
+            href="/contact"
             className="text-gray-500 hover:text-white transition-colors underline underline-offset-2"
           >
-            hunter@boxstreamtv.com
-          </a>
+            Contact us
+          </Link>
         </p>
       </div>
     </main>

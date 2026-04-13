@@ -28,10 +28,10 @@ export default function GlobalError({
             </h1>
             <div style={{ width: '48px', height: '2px', backgroundColor: '#fff', margin: '0 auto 24px' }} />
             <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.6', marginBottom: '40px' }}>
-              A critical error occurred. Try refreshing, or contact us at{' '}
-              <a href="mailto:hunter@boxstreamtv.com" style={{ color: '#d1d5db' }}>
-                hunter@boxstreamtv.com
-              </a>
+              A critical error occurred. Try refreshing, or{' '}
+              <Link href="/contact" style={{ color: '#d1d5db' }}>
+                contact us
+              </Link>
               .
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>

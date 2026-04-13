@@ -95,6 +95,7 @@ export default function HomeContent() {
                   key={selectedVideo}
                   controls
                   autoPlay
+                  aria-label="Event highlights video"
                   className="w-full h-auto"
                 >
                   <source src={selectedVideo} type="video/mp4" />
@@ -102,9 +103,10 @@ export default function HomeContent() {
                 </video>
                 <button
                   onClick={() => setSelectedVideo(null)}
+                  aria-label="Close video player"
                   className="absolute top-4 right-4 bg-black/80 hover:bg-black text-white px-4 py-2 text-sm font-bold tracking-wider transition-colors z-10"
                 >
-                  ✕ CLOSE
+                  <span aria-hidden="true">✕</span> CLOSE
                 </button>
               </div>
             </div>
@@ -146,7 +148,7 @@ export default function HomeContent() {
                         : 'border-black/20 group-hover:bg-black group-hover:text-white group-hover:border-black'
                     }`}
                   >
-                    ▶
+                    <span aria-hidden="true">▶</span>
                   </span>
                 </div>
                 <h3 className="text-xl font-bold tracking-tight">

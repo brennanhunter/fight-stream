@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
 const STORAGE_KEY = 'fight_pass_prompt_seen';
+const EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 interface FightPassPromptProps {
   open: boolean;
@@ -12,15 +13,17 @@ interface FightPassPromptProps {
   onContinue: () => void;
 }
 
-/** Returns true if the user has already dismissed this prompt. */
+/** Returns true if the user has dismissed this prompt within the last 24 hours. */
 export function hasSeenFightPassPrompt(): boolean {
   if (typeof window === 'undefined') return true;
-  return localStorage.getItem(STORAGE_KEY) === '1';
+  const ts = localStorage.getItem(STORAGE_KEY);
+  if (!ts) return false;
+  return Date.now() - Number(ts) < EXPIRY_MS;
 }
 
-/** Mark the prompt as seen so it won't show again. */
+/** Mark the prompt as seen — expires after 24 hours. */
 export function markFightPassPromptSeen(): void {
-  localStorage.setItem(STORAGE_KEY, '1');
+  localStorage.setItem(STORAGE_KEY, String(Date.now()));
 }
 
 export default function FightPassPrompt({ open, onClose, onContinue }: FightPassPromptProps) {
@@ -50,6 +53,7 @@ export default function FightPassPrompt({ open, onClose, onContinue }: FightPass
     {open && (
     <motion.div
       ref={backdropRef}
+      role="presentation"
       onClick={handleBackdropClick}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -58,15 +62,19 @@ export default function FightPassPrompt({ open, onClose, onContinue }: FightPass
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
     >
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fightpass-prompt-title"
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="relative bg-black border border-white/20 max-w-md w-full p-8 space-y-6"
+        className="relative bg-black border border-white/20 max-w-[calc(100vw-24px)] sm:max-w-md w-full p-8 space-y-6"
       >
         {/* Close button */}
         <button
           onClick={onClose}
+          autoFocus
           className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
           aria-label="Close"
         >
@@ -78,7 +86,7 @@ export default function FightPassPrompt({ open, onClose, onContinue }: FightPass
         {/* Content */}
         <div className="space-y-2">
           <p className="text-xs font-bold tracking-[0.3em] uppercase text-amber-400">Save on Every Event</p>
-          <h2 className="text-2xl font-bold text-white">Have You Seen Fight Pass?</h2>
+          <h2 id="fightpass-prompt-title" className="text-2xl font-bold text-white">Have You Seen Fight Pass?</h2>
         </div>
 
         <p className="text-gray-400 text-sm leading-relaxed">
@@ -102,13 +110,13 @@ export default function FightPassPrompt({ open, onClose, onContinue }: FightPass
         <div className="space-y-3 pt-2">
           <Link
             href="/pricing"
-            className="block w-full text-center bg-white text-black font-bold py-3 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
+            className="block w-full text-center bg-white text-black font-bold py-3 text-xs sm:text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200"
           >
             View Fight Pass Plans
           </Link>
           <button
             onClick={handleContinue}
-            className="w-full text-center border border-white/30 text-white font-bold py-3 text-sm tracking-[0.15em] uppercase transition-colors hover:border-white hover:bg-white/5"
+            className="w-full text-center border border-white/30 text-white font-bold py-3 text-xs sm:text-sm tracking-[0.15em] uppercase transition-colors hover:border-white hover:bg-white/5"
           >
             Continue to Checkout
           </button>

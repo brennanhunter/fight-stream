@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="password" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="password" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             New Password
           </label>
           <input
@@ -68,10 +68,11 @@ export default function ResetPasswordPage() {
             className="w-full bg-white/5 border border-white/10 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-white/30 transition-colors"
             placeholder="••••••••"
           />
+          <p className="mt-1 text-[10px] text-gray-600">Minimum 8 characters</p>
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="confirmPassword" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Confirm New Password
           </label>
           <input

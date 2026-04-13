@@ -20,7 +20,7 @@ function WatchlistButton({ productId, isInWatchlist, onToggle }: { productId: st
           ? 'border-white/40 text-white hover:text-red-400 hover:border-red-400/50'
           : 'border-white/20 text-gray-500 hover:text-white hover:border-white/40'
       }`}
-      title={isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+      aria-label={isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
     >
       <svg className="w-4 h-4" fill={isInWatchlist ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -88,6 +88,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
             <button
               key={event.slug}
               onClick={() => setSelectedEvent(event)}
+              aria-label={`View fights for ${event.name}`}
               className="group relative overflow-visible text-left transition-all duration-300 transform hover:scale-[1.03] bg-black"
             >
               {/* Glow overlay for full-event cards */}
@@ -140,7 +141,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
 
               {/* Event Info - Below poster */}
               <div className="p-4">
-                <h3 className="font-bold text-white text-lg mb-1 group-hover:text-gray-300 transition-colors">
+                <h3 className="font-bold text-white text-base sm:text-lg mb-1 group-hover:text-gray-300 transition-colors">
                   {event.name}
                 </h3>
                 <div className="flex items-center justify-between text-sm text-gray-500">
@@ -161,9 +162,10 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
       {/* Back Button */}
       <button
         onClick={() => setSelectedEvent(null)}
+        aria-label="Back to all events"
         className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors group"
       >
-        <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
         <span className="font-medium">All Events</span>
@@ -241,7 +243,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
                       href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id].purchaseId}` : `/watch?product_id=${product.id}`}
                       className="px-8 py-4 bg-white text-black text-xl font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center gap-2 tracking-wide"
                     >
-                      ▶ Watch
+                      <span aria-hidden="true">▶</span> Watch
                     </Link>
                     {ownedProducts[product.id]?.expiresAt && (
                       <ExpiryCountdown expiresAt={ownedProducts[product.id].expiresAt!} />
@@ -306,14 +308,14 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
                 </div>
               ) : (
                 <div className="relative bg-black/50 overflow-hidden flex items-center justify-center min-h-[200px] p-6">
-                  <p className="text-lg font-bold text-white text-center">{product.name}</p>
+                  <p className="text-base sm:text-lg font-bold text-white text-center">{product.name}</p>
                 </div>
               )}
 
               {/* Card Info */}
               <div className="p-4">
                 <h3 className={`font-bold text-white mb-2 ${
-                  product.featured === 'true' ? 'text-lg' : 'text-base'
+                  product.featured === 'true' ? 'text-base sm:text-lg' : 'text-base'
                 }`}>
                   {product.name}
                 </h3>
@@ -339,7 +341,7 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
                       href={ownedProducts[product.id] ? `/watch?purchase_id=${ownedProducts[product.id].purchaseId}` : `/watch?product_id=${product.id}`}
                       className="w-full text-center px-6 py-3 bg-white text-black text-base font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center justify-center gap-2 tracking-wide"
                     >
-                      ▶ Watch Now
+                      <span aria-hidden="true">▶</span> Watch Now
                     </Link>
                     {ownedProducts[product.id]?.expiresAt && (
                       <ExpiryCountdown expiresAt={ownedProducts[product.id].expiresAt!} />

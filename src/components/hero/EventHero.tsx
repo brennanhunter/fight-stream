@@ -109,7 +109,7 @@ function PosterCard({
         {accessState === 'has-access' && (
           <div className="absolute top-4 right-4 z-10">
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2">
-              <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <span className="text-xs font-bold tracking-[0.2em] uppercase text-white">Purchased</span>
@@ -393,7 +393,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
               /* Not purchased — show buy button + recovery */
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-gray-400">
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                   <span className="text-xs font-bold tracking-[0.15em] uppercase">Full refund if you can&apos;t access the stream</span>
@@ -406,7 +406,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                       className="group bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {checkoutLoading
-                        ? 'Redirecting...'
+                        ? 'Redirecting to Stripe…'
                         : subscriptionTier === 'premium'
                           ? replayUrl ? 'Buy Replay — Free' : isStreaming ? 'Watch Live — Free' : 'Get PPV Access — Free'
                           : replayUrl
@@ -418,7 +418,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                   )}
                 </div>
                 {checkoutError && (
-                  <p className="text-sm text-red-400">{checkoutError}</p>
+                  <p role="alert" aria-live="polite" className="text-sm text-red-400">{checkoutError}</p>
                 )}
                 {replayUrl && eventDate && (
                   <p className="text-xs text-gray-500">
@@ -435,8 +435,8 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                   </p>
                 )}
                 <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
-                  Issues? Email{' '}
-                  <a href="mailto:hunter@boxstreamtv.com" className="underline hover:text-gray-300 transition-colors">hunter@boxstreamtv.com</a>{' '}
+                  Issues?{' '}
+                  <Link href="/contact" className="underline hover:text-gray-300 transition-colors">Contact us</Link>{' '}
                   and we&apos;ll make it right.
                 </p>
                 <Link
@@ -450,7 +450,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
               /* Purchased but session expired — prompt recovery */
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                   <span className="text-white font-bold text-sm tracking-[0.15em] uppercase">Session Expired</span>
@@ -466,8 +466,8 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
                   <span className="inline-block transition-transform group-hover:translate-x-1">&rarr;</span>
                 </Link>
                 <p className="text-xs text-gray-500 leading-relaxed max-w-sm">
-                  Issues? Email{' '}
-                  <a href="mailto:hunter@boxstreamtv.com" className="underline hover:text-gray-300 transition-colors">hunter@boxstreamtv.com</a>{' '}
+                  Issues?{' '}
+                  <Link href="/contact" className="underline hover:text-gray-300 transition-colors">Contact us</Link>{' '}
                   and we&apos;ll make it right.
                 </p>
               </div>

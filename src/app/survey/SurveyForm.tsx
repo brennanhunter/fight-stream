@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 type Props = {
   email: string;
@@ -225,12 +226,12 @@ export default function SurveyForm({ email, type, surveyRef, subject, token }: P
           <p className="text-sm text-gray-500 mb-8">
             We read every review and use it to make BoxStreamTV better for every fight.
           </p>
-          <a
+          <Link
             href="/"
             className="inline-block bg-white text-black text-[11px] font-bold tracking-[0.15em] uppercase px-8 py-3.5 hover:bg-gray-100 transition-colors"
           >
             Back to BoxStreamTV
-          </a>
+          </Link>
         </div>
       )}
     </div>

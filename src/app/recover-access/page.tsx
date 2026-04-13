@@ -12,6 +12,7 @@ export default function RecoverAccessPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendSuccess, setResendSuccess] = useState(false);
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [recoveredEvent, setRecoveredEvent] = useState<{
     eventId: string;
@@ -26,7 +27,7 @@ export default function RecoverAccessPage() {
       } else {
         router.push('/');
       }
-    }, 3000);
+    }, 5000);
     return timer;
   }, [router]);
 
@@ -132,6 +133,7 @@ export default function RecoverAccessPage() {
   async function handleResend() {
     if (resendCooldown > 0) return;
     setError('');
+    setResendSuccess(false);
     setCode(['', '', '', '', '', '']);
     setLoading(true);
     try {
@@ -141,6 +143,8 @@ export default function RecoverAccessPage() {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
       startResendCooldown();
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 3000);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -161,7 +165,7 @@ export default function RecoverAccessPage() {
           <div className="w-12 h-[2px] bg-white mx-auto mt-4" />
           {step === 'email' && (
             <p className="mt-4 text-sm text-gray-400">
-              Enter the email you used at checkout and we&apos;ll send a code to restore your event access.
+              Enter the email associated with your purchase or account and we&apos;ll send a 6-digit code to restore your access.
             </p>
           )}
         </div>
@@ -175,8 +179,8 @@ export default function RecoverAccessPage() {
         {step === 'email' ? (
           <form onSubmit={handleSendCode} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
-                Email used at checkout
+              <label htmlFor="email" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+                Email
               </label>
               <input
                 id="email"
@@ -207,7 +211,7 @@ export default function RecoverAccessPage() {
             </p>
 
             {/* 6-digit code input */}
-            <div className="flex gap-2 justify-center" onPaste={handleCodePaste}>
+            <div className="flex gap-1.5 sm:gap-2 justify-center" onPaste={handleCodePaste}>
               {code.map((digit, i) => (
                 <input
                   key={i}
@@ -219,7 +223,8 @@ export default function RecoverAccessPage() {
                   onChange={(e) => handleCodeInput(i, e.target.value)}
                   onKeyDown={(e) => handleCodeKeyDown(i, e)}
                   autoFocus={i === 0}
-                  className="w-11 h-14 bg-white/5 border border-white/10 text-white text-xl font-bold text-center focus:outline-none focus:border-white/40 transition-colors"
+                  aria-label={`Digit ${i + 1} of 6`}
+                  className="w-10 h-12 sm:w-12 sm:h-16 bg-white/5 border border-white/10 text-white text-lg sm:text-xl font-bold text-center focus:outline-none focus:border-white/40 transition-colors"
                 />
               ))}
             </div>
@@ -239,7 +244,7 @@ export default function RecoverAccessPage() {
                 disabled={resendCooldown > 0 || loading}
                 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+                {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : resendSuccess ? 'Code sent!' : 'Resend code'}
               </button>
             </div>
           </form>

@@ -38,9 +38,14 @@ export default function ExpiryCountdown({ expiresAt, className }: { expiresAt: s
     timeLeft.urgency === 'medium' ? 'text-amber-400' :
     'text-gray-500';
 
+  const prefix =
+    timeLeft.urgency === 'high' ? '⚠ Expiring soon —' :
+    timeLeft.urgency === 'medium' ? 'Expires in' :
+    'Expires in';
+
   return (
     <span className={`text-[10px] font-bold tracking-[0.15em] uppercase ${color} ${className ?? ''}`}>
-      Expires in {timeLeft.label}
+      {prefix} {timeLeft.label}
     </span>
   );
 }

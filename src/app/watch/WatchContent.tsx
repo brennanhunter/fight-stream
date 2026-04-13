@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import VodPlayer from './VodPlayer';
 import SaveSession from './SaveSession';
 import ExpiryCountdown from '@/components/ExpiryCountdown';
@@ -41,12 +42,12 @@ export default function WatchContent({
 
         <p className="text-sm text-gray-500 mt-6 text-center">
           Having trouble? Try refreshing the page or{' '}
-          <a
-            href="mailto:hunter@boxstreamtv.com"
+          <Link
+            href="/contact"
             className="text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
           >
             contact support
-          </a>
+          </Link>
           .
         </p>
       </div>

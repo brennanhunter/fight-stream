@@ -107,7 +107,7 @@ export default function SignupPage() {
 
       <form onSubmit={handleSignup} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="email" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Email
           </label>
           <input
@@ -123,7 +123,7 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="password" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Password
           </label>
           <input
@@ -137,10 +137,11 @@ export default function SignupPage() {
             className="w-full bg-white/5 border border-white/10 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-white/30 transition-colors"
             placeholder="••••••••"
           />
+          <p className="mt-1 text-[10px] text-gray-600">Minimum 8 characters</p>
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="confirmPassword" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Confirm Password
           </label>
           <input
@@ -181,7 +182,7 @@ export default function SignupPage() {
         </div>
         <div className="relative flex justify-center">
           <span className="bg-black px-3 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-600">
-            or
+            Or continue with
           </span>
         </div>
       </div>
@@ -214,7 +215,7 @@ export default function SignupPage() {
       <p className="mt-8 text-center text-xs text-gray-500">
         Already have an account?{' '}
         <Link href="/login" className="text-white hover:underline">
-          Sign in
+          Sign In
         </Link>
       </p>
     </>

@@ -51,11 +51,11 @@ export default function VodBuyButton({ priceId, subscriptionTier }: { priceId: s
           tracking-wide
           border border-white"
       >
-        {loading ? 'Redirecting to checkout...' : '🥊 Buy Now'}
+        {loading ? 'Redirecting to Stripe…' : '🥊 Buy Now'}
       </button>
 
       {error && (
-        <p className="mt-3 text-sm text-red-400">{error}</p>
+        <p role="alert" aria-live="polite" className="mt-3 text-sm text-red-400">{error}</p>
       )}
 
       <FightPassPrompt

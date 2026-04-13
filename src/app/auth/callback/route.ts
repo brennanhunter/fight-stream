@@ -7,8 +7,8 @@ import { unsubscribeUrl, unsubscribeHeaders } from '@/lib/emails/unsubscribe';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 function sanitizeRedirect(path: string | null): string {
-  if (!path || !path.startsWith('/') || path.startsWith('//')) return '/account';
-  return path;
+  if (!path || !/^\/[a-zA-Z0-9]/.test(path) || /[:\\]/.test(path)) return '/account';
+  return path.split('?')[0];
 }
 
 export async function GET(request: Request) {

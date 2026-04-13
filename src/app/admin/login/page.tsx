@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-white/5 border border-white/20 text-white placeholder-gray-600 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors"
+            className="w-full bg-white/5 border border-white/20 text-white placeholder-gray-500 px-4 py-3 text-sm focus:outline-none focus:border-white transition-colors"
             autoFocus
           />
           {error && <p className="text-sm text-red-400">{error}</p>}

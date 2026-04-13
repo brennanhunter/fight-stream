@@ -263,3 +263,9 @@ html.vod-fullscreen .vod-player-wrapper video {
     @apply font-sans;
   }
 }
+
+/* Keyboard navigation: visible focus ring on all interactive elements */
+:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}

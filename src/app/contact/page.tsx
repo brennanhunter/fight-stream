@@ -14,6 +14,26 @@ export default function ContactPage() {
     _gotcha: '',
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const validate = (name: string, value: string): string | null => {
+    if (['name', 'email', 'subject', 'message'].includes(name) && !value.trim()) {
+      return 'Required';
+    }
+    if (name === 'email' && value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      return 'Enter a valid email address';
+    }
+    return null;
+  };
+
+  const getFieldError = (name: string): string | null => {
+    if (!touched[name]) return null;
+    return validate(name, formData[name as keyof typeof formData]);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setTouched((prev) => ({ ...prev, [e.target.name]: true }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +101,7 @@ export default function ContactPage() {
                 <h3 className="text-lg font-bold text-white mb-4">Ryan Ross</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-gray-400">
-                    <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     <a href="mailto:ryan@boxstreamtv.com" className="hover:text-white transition-colors">
@@ -89,7 +109,7 @@ export default function ContactPage() {
                     </a>
                   </div>
                   <div className="flex items-center gap-3 text-gray-400">
-                    <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                     <a href="tel:386-747-8250" className="hover:text-white transition-colors">
@@ -104,7 +124,7 @@ export default function ContactPage() {
                 <h3 className="text-lg font-bold text-white mb-4">Hunter Coleman</h3>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-gray-400">
-                    <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     <a href="mailto:hunter@boxstreamtv.com" className="hover:text-white transition-colors">
@@ -112,7 +132,7 @@ export default function ContactPage() {
                     </a>
                   </div>
                   <div className="flex items-center gap-3 text-gray-400">
-                    <svg className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                     <a href="tel:406-868-5850" className="hover:text-white transition-colors">
@@ -151,13 +171,13 @@ export default function ContactPage() {
             <h2 className="text-2xl font-bold text-white mb-6">Send Us a Message</h2>
 
             {status === 'success' && (
-              <div className="mb-6 p-4 border border-white/30 bg-white/5 text-white">
+              <div role="status" aria-live="polite" aria-atomic="true" className="mb-6 p-4 border border-white/30 bg-white/5 text-white">
                 Thank you! We&apos;ll get back to you soon.
               </div>
             )}
 
             {status === 'error' && (
-              <div className="mb-6 p-4 border border-red-500/50 bg-red-500/10 text-red-300">
+              <div role="alert" aria-live="polite" aria-atomic="true" className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center">
                 Something went wrong. Please try again or contact us directly.
               </div>
             )}
@@ -172,6 +192,7 @@ export default function ContactPage() {
                 style={{ display: 'none' }}
                 tabIndex={-1}
                 autoComplete="off"
+                aria-hidden="true"
               />
               <div>
                 <label htmlFor="name" className="block text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">
@@ -183,10 +204,12 @@ export default function ContactPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
-                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors"
+                  className={`w-full bg-transparent border px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-colors ${getFieldError('name') ? 'border-red-500/50 focus:border-red-400' : 'border-white/20 focus:border-white'}`}
                   placeholder="Your name"
                 />
+                {getFieldError('name') && <p className="mt-1.5 text-xs text-red-400">{getFieldError('name')}</p>}
               </div>
 
               <div>
@@ -199,10 +222,12 @@ export default function ContactPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
-                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors"
+                  className={`w-full bg-transparent border px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-colors ${getFieldError('email') ? 'border-red-500/50 focus:border-red-400' : 'border-white/20 focus:border-white'}`}
                   placeholder="your@email.com"
                 />
+                {getFieldError('email') && <p className="mt-1.5 text-xs text-red-400">{getFieldError('email')}</p>}
               </div>
 
               <div>
@@ -215,7 +240,7 @@ export default function ContactPage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors"
+                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-white transition-colors"
                   placeholder="(555) 123-4567"
                 />
               </div>
@@ -230,10 +255,12 @@ export default function ContactPage() {
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
-                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors"
+                  className={`w-full bg-transparent border px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-colors ${getFieldError('subject') ? 'border-red-500/50 focus:border-red-400' : 'border-white/20 focus:border-white'}`}
                   placeholder="What can we help you with?"
                 />
+                {getFieldError('subject') && <p className="mt-1.5 text-xs text-red-400">{getFieldError('subject')}</p>}
               </div>
 
               <div>
@@ -245,11 +272,13 @@ export default function ContactPage() {
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   required
                   rows={6}
-                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-white transition-colors resize-none"
+                  className={`w-full bg-transparent border px-4 py-3 text-white placeholder-gray-500 focus:outline-none transition-colors resize-none ${getFieldError('message') ? 'border-red-500/50 focus:border-red-400' : 'border-white/20 focus:border-white'}`}
                   placeholder="Tell us about your event..."
                 />
+                {getFieldError('message') && <p className="mt-1.5 text-xs text-red-400">{getFieldError('message')}</p>}
               </div>
 
               <button

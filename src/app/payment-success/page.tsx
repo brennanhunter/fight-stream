@@ -75,8 +75,8 @@ function PaymentSuccessContent() {
 
   if (status === 'loading') {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-6"></div>
+      <div role="status" aria-live="polite" className="flex flex-col items-center justify-center py-20">
+        <div aria-hidden="true" className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-6"></div>
         <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Verifying Payment...</h2>
         <p className="text-gray-500">Please wait while we confirm your purchase</p>
       </div>
@@ -178,7 +178,7 @@ function PaymentSuccessContent() {
         </div>
 
         {/* Redirect Message */}
-        <p className="text-gray-500 text-sm mb-6 tracking-wide">
+        <p aria-live="polite" aria-atomic="true" className="text-gray-500 text-sm mb-6 tracking-wide">
           Redirecting you {eventInfo?.isStreaming ? 'to the watch page' : 'home'} in {countdown} second{countdown !== 1 ? 's' : ''}...
         </p>
 

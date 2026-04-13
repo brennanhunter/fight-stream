@@ -149,7 +149,7 @@ export default function ReportEmailGate({
         </div>
 
         {error && (
-          <div className="mb-5 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center">
+          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center">
             {error}
           </div>
         )}
@@ -198,6 +198,7 @@ export default function ReportEmailGate({
                   onChange={(e) => handleCodeInput(i, e.target.value)}
                   onKeyDown={(e) => handleCodeKeyDown(i, e)}
                   autoFocus={i === 0}
+                  aria-label={`Digit ${i + 1} of 6`}
                   className="w-11 h-14 bg-white/5 border border-white/10 text-white text-xl font-bold text-center focus:outline-none focus:border-white/40 transition-colors"
                 />
               ))}

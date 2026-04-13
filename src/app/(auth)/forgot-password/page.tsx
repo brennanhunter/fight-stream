@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="email" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Email
           </label>
           <input
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
       <p className="mt-8 text-center text-xs text-gray-500">
         Remember your password?{' '}
         <Link href="/login" className="text-white hover:underline">
-          Sign in
+          Sign In
         </Link>
       </p>
     </>

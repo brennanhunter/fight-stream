@@ -28,8 +28,15 @@ export default function UserMenu({ user }: { user: User }) {
         setOpen(false);
       }
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, []);
 
   async function handleSignOut() {
@@ -53,6 +60,8 @@ export default function UserMenu({ user }: { user: User }) {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
         aria-label="User menu"
+        aria-expanded={open}
+        aria-haspopup="menu"
       >
         {avatarUrl && !imgError ? (
           <img
@@ -78,7 +87,7 @@ export default function UserMenu({ user }: { user: User }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-48 bg-black/95 backdrop-blur-md border border-white/10 shadow-xl z-50">
+        <div role="menu" className="absolute right-0 mt-2 w-48 bg-black/95 backdrop-blur-md border border-white/10 shadow-xl z-50">
           <div className="px-4 py-3 border-b border-white/10">
             <p className="text-xs text-white font-bold truncate">{displayName}</p>
             <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
@@ -89,6 +98,7 @@ export default function UserMenu({ user }: { user: User }) {
               <Link
                 key={item.href}
                 href={item.href}
+                role="menuitem"
                 onClick={() => setOpen(false)}
                 className="block px-4 py-2 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
               >
@@ -99,6 +109,7 @@ export default function UserMenu({ user }: { user: User }) {
 
           <div className="border-t border-white/10 py-1">
             <button
+              role="menuitem"
               onClick={handleSignOut}
               className="w-full text-left px-4 py-2 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-400 hover:text-red-400 hover:bg-white/5 transition-colors"
             >

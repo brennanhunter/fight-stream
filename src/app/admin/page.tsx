@@ -326,7 +326,7 @@ export default async function AdminPage({
               name="q"
               defaultValue={searchEmail}
               placeholder="Search by email..."
-              className="flex-1 bg-white/5 border border-white/20 text-white placeholder-gray-600 px-4 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+              className="flex-1 bg-white/5 border border-white/20 text-white placeholder-gray-500 px-4 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
             />
             <button
               type="submit"

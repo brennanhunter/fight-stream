@@ -76,7 +76,7 @@ export default function WatchlistContent({
               <button
                 onClick={() => removeFavorite(favoriteId)}
                 className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center bg-black/70 border border-white/20 text-gray-400 hover:text-red-400 hover:border-red-400/50 transition-colors"
-                title="Remove from watchlist"
+                aria-label="Remove from watchlist"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -116,7 +116,7 @@ export default function WatchlistContent({
                     href={owned ? `/watch?purchase_id=${owned.purchaseId}` : `/watch?product_id=${product.id}`}
                     className="w-full text-center px-6 py-3 bg-white text-black text-base font-bold hover:bg-gray-200 transition-all duration-300 border border-white inline-flex items-center justify-center gap-2 tracking-wide"
                   >
-                    ▶ Watch Now
+                    <span aria-hidden="true">▶</span> Watch Now
                   </Link>
                 ) : product.price ? (
                   <div className="flex items-center justify-between">

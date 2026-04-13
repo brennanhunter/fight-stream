@@ -16,7 +16,7 @@ interface VodPlayerProps {
   expiresAt?: string | null;
 }
 
-type ErrorState = 'expired' | 'network';
+type ErrorState = 'expired' | 'network' | 'playback';
 
 export default function VodPlayer({ src, title, expiresAt }: VodPlayerProps) {
   const [error, setError] = useState<ErrorState | null>(null);
@@ -27,14 +27,14 @@ export default function VodPlayer({ src, title, expiresAt }: VodPlayerProps) {
       <div className="flex flex-col items-center justify-center bg-black/80 py-16 px-6 text-center">
         <p className="text-white text-lg font-semibold mb-2">Playback link expired</p>
         <p className="text-gray-400 text-sm mb-6">
-          Your video link has timed out. Refresh to get a new one, or restore your access below.
+          Your secure video link has timed out. Refreshing the page will generate a new link automatically.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-white text-black font-bold text-sm tracking-wide hover:bg-gray-200 transition-colors"
           >
-            Refresh Page
+            Get New Link
           </button>
           <a
             href="/recover-access"
@@ -64,6 +64,23 @@ export default function VodPlayer({ src, title, expiresAt }: VodPlayerProps) {
     );
   }
 
+  if (error === 'playback') {
+    return (
+      <div className="flex flex-col items-center justify-center bg-black/80 py-16 px-6 text-center">
+        <p className="text-white text-lg font-semibold mb-2">Video can&apos;t be played</p>
+        <p className="text-gray-400 text-sm mb-6">
+          This video format isn&apos;t supported by your browser. Try a different browser or device.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 bg-white text-black font-bold text-sm tracking-wide hover:bg-gray-200 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <MediaPlayer
       ref={playerRef}
@@ -80,8 +97,10 @@ export default function VodPlayer({ src, title, expiresAt }: VodPlayerProps) {
           // otherwise it's likely a transient network issue.
           const isExpired = expiresAt ? new Date(expiresAt) < new Date() : false;
           setError(isExpired ? 'expired' : 'network');
+        } else if (e?.code === 3 || e?.code === 4) {
+          // MEDIA_ERR_DECODE (3), MEDIA_ERR_SRC_NOT_SUPPORTED (4)
+          setError('playback');
         } else if (e?.code != null) {
-          // MEDIA_ERR_DECODE (3), MEDIA_ERR_SRC_NOT_SUPPORTED (4), etc.
           setError('network');
         }
       }}

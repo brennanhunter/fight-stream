@@ -120,12 +120,13 @@ function FaqItem({ q, a, link }: { q: string; a: string; link?: { label: string;
     <div className="border-b border-white/10">
       <button
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="w-full flex items-center justify-between py-5 text-left group"
       >
         <span className="text-sm font-bold text-white group-hover:text-gray-300 transition-colors pr-8">
           {q}
         </span>
-        <span className={`shrink-0 w-5 h-5 border border-white/30 flex items-center justify-center text-white transition-transform duration-200 ${open ? 'rotate-45' : ''}`}>
+        <span aria-hidden="true" className={`shrink-0 w-5 h-5 border border-white/30 flex items-center justify-center text-white transition-transform duration-200 ${open ? 'rotate-45' : ''}`}>
           +
         </span>
       </button>

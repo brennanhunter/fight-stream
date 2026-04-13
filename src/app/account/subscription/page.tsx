@@ -202,7 +202,7 @@ export default function SubscriptionPage() {
           )}
 
           {portalError && (
-            <p className="mb-4 text-sm text-red-400">{portalError}</p>
+            <p role="alert" aria-live="polite" className="mb-4 text-sm text-red-400">{portalError}</p>
           )}
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -231,7 +231,7 @@ export default function SubscriptionPage() {
               </button>
             )}
             {reactivateError && (
-              <p className="text-sm text-red-400 self-center">{reactivateError}</p>
+              <p role="alert" aria-live="polite" className="text-sm text-red-400 self-center">{reactivateError}</p>
             )}
           </div>
 
@@ -248,7 +248,7 @@ export default function SubscriptionPage() {
                 . No charges after that.
               </p>
               {cancelError && (
-                <p className="mb-3 text-sm text-red-400">{cancelError}</p>
+                <p role="alert" aria-live="polite" className="mb-3 text-sm text-red-400">{cancelError}</p>
               )}
               <div className="flex gap-3">
                 <button

@@ -53,7 +53,7 @@ export default async function PurchasesPage() {
                   {purchase.product_image && (
                     <img
                       src={purchase.product_image as string}
-                      alt=""
+                      alt={purchase.product_name as string}
                       className="w-12 h-12 object-cover"
                     />
                   )}

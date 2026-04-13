@@ -44,7 +44,7 @@ export default function AdminGrantForm({ activeEventId, activeEventName }: { act
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="bg-white/5 border border-white/20 text-white placeholder-gray-600 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+          className="bg-white/5 border border-white/20 text-white placeholder-gray-500 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
         />
         <input
           type="text"
@@ -52,7 +52,7 @@ export default function AdminGrantForm({ activeEventId, activeEventName }: { act
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
           required
-          className="bg-white/5 border border-white/20 text-white placeholder-gray-600 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+          className="bg-white/5 border border-white/20 text-white placeholder-gray-500 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
         />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -69,7 +69,7 @@ export default function AdminGrantForm({ activeEventId, activeEventName }: { act
           placeholder={activeEventName ? `Event ID (default: ${activeEventName})` : 'Event ID (for PPV grants)'}
           value={eventId}
           onChange={(e) => setEventId(e.target.value)}
-          className="bg-white/5 border border-white/20 text-white placeholder-gray-600 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+          className="bg-white/5 border border-white/20 text-white placeholder-gray-500 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
         />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

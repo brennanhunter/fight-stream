@@ -77,7 +77,7 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
             animate={{ boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 20px rgba(255,255,255,0.6)', '0 0 4px rgba(255,255,255,0.1)', '0 0 20px rgba(255,255,255,0.6)', '0 0 0px rgba(255,255,255,0)'] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut', times: [0, 0.1, 0.2, 0.3, 1] }}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </motion.button>
@@ -90,7 +90,7 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
             animate={{ boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 20px rgba(255,255,255,0.6)', '0 0 4px rgba(255,255,255,0.1)', '0 0 20px rgba(255,255,255,0.6)', '0 0 0px rgba(255,255,255,0)'] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut', times: [0, 0.1, 0.2, 0.3, 1] }}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </motion.button>
@@ -107,7 +107,7 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
                 animate={{ boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 18px rgba(255,255,255,0.5)', '0 0 0px rgba(255,255,255,0)'] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </motion.button>
@@ -133,7 +133,7 @@ export default function EventCarousel({ events, subscriptionTier }: EventCarouse
                 animate={{ boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 18px rgba(255,255,255,0.5)', '0 0 0px rgba(255,255,255,0)'] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </motion.button>

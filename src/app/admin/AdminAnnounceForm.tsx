@@ -42,7 +42,7 @@ export default function AdminAnnounceForm() {
           value={eventName}
           onChange={(e) => setEventName(e.target.value)}
           required
-          className="sm:col-span-2 bg-white/5 border border-white/20 text-white placeholder-gray-600 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+          className="sm:col-span-2 bg-white/5 border border-white/20 text-white placeholder-gray-500 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
         />
         <input
           type="text"
@@ -50,7 +50,7 @@ export default function AdminAnnounceForm() {
           value={ppvPrice}
           onChange={(e) => setPpvPrice(e.target.value)}
           required
-          className="bg-white/5 border border-white/20 text-white placeholder-gray-600 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+          className="bg-white/5 border border-white/20 text-white placeholder-gray-500 px-3 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
         />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">

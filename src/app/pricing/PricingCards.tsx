@@ -143,13 +143,14 @@ export default function PricingCards({ prices }: PricingProps) {
           <button
             onClick={() => handleSubscribe(plan.tier)}
             disabled={loading !== null}
+            aria-busy={loading === plan.tier}
             className={`w-full py-3 text-sm font-bold tracking-[0.15em] uppercase transition-all duration-200 ${
               plan.featured
                 ? 'bg-white text-black hover:bg-gray-200 border border-white'
                 : 'bg-transparent text-white border border-white hover:bg-white hover:text-black'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            } ${loading === plan.tier ? 'opacity-50 cursor-not-allowed' : loading !== null ? 'cursor-not-allowed' : ''}`}
           >
-            {loading === plan.tier ? 'Redirecting...' : plan.cta}
+            {loading === plan.tier ? 'Redirecting to Stripe…' : plan.cta}
           </button>
           <p className="text-[11px] text-gray-600 text-center mt-3 leading-relaxed">
             By subscribing you authorize BoxStreamTV to charge {plan.price}/{plan.interval} on a recurring basis until you cancel.

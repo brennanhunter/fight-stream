@@ -45,10 +45,11 @@ export default async function Testimonials() {
               className="border border-white/10 bg-[#0a0a0a] p-6 flex flex-col"
             >
               {/* Stars */}
-              <div className="flex gap-0.5 mb-5">
+              <div className="flex gap-0.5 mb-5" aria-label={`${t.overall_rating} out of 5 stars`} role="img">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <span
                     key={n}
+                    aria-hidden="true"
                     className="text-lg leading-none"
                     style={{ color: n <= t.overall_rating ? '#fbbf24' : '#1f2937' }}
                   >

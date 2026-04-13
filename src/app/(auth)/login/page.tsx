@@ -23,7 +23,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawRedirect = searchParams.get('redirect') || '/account';
-  const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/account';
+  const redirect = /^\/[a-zA-Z0-9]/.test(rawRedirect) && !/[:\\]/.test(rawRedirect) ? rawRedirect.split('?')[0] : '/account';
   const errorParam = searchParams.get('error');
 
   const [email, setEmail] = useState('');
@@ -86,7 +86,7 @@ function LoginContent() {
 
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="email" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Email
           </label>
           <input
@@ -102,7 +102,7 @@ function LoginContent() {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="password" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Password
           </label>
           <input
@@ -112,10 +112,11 @@ function LoginContent() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
-            minLength={6}
+            minLength={8}
             className="w-full bg-white/5 border border-white/10 text-white px-3 py-2.5 text-sm focus:outline-none focus:border-white/30 transition-colors"
             placeholder="••••••••"
           />
+          <p className="mt-1 text-[10px] text-gray-600">Minimum 8 characters</p>
         </div>
 
         <div className="text-right">
@@ -142,7 +143,7 @@ function LoginContent() {
         </div>
         <div className="relative flex justify-center">
           <span className="bg-black px-3 text-[10px] font-bold tracking-[0.2em] uppercase text-gray-600">
-            or
+            Or continue with
           </span>
         </div>
       </div>
@@ -175,7 +176,7 @@ function LoginContent() {
       <p className="mt-8 text-center text-xs text-gray-500">
         Don&apos;t have an account?{' '}
         <Link href="/signup" className="text-white hover:underline">
-          Sign up
+          Sign Up
         </Link>
       </p>
     </>

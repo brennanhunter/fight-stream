@@ -150,7 +150,15 @@ export default async function AccountPage() {
               </Link>
             </>
           ) : (
-            <p className="text-sm text-gray-500">No upcoming events</p>
+            <div className="py-2">
+              <p className="text-sm text-gray-500 mb-3">No upcoming events</p>
+              <Link
+                href="/vod"
+                className="text-[10px] font-bold tracking-[0.15em] uppercase text-gray-400 hover:text-white transition-colors"
+              >
+                Browse Replays →
+              </Link>
+            </div>
           )}
         </div>
       </div>
@@ -216,12 +224,12 @@ export default async function AccountPage() {
           <p className="text-sm font-bold text-white mb-1">Need help?</p>
           <p className="text-xs text-gray-500">Access issues, billing questions, or anything else — we read every email.</p>
         </div>
-        <a
-          href="mailto:hunter@boxstreamtv.com"
+        <Link
+          href="/contact"
           className="flex-shrink-0 text-[10px] font-bold tracking-[0.2em] uppercase px-6 py-3 border border-white/20 text-gray-400 hover:border-white hover:text-white transition-all duration-200"
         >
           Contact Support
-        </a>
+        </Link>
       </div>
     </PageTransition>
   );

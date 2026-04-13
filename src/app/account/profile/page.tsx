@@ -124,23 +124,24 @@ export default function ProfilePage() {
       </div>
 
       {loadError && (
-        <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-sm text-red-400 text-center">
+        <div role="alert" aria-live="polite" className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center">
           {loadError}
         </div>
       )}
 
       {message && (
-        <div className="mb-6 p-3 bg-white/5 border border-white/10 text-sm text-gray-300 text-center">
+        <div role="status" aria-live="polite" className="mb-6 p-3 bg-white/5 border border-white/10 text-sm text-gray-300 text-center">
           {message}
         </div>
       )}
 
       <form onSubmit={handleSave} className="space-y-6 max-w-md">
         <div>
-          <label className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="profile-email" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Email
           </label>
           <input
+            id="profile-email"
             type="email"
             value={email}
             disabled
@@ -149,7 +150,7 @@ export default function ProfilePage() {
         </div>
 
         <div>
-          <label htmlFor="displayName" className="block text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
+          <label htmlFor="displayName" className="block text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1.5">
             Display Name
           </label>
           <input
@@ -164,7 +165,7 @@ export default function ProfilePage() {
 
         {/* Notification Preferences */}
         <fieldset className="border border-white/10 p-4">
-          <legend className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 px-2">
+          <legend className="text-xs sm:text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 px-2">
             Notifications
           </legend>
           <div className="space-y-3 mt-2">

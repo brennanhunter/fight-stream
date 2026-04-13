@@ -41,6 +41,7 @@ interface LivePlayerProps {
 export default function LivePlayer({
   eventId,
   eventName,
+  eventDate,
   posterImage,
   priceCents,
   stripePriceId,
@@ -48,7 +49,7 @@ export default function LivePlayer({
   subscriptionTier,
 }: LivePlayerProps) {
   /* ── Access state ── */
-  const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'recover-access' | 'has-access'>('checking');
+  const [accessState, setAccessState] = useState<'checking' | 'needs-purchase' | 'recover-access' | 'has-access' | 'token-error'>('checking');
   const [playbackUrl, setPlaybackUrl] = useState<string | null>(null);
 
   /* ── Token refresh ── */
@@ -72,6 +73,7 @@ export default function LivePlayer({
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [showFightPassPrompt, setShowFightPassPrompt] = useState(false);
+  const [scriptLoadError, setScriptLoadError] = useState(false);
 
   const priceDisplay = `$${(priceCents / 100).toFixed(2)}`;
   let ppvLabel: string;
@@ -88,10 +90,14 @@ export default function LivePlayer({
   useEffect(() => {
     (async () => {
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15_000);
         const res = await fetch('/api/generate-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
         });
+        clearTimeout(timeout);
         if (res.status === 403) {
           const data = await res.json().catch(() => ({}));
           // If the user has a purchase but an invalid/stale session, send them
@@ -109,8 +115,12 @@ export default function LivePlayer({
         setPlaybackUrl(url);
         tokenFetchedAtRef.current = Date.now();
         setAccessState('has-access');
-      } catch {
-        setAccessState('needs-purchase');
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          setAccessState('token-error');
+        } else {
+          setAccessState('needs-purchase');
+        }
       }
     })();
   }, []);
@@ -118,10 +128,14 @@ export default function LivePlayer({
   /* ── Token refresh helper (called before reconnection when token may be stale) ── */
   const refreshToken = useCallback(async (): Promise<string | null> => {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000);
       const res = await fetch('/api/generate-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       if (!res.ok) return null;
       const data = await res.json();
       const url = data.token ? `${data.playbackUrl}?token=${data.token}` : data.playbackUrl;
@@ -141,7 +155,7 @@ export default function LivePlayer({
     script.src = 'https://player.live-video.net/1.33.0/amazon-ivs-player.min.js';
     script.async = true;
     script.onload = () => setPlayerLoaded(true);
-    script.onerror = () => console.error('Failed to load IVS Player script');
+    script.onerror = () => setScriptLoadError(true);
     document.body.appendChild(script);
     return () => { if (script.parentNode) script.parentNode.removeChild(script); };
   }, [accessState]);
@@ -360,9 +374,29 @@ export default function LivePlayer({
   if (accessState === 'checking') {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center pt-16">
-        <div className="flex items-center gap-3 text-gray-400">
-          <div className="w-6 h-6 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
+        <div role="status" aria-live="polite" className="flex items-center gap-3 text-gray-400">
+          <div aria-hidden="true" className="w-6 h-6 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
           <span className="text-sm tracking-wide">Checking access&hellip;</span>
+        </div>
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════
+     RENDER: Token fetch failed / timed out
+  ═══════════════════════════════════════ */
+  if (accessState === 'token-error') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center pt-16">
+        <div className="text-center space-y-4 px-6 max-w-md">
+          <p className="text-white text-lg font-semibold">Connection timed out</p>
+          <p className="text-gray-400 text-sm">We couldn&apos;t reach our servers. Check your connection and try again.</p>
+          <button
+            onClick={() => { setAccessState('checking'); window.location.reload(); }}
+            className="px-6 py-3 bg-white text-black font-bold text-sm tracking-wide hover:bg-gray-200 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -438,10 +472,10 @@ export default function LivePlayer({
                 disabled={checkoutLoading}
                 className="w-full bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase transition-colors hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {checkoutLoading ? 'Redirecting\u2026' : `Get Access \u2014 ${ppvLabel}`}
+                {checkoutLoading ? 'Redirecting to Stripe\u2026' : `Get Access \u2014 ${ppvLabel}`}
               </button>
             )}
-            {checkoutError && <p className="text-sm text-red-400">{checkoutError}</p>}
+            {checkoutError && <p role="alert" aria-live="polite" className="text-sm text-red-400">{checkoutError}</p>}
             <Link
               href="/recover-access"
               className="block text-xs text-gray-500 hover:text-white underline underline-offset-2 transition-colors"
@@ -484,6 +518,7 @@ export default function LivePlayer({
           <video
             ref={videoRef}
             playsInline
+            aria-label="Live stream video player"
             className={`absolute inset-0 w-full h-full ${isStreamLive ? '' : 'opacity-0 pointer-events-none'}`}
             onClick={togglePlay}
           />
@@ -493,6 +528,7 @@ export default function LivePlayer({
             <video
               ref={replayRef}
               playsInline
+              aria-label="Event replay video"
               className="absolute inset-0 w-full h-full"
               onClick={togglePlay}
               src={replayUrl!}
@@ -500,7 +536,7 @@ export default function LivePlayer({
           )}
 
           {/* Waiting overlay — shown when not live and not playing replay */}
-          {!showPlayer && (
+          {!showPlayer && !scriptLoadError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10 gap-6">
               {posterImage && (
                 <div className="relative w-40 h-52 border border-white/10 overflow-hidden">
@@ -509,20 +545,62 @@ export default function LivePlayer({
               )}
               <div className="text-center space-y-3 px-6">
                 <h2 className="text-xl font-bold">{eventName}</h2>
-                {replayUrl ? (
-                  <button
-                    onClick={handleWatchReplay}
-                    className="bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase hover:bg-gray-200 transition-colors"
-                  >
-                    Watch Replay
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2 justify-center text-gray-400">
-                    <div className="w-4 h-4 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
-                    <span className="text-sm">Waiting for stream to begin&hellip;</span>
-                  </div>
-                )}
+                {(() => {
+                  if (replayUrl) {
+                    return (
+                      <button
+                        onClick={handleWatchReplay}
+                        className="bg-white text-black font-bold px-8 py-4 text-sm tracking-[0.15em] uppercase hover:bg-gray-200 transition-colors"
+                      >
+                        Watch Replay
+                      </button>
+                    );
+                  }
+                  const elapsed = Date.now() - new Date(eventDate).getTime();
+                  if (elapsed > 0 && elapsed < 4 * 60 * 60 * 1000) {
+                    // Within 4 hours of event start — likely a mid-event interruption
+                    return (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 justify-center text-white">
+                          <div className="w-4 h-4 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
+                          <span className="text-sm font-bold tracking-wide uppercase">Still in the fight</span>
+                        </div>
+                        <p className="text-xs text-gray-500">The stream hit a snag &mdash; we&apos;re working to get it back up.</p>
+                      </div>
+                    );
+                  }
+                  if (elapsed >= 4 * 60 * 60 * 1000) {
+                    return (
+                      <p className="text-sm text-gray-400">
+                        Event has ended. Replay not yet available.
+                      </p>
+                    );
+                  }
+                  // Event hasn't started yet
+                  return (
+                    <div className="flex items-center gap-2 justify-center text-gray-400">
+                      <div className="w-4 h-4 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
+                      <span className="text-sm">Waiting for stream to begin&hellip;</span>
+                    </div>
+                  );
+                })()}
               </div>
+            </div>
+          )}
+
+          {/* Script load error */}
+          {scriptLoadError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10 gap-4 px-6 text-center">
+              <p className="text-white text-lg font-semibold">Unable to load the video player</p>
+              <p className="text-gray-400 text-sm max-w-md">
+                The stream player failed to load. This can happen if your browser or network is blocking external scripts. Try disabling your ad blocker or refreshing the page.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 px-6 py-3 bg-white text-black font-bold text-sm tracking-wide hover:bg-gray-200 transition-colors"
+              >
+                Refresh Page
+              </button>
             </div>
           )}
 
@@ -547,27 +625,27 @@ export default function LivePlayer({
                 showControls ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              <div className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <button onClick={togglePlay} className="text-white hover:text-gray-300 p-2">
+              <div className="p-2 sm:p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'} className="text-white hover:text-gray-300 p-2">
                     {isPlaying ? (
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <svg aria-hidden="true" className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z" />
                       </svg>
                     ) : (
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <svg aria-hidden="true" className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
                       </svg>
                     )}
                   </button>
-                  <div className="flex items-center gap-2">
-                    <button onClick={toggleMute} className="text-white hover:text-gray-300 p-2">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <button onClick={toggleMute} aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'} className="text-white hover:text-gray-300 p-2">
                       {isMuted || volume === 0 ? (
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <svg aria-hidden="true" className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
                       ) : (
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <svg aria-hidden="true" className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
                         </svg>
                       )}
@@ -578,17 +656,18 @@ export default function LivePlayer({
                       max="100"
                       value={isMuted ? 0 : volume}
                       onChange={handleVolumeChange}
-                      className="w-24 h-1 appearance-none cursor-pointer accent-white"
+                      aria-label="Volume"
+                      className="w-16 sm:w-24 h-1 appearance-none cursor-pointer accent-white"
                       style={{
                         background: `linear-gradient(to right, #fff 0%, #fff ${isMuted ? 0 : volume}%, #4b5563 ${isMuted ? 0 : volume}%, #4b5563 100%)`,
                       }}
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                   <span className="text-white text-xs font-medium bg-white/10 px-2 py-1">AUTO</span>
-                  <button onClick={toggleFullscreen} className="text-white hover:text-gray-300 p-2">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <button onClick={toggleFullscreen} aria-label="Fullscreen" className="text-white hover:text-gray-300 p-2">
+                    <svg aria-hidden="true" className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
                     </svg>
                   </button>
