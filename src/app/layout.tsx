@@ -110,6 +110,8 @@ const jsonLd = {
       "sameAs": [
         "https://www.instagram.com/boxstreamtv",
         "https://www.youtube.com/@BoxStreamTV",
+        "https://www.tiktok.com/@boxstream_tv",
+        "https://www.linkedin.com/company/box-stream-tv",
       ],
       "contactPoint": {
         "@type": "ContactPoint",

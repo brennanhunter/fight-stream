@@ -67,6 +67,7 @@ export function surveyEmail({
                 &copy; ${new Date().getFullYear()} BoxStreamTV &middot;
                 <a href="https://boxstreamtv.com/privacy" style="color:#374151;text-decoration:underline;">Privacy</a>
                 ${unsubscribeUrl ? `&middot; <a href="${unsubscribeUrl}" style="color:#374151;text-decoration:underline;">Unsubscribe</a>` : ''}
+                &middot; <a href="https://www.instagram.com/boxstreamtv/" style="color:#374151;text-decoration:underline;">Instagram</a>
               </p>
             </td>
           </tr>

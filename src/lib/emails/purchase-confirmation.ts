@@ -138,6 +138,8 @@ export function purchaseConfirmationEmail({
                 <a href="https://boxstreamtv.com/privacy" style="color:#374151;text-decoration:underline;">Privacy</a>
                 &middot;
                 <a href="https://boxstreamtv.com/terms" style="color:#374151;text-decoration:underline;">Terms</a>
+                &middot;
+                <a href="https://www.instagram.com/boxstreamtv/" style="color:#374151;text-decoration:underline;">Instagram</a>
               </p>
             </td>
           </tr>

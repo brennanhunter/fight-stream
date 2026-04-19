@@ -64,6 +64,8 @@ export default function Welcome() {
             <Link href="https://boxstreamtv.com/account" style={footerLink}>My Account</Link>
             &nbsp;·&nbsp;{' '}
             <Link href="https://boxstreamtv.com/privacy" style={footerLink}>Privacy</Link>
+            &nbsp;·&nbsp;{' '}
+            <Link href="https://www.instagram.com/boxstreamtv/" style={footerLink}>Instagram</Link>
           </Text>
         </Container>
       </Body>

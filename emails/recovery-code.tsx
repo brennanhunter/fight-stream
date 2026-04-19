@@ -65,6 +65,8 @@ function Footer() {
       <Link href="https://boxstreamtv.com/privacy" style={footerLink}>Privacy</Link>
       &nbsp;·&nbsp;{' '}
       <Link href="https://boxstreamtv.com/terms" style={footerLink}>Terms</Link>
+      &nbsp;·&nbsp;{' '}
+      <Link href="https://www.instagram.com/boxstreamtv/" style={footerLink}>Instagram</Link>
     </Text>
   );
 }
