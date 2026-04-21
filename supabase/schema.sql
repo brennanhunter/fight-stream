@@ -72,6 +72,9 @@ CREATE TABLE IF NOT EXISTS purchases (
   recovery_code             text,
   recovery_code_expires_at  timestamptz,
 
+  -- Boxer comp
+  boxer_name                text,                    -- optional: boxer last name entered at checkout
+
   created_at                timestamptz NOT NULL DEFAULT now()
 );
 

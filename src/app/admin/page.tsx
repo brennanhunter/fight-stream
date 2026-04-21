@@ -95,6 +95,24 @@ export default async function AdminPage({
     });
   }
 
+  // Boxer comp leaderboard — count per boxer_name for the active event
+  const { data: boxerRows } = activeEvent
+    ? await supabase
+        .from('purchases')
+        .select('boxer_name')
+        .eq('event_id', activeEvent.id)
+        .eq('purchase_type', 'ppv')
+        .not('boxer_name', 'is', null)
+    : { data: [] };
+
+  const boxerTally = new Map<string, number>();
+  for (const row of boxerRows || []) {
+    if (row.boxer_name) {
+      boxerTally.set(row.boxer_name, (boxerTally.get(row.boxer_name) ?? 0) + 1);
+    }
+  }
+  const boxerLeaderboard = [...boxerTally.entries()].sort((a, b) => b[1] - a[1]);
+
   const BASE_URL = 'https://boxstreamtv.com';
   const eventPayouts = await Promise.all(
     (allEvents || []).map(async (event) => {
@@ -195,6 +213,28 @@ export default async function AdminPage({
             <p className="text-3xl font-bold">{subCount ?? 0}</p>
           </div>
         </div>
+
+        {/* Boxer Comp */}
+        {activeEvent && (
+          <div className="border border-white/10 p-6 mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400">Boxer Comp</h2>
+              <span className="text-[10px] text-gray-600">{activeEvent.name}</span>
+            </div>
+            {boxerLeaderboard.length === 0 ? (
+              <p className="text-sm text-gray-600">No info to display yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {boxerLeaderboard.map(([name, count]) => (
+                  <div key={name} className="flex justify-between text-sm">
+                    <span className="text-white capitalize">{name}</span>
+                    <span className="text-gray-400">{count} buyer{count !== 1 ? 's' : ''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Event Payouts */}
         {eventPayouts.length > 0 && (

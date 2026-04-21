@@ -80,6 +80,10 @@ export async function POST(req: NextRequest) {
       ? new Date(new Date(activeEvent.date).getTime() + REPLAY_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
       : null;
 
+    // Read optional boxer code from Stripe custom field
+    const boxerField = checkoutSession.custom_fields?.find((f) => f.key === 'boxer_code');
+    const boxerName = boxerField?.text?.value?.trim().toLowerCase() || null;
+
     const customerEmail = checkoutSession.customer_details?.email?.toLowerCase().trim();
     if (!customerEmail) {
       console.warn('No customer email from Stripe for session:', sessionId);
@@ -206,6 +210,7 @@ export async function POST(req: NextRequest) {
         currency: checkoutSession.currency || 'usd',
         expires_at: expiresAt,
         user_id: userId,
+        boxer_name: boxerName,
         session_claimed_at: new Date().toISOString(),
       }, { onConflict: 'stripe_payment_intent_id', ignoreDuplicates: true });
 

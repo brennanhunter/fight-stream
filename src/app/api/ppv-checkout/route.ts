@@ -142,6 +142,15 @@ export async function POST(request: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'payment',
       metadata,
+      custom_fields: [
+        {
+          key: 'boxer_code',
+          label: { type: 'custom', custom: 'Boxer Code' },
+          type: 'text',
+          optional: true,
+          text: { maximum_length: 50 },
+        },
+      ],
       payment_intent_data: {
         statement_descriptor: 'BOXSTREAMTV',
         metadata: {

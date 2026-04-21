@@ -191,6 +191,9 @@ export async function POST(request: Request) {
               : null;
 
             // Upsert to handle race with verify-payment
+            const webhookBoxerField = session.custom_fields?.find((f) => f.key === 'boxer_code');
+            const webhookBoxerName = webhookBoxerField?.text?.value?.trim().toLowerCase() || null;
+
             const ppvRow = {
               email: customerEmail,
               purchase_type: 'ppv' as const,
@@ -202,6 +205,7 @@ export async function POST(request: Request) {
               currency: session.currency || 'usd',
               expires_at: expiresAt,
               user_id: session.metadata?.user_id || null,
+              boxer_name: webhookBoxerName,
               session_version: 1,
             };
             const { error: upsertError } = await supabase.from('purchases').upsert(ppvRow, { onConflict: 'stripe_payment_intent_id' });
