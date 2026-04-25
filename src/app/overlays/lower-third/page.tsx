@@ -139,17 +139,17 @@ export default function LowerThirdDisplay() {
             transition={{ type: 'spring', stiffness: 220, damping: 30, mass: 1.1 }}
             style={{
               position: 'absolute',
-              left: '2.5vw',
-              right: '2.5vw',
-              bottom: '3vh',
-              height: '66vh',
+              left: '4vw',
+              right: '4vw',
+              bottom: '4vh',
+              height: '62vh',
               background: 'rgba(4, 4, 4, 0.96)',
               border: '1px solid rgba(255,255,255,0.85)',
               boxShadow:
                 '0 30px 80px rgba(0,0,0,0.95), 0 0 80px rgba(255,255,255,0.06), inset 0 0 1px rgba(255,255,255,0.5)',
               display: 'grid',
-              gridTemplateColumns: '160px 1fr 160px',
-              gridTemplateRows: '64px 1fr 56px',
+              gridTemplateColumns: '120px 1fr 120px',
+              gridTemplateRows: '60px 1fr 52px',
               overflow: 'hidden',
             }}
           >
@@ -262,21 +262,27 @@ export default function LowerThirdDisplay() {
                   fontSize: 14,
                   letterSpacing: '0.05em',
                   color: 'rgba(255,255,255,0.42)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
                   transformOrigin: 'left',
+                  whiteSpace: 'nowrap',
+                  minWidth: 0,
+                  overflow: 'hidden',
                 }}
               >
-                ┌─[ ID:0001 ]─[ ENTRY:LIVE ]─────────────────────────────────────────────────────────
+                <span>{'┌─[ ID:0001 ]─[ ENTRY:LIVE ]─'}</span>
+                <span style={{ flex: 1, borderTop: '1px dashed currentColor', height: 0 }} />
+                <span>{'─┐'}</span>
               </motion.div>
 
-              {/* Fighter name — scrambled */}
+              {/* Fighter name — scrambled. Font shrinks with longer names. */}
               <div style={{ position: 'relative' }}>
                 <div
                   ref={nameRef}
                   style={{
                     fontFamily: 'var(--font-barlow-condensed), ui-sans-serif, system-ui, sans-serif',
-                    fontSize: 'clamp(110px, 13vw, 200px)',
+                    fontSize: `clamp(56px, min(11vw, calc((92vw - 336px) / ${Math.max(state.fighter_name.length, 6) * 0.6})), 150px)`,
                     fontWeight: 800,
                     color: '#ffffff',
                     letterSpacing: '0.04em',
@@ -335,12 +341,18 @@ export default function LowerThirdDisplay() {
                   fontSize: 14,
                   letterSpacing: '0.05em',
                   color: 'rgba(255,255,255,0.42)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
                   transformOrigin: 'right',
+                  whiteSpace: 'nowrap',
+                  minWidth: 0,
+                  overflow: 'hidden',
                 }}
               >
-                └─────────────────────────────────────────────────[ STATUS:ACTIVE ]─[ SIG:OK ]──┘
+                <span>{'└─'}</span>
+                <span style={{ flex: 1, borderTop: '1px dashed currentColor', height: 0 }} />
+                <span>{'─[ STATUS:ACTIVE ]─[ SIG:OK ]─┘'}</span>
               </motion.div>
 
               {/* Vertical scan line */}
