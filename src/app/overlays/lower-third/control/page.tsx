@@ -27,7 +27,22 @@ async function postState(update: Partial<LowerThirdState>) {
   return res.json() as Promise<LowerThirdState>;
 }
 
-// ── Mini preview of the lower third (scaled down)
+// ── Mini preview of the new full-takeover lower third (scaled down)
+const ASCII_CHARS = '!@#$%&*+-=|;:.<>?/~▓▒░█■□●◆◇※✦⌬╳╲╱┃═╬╪╫';
+const PREVIEW_ASCII_COLS = 5;
+const PREVIEW_ASCII_ROWS = 14;
+
+function randomPreviewBlock(): string {
+  let out = '';
+  for (let r = 0; r < PREVIEW_ASCII_ROWS; r++) {
+    for (let c = 0; c < PREVIEW_ASCII_COLS; c++) {
+      out += ASCII_CHARS[Math.floor(Math.random() * ASCII_CHARS.length)];
+    }
+    if (r < PREVIEW_ASCII_ROWS - 1) out += '\n';
+  }
+  return out;
+}
+
 function LowerThirdPreview({
   state,
   previewVisible,
@@ -35,7 +50,24 @@ function LowerThirdPreview({
   state: LowerThirdState;
   previewVisible: boolean;
 }) {
-  const subline = [state.record, state.weight_class].filter(Boolean).join('   ·   ');
+  const subline = [state.record, state.weight_class].filter(Boolean).join('   //   ');
+  const [asciiL, setAsciiL] = useState('');
+  const [asciiR, setAsciiR] = useState('');
+
+  useEffect(() => {
+    if (!previewVisible) {
+      setAsciiL('');
+      setAsciiR('');
+      return;
+    }
+    const tick = () => {
+      setAsciiL(randomPreviewBlock());
+      setAsciiR(randomPreviewBlock());
+    };
+    tick();
+    const id = setInterval(tick, 140);
+    return () => clearInterval(id);
+  }, [previewVisible]);
 
   return (
     // 16:9 wrapper scaled to fit the control panel
@@ -59,99 +91,192 @@ function LowerThirdPreview({
             'repeating-linear-gradient(45deg,rgba(255,255,255,0.015) 0px,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 20px)',
         }}
       />
+
+      {/* Takeover panel — covers ~2/3 from the bottom */}
       <div
         style={{
           position: 'absolute',
-          bottom: '9%',
-          left: 0,
-          display: 'flex',
-          alignItems: 'stretch',
+          left: '2.5%',
+          right: '2.5%',
+          bottom: '3%',
+          height: '66%',
+          background: 'rgba(4, 4, 4, 0.96)',
+          border: '1px solid rgba(255,255,255,0.85)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.8), inset 0 0 1px rgba(255,255,255,0.4)',
+          display: 'grid',
+          gridTemplateColumns: '32px 1fr 32px',
+          gridTemplateRows: '14px 1fr 12px',
+          overflow: 'hidden',
           transition: 'transform 0.3s ease, opacity 0.3s ease',
-          transform: previewVisible ? 'translateX(0)' : 'translateX(-110%)',
+          transform: previewVisible ? 'translateY(0)' : 'translateY(108%)',
           opacity: previewVisible ? 1 : 0,
-          filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.6))',
         }}
       >
+        {/* Top header */}
         <div
           style={{
-            width: 3,
-            flexShrink: 0,
-            background: '#ffffff',
-            boxShadow: '0 0 8px rgba(255,255,255,0.8)',
-          }}
-        />
-        <div
-          style={{
-            background: 'rgba(7, 7, 7, 0.94)',
+            gridColumn: '1 / 4',
+            gridRow: '1',
+            borderBottom: '1px solid rgba(255,255,255,0.22)',
+            background: 'rgba(255,255,255,0.04)',
             display: 'flex',
             alignItems: 'center',
+            padding: '0 6px',
+            gap: 5,
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: 5,
+            letterSpacing: '0.2em',
+            color: 'rgba(255,255,255,0.7)',
+            textTransform: 'uppercase',
+          }}
+        >
+          <Image
+            src="/logos/BoxStreamThumbnail.png"
+            alt=""
+            width={9}
+            height={9}
+            style={{ display: 'block' }}
+          />
+          <span>{'// FIGHTER_PROFILE.DAT'}</span>
+          <span style={{ marginLeft: 'auto', color: '#ef4444' }}>● BROADCASTING</span>
+        </div>
+
+        {/* Left ASCII */}
+        <pre
+          style={{
+            gridColumn: '1',
+            gridRow: '2',
+            margin: 0,
+            padding: '3px 0',
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: 4,
+            lineHeight: 1.2,
+            color: 'rgba(255,255,255,0.3)',
+            textAlign: 'center',
+            borderRight: '1px solid rgba(255,255,255,0.1)',
+            whiteSpace: 'pre',
+            overflow: 'hidden',
+          }}
+        >
+          {asciiL}
+        </pre>
+
+        {/* Center */}
+        <div
+          style={{
+            gridColumn: '2',
+            gridRow: '2',
+            padding: '6px 12px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            gap: 4,
+            overflow: 'hidden',
           }}
         >
           <div
             style={{
-              padding: '8px 10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: 4,
+              color: 'rgba(255,255,255,0.4)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
             }}
           >
-            <Image
-              src="/logos/BoxStreamThumbnail.png"
-              alt="BoxStreamTV"
-              width={24}
-              height={24}
-              style={{ display: 'block', filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.3))' }}
-            />
+            ┌─[ ID:0001 ]─[ ENTRY:LIVE ]──────────────────────
           </div>
           <div
             style={{
-              width: 1,
-              alignSelf: 'stretch',
-              background: 'rgba(255,255,255,0.15)',
-              margin: '6px 0',
-              flexShrink: 0,
-            }}
-          />
-          <div
-            style={{
-              padding: '8px 16px 8px 10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 3,
+              fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+              fontSize: 36,
+              fontWeight: 800,
+              color: '#ffffff',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              lineHeight: 0.95,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textShadow: '0 0 6px rgba(255,255,255,0.4)',
             }}
           >
+            {state.fighter_name || 'FIGHTER NAME'}
+          </div>
+          {subline && (
             <div
               style={{
-                fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-                fontSize: 18,
-                fontWeight: 800,
-                color: '#ffffff',
-                letterSpacing: '0.05em',
+                fontFamily: 'ui-monospace, monospace',
+                fontSize: 8,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.8)',
+                letterSpacing: '0.16em',
                 textTransform: 'uppercase',
                 lineHeight: 1,
                 whiteSpace: 'nowrap',
               }}
             >
-              {state.fighter_name || 'FIGHTER NAME'}
+              {subline}
             </div>
-            {subline && (
-              <div
-                style={{
-                  fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-                  fontSize: 7,
-                  fontWeight: 500,
-                  color: 'rgba(255,255,255,0.6)',
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  lineHeight: 1,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {subline}
-              </div>
-            )}
+          )}
+          <div
+            style={{
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: 4,
+              color: 'rgba(255,255,255,0.4)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+            }}
+          >
+            └────────────────────────[ STATUS:ACTIVE ]─[ SIG:OK ]──┘
           </div>
+        </div>
+
+        {/* Right ASCII */}
+        <pre
+          style={{
+            gridColumn: '3',
+            gridRow: '2',
+            margin: 0,
+            padding: '3px 0',
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: 4,
+            lineHeight: 1.2,
+            color: 'rgba(255,255,255,0.3)',
+            textAlign: 'center',
+            borderLeft: '1px solid rgba(255,255,255,0.1)',
+            whiteSpace: 'pre',
+            overflow: 'hidden',
+          }}
+        >
+          {asciiR}
+        </pre>
+
+        {/* Footer */}
+        <div
+          style={{
+            gridColumn: '1 / 4',
+            gridRow: '3',
+            borderTop: '1px solid rgba(255,255,255,0.22)',
+            background: 'rgba(255,255,255,0.04)',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 6px',
+            gap: 6,
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: 4,
+            letterSpacing: '0.2em',
+            color: 'rgba(255,255,255,0.55)',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+          }}
+        >
+          <span>[ BOXSTREAM.TV ]</span>
+          <span style={{ color: 'rgba(255,255,255,0.25)' }}>{'///'}</span>
+          <span>BROADCAST_FEED</span>
+          <span style={{ flex: 1, color: 'rgba(255,255,255,0.3)' }}>
+            ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░
+          </span>
+          <span>SIGNAL OK</span>
         </div>
       </div>
     </div>
