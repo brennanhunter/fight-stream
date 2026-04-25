@@ -53,7 +53,7 @@ export default async function LivePage() {
       if (geo.blocked) {
         return (
           <div className="min-h-screen flex items-center justify-center bg-black px-6 pt-16">
-            <div className="max-w-lg text-center">
+            <div className="max-w-lg text-center space-y-6">
               <h1 className="text-4xl font-bold text-white mb-4">Blackout Restriction</h1>
               <p className="text-gray-400 text-lg mb-2">
                 This event is blacked out in your area due to local broadcast restrictions.
@@ -61,6 +61,12 @@ export default async function LivePage() {
               <p className="text-gray-500 text-sm">
                 Attend the event in person or check back after the broadcast to purchase the replay.
               </p>
+              <a
+                href="/recover-access"
+                className="inline-block text-xs text-gray-500 hover:text-white underline underline-offset-2 transition-colors"
+              >
+                Already purchased before traveling here? Recover access &rarr;
+              </a>
             </div>
           </div>
         );

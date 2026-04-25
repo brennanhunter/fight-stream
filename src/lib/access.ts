@@ -63,7 +63,7 @@ export async function hasPpvAccess(userId: string, email: string, eventId: strin
     .select('id')
     .eq('event_id', eventId)
     .eq('purchase_type', 'ppv')
-    .or(`user_id.eq.${userId},email.eq.${normalizeEmail(email)}`)
+    .or(`user_id.eq.${userId},email.eq."${normalizeEmail(email)}"`)  // double-quotes required for @ in PostgREST
     .limit(1)
     .maybeSingle();
 
