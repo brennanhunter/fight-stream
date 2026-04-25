@@ -3,7 +3,7 @@ import type { Stripe } from 'stripe';
 import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
-import { getSubscriptionTier } from '@/lib/access';
+import { getSubscriptionTier, hasPpvAccess } from '@/lib/access';
 import { checkGeoRestriction } from '@/lib/geo';
 import { stripeServer } from '@/lib/stripe';
 import LivePlayer from './LivePlayer';
@@ -26,23 +26,45 @@ export default async function LivePage() {
 
   if (!activeEvent) redirect('/');
 
-  // Geo restriction — fields now fetched in the same query above
+  // Resolve the current user early — needed to exempt subscribers and existing purchasers from geo
+  let currentUserId: string | null = null;
+  let currentUserEmail: string | null = null;
+  let subscriptionTier: 'basic' | 'premium' | null = null;
+  try {
+    const authSupabase = await createAuthServerClient();
+    const { data: { user } } = await authSupabase.auth.getUser();
+    if (user) {
+      currentUserId = user.id;
+      currentUserEmail = user.email ?? null;
+      subscriptionTier = await getSubscriptionTier(user.id);
+    }
+  } catch { /* not logged in */ }
+
+  // Geo restriction — skip for active subscribers and for users who already hold a PPV purchase
+  // (restriction is a purchase gate; once paid it should not prevent watching)
   if (activeEvent.venue_address) {
-    const geo = await checkGeoRestriction(activeEvent.venue_address, activeEvent.blackout_radius_miles ?? 90);
-    if (geo.blocked) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-black px-6 pt-16">
-          <div className="max-w-lg text-center">
-            <h1 className="text-4xl font-bold text-white mb-4">Blackout Restriction</h1>
-            <p className="text-gray-400 text-lg mb-2">
-              This event is blacked out in your area due to local broadcast restrictions.
-            </p>
-            <p className="text-gray-500 text-sm">
-              Attend the event in person or check back after the broadcast to purchase the replay.
-            </p>
+    const isSubscriber = subscriptionTier !== null;
+    const alreadyPurchased = (currentUserId && currentUserEmail)
+      ? await hasPpvAccess(currentUserId, currentUserEmail, activeEvent.id)
+      : false;
+
+    if (!isSubscriber && !alreadyPurchased) {
+      const geo = await checkGeoRestriction(activeEvent.venue_address, activeEvent.blackout_radius_miles ?? 90);
+      if (geo.blocked) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-black px-6 pt-16">
+            <div className="max-w-lg text-center">
+              <h1 className="text-4xl font-bold text-white mb-4">Blackout Restriction</h1>
+              <p className="text-gray-400 text-lg mb-2">
+                This event is blacked out in your area due to local broadcast restrictions.
+              </p>
+              <p className="text-gray-500 text-sm">
+                Attend the event in person or check back after the broadcast to purchase the replay.
+              </p>
+            </div>
           </div>
-        </div>
-      );
+        );
+      }
     }
   }
 
@@ -59,15 +81,6 @@ export default async function LivePage() {
       priceCents = price.unit_amount ?? 0;
     } catch { /* ignore */ }
   }
-
-  let subscriptionTier: 'basic' | 'premium' | null = null;
-  try {
-    const authSupabase = await createAuthServerClient();
-    const { data: { user } } = await authSupabase.auth.getUser();
-    if (user) {
-      subscriptionTier = await getSubscriptionTier(user.id);
-    }
-  } catch { /* not logged in */ }
 
   return (
     <>

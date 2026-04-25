@@ -1,4 +1,5 @@
 import { createServerClient } from '@/lib/supabase';
+import { normalizeEmail } from '@/lib/utils';
 
 interface Subscription {
   id: string;
@@ -51,6 +52,22 @@ export async function hasVodAccess(userId: string, productId: string): Promise<{
     .maybeSingle();
 
   return { access: !!data, via: data ? 'purchase' : null };
+}
+
+/** Check if a user has already purchased PPV access for a specific event.
+ * Matches by user_id OR email to cover guest purchases where user_id is null. */
+export async function hasPpvAccess(userId: string, email: string, eventId: string): Promise<boolean> {
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from('purchases')
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('purchase_type', 'ppv')
+    .or(`user_id.eq.${userId},email.eq.${normalizeEmail(email)}`)
+    .limit(1)
+    .maybeSingle();
+
+  return !!data;
 }
 
 /** Get PPV discount info for a subscriber */
