@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
+import { useScramble } from 'use-scramble';
 import { createBrowserClient } from '@/lib/supabase';
 
 interface LowerThirdState {
@@ -19,64 +20,39 @@ const DEFAULT_STATE: LowerThirdState = {
   visible: false,
 };
 
-const GLITCH_CHARS = '!@#$%&?><[]{}|/\\~^*ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
-function scramble(original: string, progress: number): string {
-  return original
-    .split('')
-    .map((char, i) => {
-      if (char === ' ') return ' ';
-      if (i / original.length < progress) return char;
-      return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
-    })
-    .join('');
-}
-
 export default function LowerThirdDisplay() {
   const [state, setState] = useState<LowerThirdState>(DEFAULT_STATE);
   const [ready, setReady] = useState(false);
   const [displayVisible, setDisplayVisible] = useState(false);
-  const [displayName, setDisplayName] = useState('');
-  const scrambleRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // use-scramble: auto-plays scramble-in whenever `text` changes
+  const { ref: nameRef, replay } = useScramble({
+    text: state.fighter_name || 'FIGHTER NAME',
+    speed: 0.65,
+    tick: 2,
+    step: 1,
+    scramble: 8,
+    seed: 3,
+    chance: 0.9,
+    range: [33, 126],
+    overdrive: false,
+  });
 
   useEffect(() => {
     if (!ready) return;
-    if (state.visible) {
-      if (scrambleRef.current) clearInterval(scrambleRef.current);
-      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-      setDisplayName(state.fighter_name);
-      setDisplayVisible(true);
-    } else {
-      const name = state.fighter_name;
-      const duration = 480;
-      const fps = 35;
-      const start = Date.now();
-      scrambleRef.current = setInterval(() => {
-        const elapsed = Date.now() - start;
-        const progress = Math.max(0, 1 - elapsed / duration);
-        setDisplayName(scramble(name, progress));
-        if (elapsed >= duration) {
-          clearInterval(scrambleRef.current!);
-          setDisplayVisible(false);
-        }
-      }, fps);
-      exitTimerRef.current = setTimeout(() => {
-        setDisplayVisible(false);
-      }, duration + 50);
-    }
-    return () => {
-      if (scrambleRef.current) clearInterval(scrambleRef.current);
-      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
-    };
-  }, [state.visible, state.fighter_name, ready]);
+    setDisplayVisible(state.visible);
+  }, [state.visible, ready]);
+
+  // Re-scramble when a new fighter name comes in while visible
+  useEffect(() => {
+    if (displayVisible) replay();
+  }, [state.fighter_name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch('/api/overlay/lower-third')
       .then((r) => r.json())
       .then((data: LowerThirdState) => {
         setState(data);
-        setDisplayName(data.fighter_name);
         setReady(true);
       })
       .catch(() => setReady(true));
@@ -150,7 +126,7 @@ export default function LowerThirdDisplay() {
                       animation: state.visible ? 'glowPulse 2.4s ease-in-out 0.72s 2' : undefined,
                     }}
                   >
-                    {displayName || 'FIGHTER NAME'}
+                    <span ref={nameRef} />
                   </motion.div>
                   {state.visible && (
                     <motion.div
