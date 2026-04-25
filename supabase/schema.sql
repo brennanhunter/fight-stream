@@ -279,3 +279,27 @@ BEGIN
   RETURN jsonb_build_object('allowed', true);
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: lower_third_state
+-- Single-row state for the live lower-third broadcast overlay.
+-- The display page (OBS browser source) subscribes via Realtime.
+-- The control page writes via the service role through the API.
+-- Added: 2026-04-25
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS lower_third_state (
+  id           integer     PRIMARY KEY DEFAULT 1,
+  fighter_name text        NOT NULL DEFAULT '',
+  record       text        NOT NULL DEFAULT '',
+  weight_class text        NOT NULL DEFAULT '',
+  visible      boolean     NOT NULL DEFAULT false,
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+
+-- Enforce single row
+INSERT INTO lower_third_state (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+ALTER TABLE lower_third_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "lower_third public read" ON lower_third_state FOR SELECT USING (true);
+-- Service role key used in API route handles writes; no explicit write policy needed.
