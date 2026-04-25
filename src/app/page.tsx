@@ -8,7 +8,7 @@ import Testimonials from '@/components/Testimonials';
 import { createServerClient } from '@/lib/supabase';
 import { checkGeoRestriction } from '@/lib/geo';
 import { createAuthServerClient } from '@/lib/supabase-server';
-import { getSubscriptionTier } from '@/lib/access';
+import { getSubscriptionTier, hasPpvAccess } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,7 +113,23 @@ export default async function Home() {
   const events = await getAllEvents();
   const activeEvent = events.find((e) => e.is_active) || null;
 
-  // Geo-restrict only the active event
+  // Get subscription tier for logged-in users
+  let subscriptionTier: 'basic' | 'premium' | null = null;
+  let currentUserId: string | null = null;
+  let currentUserEmail: string | null = null;
+  try {
+    const supabase = await createAuthServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      currentUserId = user.id;
+      currentUserEmail = user.email ?? null;
+      subscriptionTier = await getSubscriptionTier(user.id);
+    }
+  } catch {
+    // Not logged in — no discount
+  }
+
+  // Geo-restrict only the active event — skip for subscribers and existing purchasers
   let geoBlocked = false;
   if (activeEvent) {
     const supabase = createServerClient();
@@ -124,22 +140,17 @@ export default async function Home() {
       .maybeSingle();
 
     if (eventGeo?.venue_address) {
-      const geo = await checkGeoRestriction(eventGeo.venue_address, eventGeo.blackout_radius_miles ?? 90);
-      console.log('[GEO DEBUG]', { venue: eventGeo.venue_address, radius: eventGeo.blackout_radius_miles, blocked: geo.blocked, distanceMiles: geo.distanceMiles });
-      geoBlocked = geo.blocked;
-    }
-  }
+      const isSubscriber = subscriptionTier !== null;
+      const alreadyPurchased = (currentUserId && currentUserEmail)
+        ? await hasPpvAccess(currentUserId, currentUserEmail, activeEvent.id)
+        : false;
 
-  // Get subscription tier for logged-in users
-  let subscriptionTier: 'basic' | 'premium' | null = null;
-  try {
-    const supabase = await createAuthServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      subscriptionTier = await getSubscriptionTier(user.id);
+      if (!isSubscriber && !alreadyPurchased) {
+        const geo = await checkGeoRestriction(eventGeo.venue_address, eventGeo.blackout_radius_miles ?? 90);
+        console.log('[GEO DEBUG]', { venue: eventGeo.venue_address, radius: eventGeo.blackout_radius_miles, blocked: geo.blocked, distanceMiles: geo.distanceMiles });
+        geoBlocked = geo.blocked;
+      }
     }
-  } catch {
-    // Not logged in — no discount
   }
 
   return (
