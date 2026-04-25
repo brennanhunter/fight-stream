@@ -22,7 +22,7 @@ const DEFAULT_STATE: LowerThirdState = {
 
 const ASCII_CHARS = '!@#$%&*+-=|;:.<>?/~▓▒░█■□●◆◇※✦⌬╳╲╱┃═╬╪╫';
 const ASCII_COLS = 7;
-const ASCII_ROWS = 22;
+const ASCII_ROWS = 14;
 
 function randomAsciiBlock(): string {
   let out = '';
@@ -141,15 +141,15 @@ export default function LowerThirdDisplay() {
               position: 'absolute',
               left: '4vw',
               right: '4vw',
-              bottom: '4vh',
-              height: '62vh',
+              bottom: '5vh',
+              height: '42vh',
               background: 'rgba(4, 4, 4, 0.96)',
               border: '1px solid rgba(255,255,255,0.85)',
               boxShadow:
                 '0 30px 80px rgba(0,0,0,0.95), 0 0 80px rgba(255,255,255,0.06), inset 0 0 1px rgba(255,255,255,0.5)',
               display: 'grid',
-              gridTemplateColumns: '120px 1fr 120px',
-              gridTemplateRows: '60px 1fr 52px',
+              gridTemplateColumns: '110px 1fr 110px',
+              gridTemplateRows: '52px 1fr 44px',
               overflow: 'hidden',
             }}
           >
@@ -244,11 +244,11 @@ export default function LowerThirdDisplay() {
                 gridColumn: '2',
                 gridRow: '2',
                 position: 'relative',
-                padding: '24px 48px',
+                padding: '14px 36px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                gap: 18,
+                gap: 10,
                 overflow: 'hidden',
               }}
             >

@@ -30,7 +30,7 @@ async function postState(update: Partial<LowerThirdState>) {
 // ── Mini preview of the new full-takeover lower third (scaled down)
 const ASCII_CHARS = '!@#$%&*+-=|;:.<>?/~▓▒░█■□●◆◇※✦⌬╳╲╱┃═╬╪╫';
 const PREVIEW_ASCII_COLS = 5;
-const PREVIEW_ASCII_ROWS = 14;
+const PREVIEW_ASCII_ROWS = 9;
 
 function randomPreviewBlock(): string {
   let out = '';
@@ -96,10 +96,10 @@ function LowerThirdPreview({
       <div
         style={{
           position: 'absolute',
-          left: '2.5%',
-          right: '2.5%',
-          bottom: '3%',
-          height: '66%',
+          left: '4%',
+          right: '4%',
+          bottom: '5%',
+          height: '42%',
           background: 'rgba(4, 4, 4, 0.96)',
           border: '1px solid rgba(255,255,255,0.85)',
           boxShadow: '0 4px 16px rgba(0,0,0,0.8), inset 0 0 1px rgba(255,255,255,0.4)',
