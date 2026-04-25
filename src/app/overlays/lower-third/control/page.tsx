@@ -225,7 +225,8 @@ export default function LowerThirdControl() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100%',
+        overflowY: 'auto',
         background: '#0d0d0d',
         color: '#ffffff',
         fontFamily: 'ui-sans-serif, system-ui, sans-serif',
