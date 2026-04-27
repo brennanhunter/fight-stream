@@ -12,6 +12,7 @@ import AdminStreamToggle from './AdminStreamToggle';
 import AdminCopyButton from './AdminCopyButton';
 import AdminFeedbackApprove from './AdminFeedbackApprove';
 import AdminRefundButton from './AdminRefundButton';
+import AdminRefundBackfillButton from './AdminRefundBackfillButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -226,7 +227,8 @@ export default async function AdminPage({
           </div>
           <div className="border border-white/10 p-5">
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Refunded (30d)</p>
-            <p className={`text-3xl font-bold ${(refundedCount ?? 0) > 0 ? 'text-red-400' : ''}`}>{refundedCount ?? 0}</p>
+            <p className={`text-3xl font-bold mb-3 ${(refundedCount ?? 0) > 0 ? 'text-red-400' : ''}`}>{refundedCount ?? 0}</p>
+            <AdminRefundBackfillButton />
           </div>
         </div>
 

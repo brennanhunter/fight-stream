@@ -1,90 +1,116 @@
-# Lower-Third Overlay — Build Plan
+# Broadcast Overlay Control System — Build Plan
 
-## Architecture Summary
+Unified control panel for all live-broadcast overlays, driven by a pre-loaded fighter roster per event. Operator picks from a dropdown and clicks; OBS browser sources render the result in <1s via Supabase Realtime.
 
-OBS Browser Source captures a URL in its own isolated Chromium instance.
-State is shared through **Supabase** — control page writes, display page listens via Realtime.
+## Goal
 
----
+Replace the single-purpose `lower_third_state` model with a generalized overlay control system. From one panel, the operator can:
 
-## Pages
+- Enter all fighter info up front (per event roster)
+- Show/hide any overlay independently:
+  - BoxStream logo
+  - Promoter logo
+  - Boxer info card (with promoter logo slot)
+  - Tale of the tape
+  - Lower thirds for walkouts
+- Override roster data ad-hoc when needed (surprise guests, last-minute name changes)
 
-| Route | Purpose |
-|-------|---------|
-| `/overlays/lower-third` | **Display** — what OBS captures. Transparent bg, no header/footer. |
-| `/overlays/lower-third/control` | **Control panel** — you use this during the show to push fighter info and toggle visibility. |
+## Architecture
 
----
+Same proven pattern already used for the existing lower third:
 
-## Steps
-
-### Step 1 — Overlays layout (bypass header/footer)
-- [ ] Create `src/app/overlays/layout.tsx`
-- Renders only `{children}`, no Header, no Footer
-- Sets `background: transparent` on `<html>` and `<body>`
-
-### Step 2 — Supabase table
-- [ ] Add `lower_third_state` table in Supabase SQL Editor
-- One row holds the current state (fighter name, record, weight class, visible flag)
-- Enable Row Level Security: public read, service role write
-
-```sql
-CREATE TABLE IF NOT EXISTS lower_third_state (
-  id           integer PRIMARY KEY DEFAULT 1,
-  fighter_name text    NOT NULL DEFAULT '',
-  record       text    NOT NULL DEFAULT '',
-  weight_class text    NOT NULL DEFAULT '',
-  visible      boolean NOT NULL DEFAULT false,
-  updated_at   timestamptz NOT NULL DEFAULT now()
-);
-
--- Only ever one row
-INSERT INTO lower_third_state (id) VALUES (1) ON CONFLICT DO NOTHING;
-
-ALTER TABLE lower_third_state ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public read" ON lower_third_state FOR SELECT USING (true);
--- Service role handles writes (no explicit policy needed)
+```
+Control Panel  ─writes─▶  Postgres (overlay state tables)
+                                │
+                                ▼
+                          Supabase Realtime
+                                │
+                                ▼
+                          OBS Browser Source(s) ─renders─▶ On Air
 ```
 
-### Step 3 — API route (read/write state)
-- [ ] Create `src/app/api/overlay/lower-third/route.ts`
-- `GET` — returns current state row
-- `POST` — updates the single state row (uses service role key)
-- No auth needed (internal production tool, obscure URL)
+**Key decision: separate browser sources per overlay type, not one mega source.**
 
-### Step 4 — Display page (OBS source)
-- [ ] Build `src/app/overlays/lower-third/page.tsx`
-- Transparent 1920×1080 canvas
-- Subscribes to Supabase Realtime on `lower_third_state`
-- Animates in/out based on `visible` flag
-- **Design:** Black & white, glow effects, BoxStreamThumbnail.png logo
-- **Fields shown:** Fighter name (large), record, weight class
+- Pros: failure isolation — if one overlay crashes, the others stay on air. OBS can transition each independently.
+- Cons: 4–5 URLs to configure in OBS once.
+- Trade is worth it during a live broadcast.
 
-### Step 5 — Control panel
-- [ ] Build `src/app/overlays/lower-third/control/page.tsx`
-- Form: fighter name, record, weight class
-- Show / Hide toggle button
-- Live preview of what the overlay looks like
-- Pushes to `/api/overlay/lower-third` on every change
+## Schema (proposed)
 
----
+Replace `lower_third_state` (single row) with:
 
-## OBS Setup (after build)
+- **`event_fighters`** — pre-populated roster per event
+  - `id`, `event_id`, `display_name`, `record`, `weight_class`, `height`, `reach`, `age`, `stance`, `hometown`, `photo_url`, `promoter_logo_url`, `created_at`
+- **`overlay_state`** — one row per overlay type, current on-air state
+  - `overlay_type` (PK: `'lower_third' | 'boxer_card' | 'tale_of_tape' | 'logo' | 'promoter_logo'`)
+  - `visible` (bool)
+  - `payload` (jsonb — overlay-specific data, e.g. fighter IDs, free-text overrides)
+  - `updated_at`
 
-1. In OBS → Add Source → Browser Source
-2. URL: `https://boxstreamtv.com/overlays/lower-third`
-3. Width: `1920`, Height: `1080`
-4. Check **"Shutdown source when not visible"** = OFF
-5. Check **"Refresh browser when scene becomes active"** = optional
-6. Background color: fully transparent (OBS handles this automatically for browser sources)
+Service role writes; RLS allows public read (so OBS browser sources can subscribe without auth).
 
----
+## Things to plan for upfront (not discover during a broadcast)
 
-## Current Status
+1. **Realtime drops.** Add a 2–3s heartbeat poll fallback so a missed `visible: false` event doesn't leave a stale graphic on air. Back-port to the existing lower third while we're at it.
+2. **Collision rules.** Tale of the tape is full-screen; lower third lives at the bottom. The control panel must *prevent* incompatible combos — not just let the operator stack them and hope.
+3. **Always allow ad-hoc input.** Pre-entered roster handles ~90% of cases, but every overlay must accept "pick from roster OR free-text override" for surprise guests / late changes.
+4. **Two operators racing** (low priority today). Optional soft lock: "X is controlling — take over?" Saves you when the truck operator and the laptop operator both hit "show".
+5. **Tale of the tape is the hardest one.** Two-column animated comparison, row-by-row reveals, possibly tweened numbers. Plan ~2–3 days for this one alone. Everything else is "show/hide a styled div".
+6. **Operator UX under stress.** Live broadcasts = high pressure. Control panel needs:
+   - Big toggle buttons, not nested dropdowns
+   - Visible "what's on air now" per overlay type
+   - Keyboard shortcuts (1–9 for fighter slots, space to hide all)
+   - "Kill all" panic button
+   - Confirmation only for destructive actions; everything else one-click
 
-- [x] Plan documented
-- [x] Step 1 — Overlays layout
-- [x] Step 2 — Supabase table
-- [x] Step 3 — API route
-- [x] Step 4 — Display page
-- [x] Step 5 — Control panel
+## Phased Build (each phase ships value independently)
+
+### Phase 1 — Roster foundation
+- Create `event_fighters` table.
+- Build admin "Event Setup" page: enter every fighter on the card up front (name, record, weight, photo, etc.).
+- No new overlays yet — purely data prep.
+
+### Phase 2 — Lower third refactor
+- Migrate existing lower third to read from roster.
+- Control: dropdown of fighters → click name → click show. Operators stop typing during walkouts.
+- Add Realtime heartbeat poll fallback.
+
+### Phase 3 — Boxer info card overlay
+- New browser source. Renders fighter photo + name + record + weight class + promoter logo slot.
+- Reuses Phase 1 roster.
+
+### Phase 4 — Logo overlays (BoxStream + promoter)
+- Trivial; could move earlier if we want a quick win.
+- Just on/off toggles. Promoter logo URL pulled from `events.promoter_logo_url` (new column).
+
+### Phase 5 — Tale of the tape
+- Two-column animated comparison overlay. Most complex piece.
+- **Pivot to consider**: store data in DB, render styled HTML (clean typography + slow row-by-row fade). Skip "fancy" until used live once. Most TV-grade overlays look great without motion graphics.
+
+### Phase 6 — Unified control panel
+- Surfaces all overlays on one screen.
+- Per-overlay show/hide.
+- "What's on air now" indicator per overlay.
+- Kill-all panic button.
+- Keyboard shortcuts.
+
+## Rough Size
+
+**7–10 days of focused work** for a complete v1. Each phase ships independently, so we can pause/ship at any point and still have something useful in production.
+
+## Risks
+
+| Risk | Mitigation |
+|---|---|
+| Operator UX under live-show stress | Phased rollout + dry-run every overlay against a recorded stream before each real event |
+| Realtime drops | Heartbeat poll fallback (back-port to existing lower third) |
+| Tale-of-the-tape animation complexity | Build simple HTML version first; only add motion graphics after using it live once |
+| Two-operator races | Optional soft lock; not critical at current scale |
+| Browser source crashes taking out all overlays | Separate browser source per overlay type (already in plan) |
+
+## Open Questions (decide before starting Phase 1)
+
+- Where do promoter logos live? Upload via admin → S3? Or just paste a URL into `events.promoter_logo_url`?
+- Photo storage for fighter headshots — same answer as above.
+- Do we want walk-out music cues integrated, or strictly visual overlays for v1?
+- Do we need a "rehearsal mode" that toggles a flag so operators can test overlays without them appearing on air?
