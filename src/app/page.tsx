@@ -1,8 +1,8 @@
 import Stripe from 'stripe';
 import type { Metadata } from 'next';
 import Hero from '@/components/hero/Hero';
-import EventCarousel from '@/components/hero/EventCarousel';
-import type { CarouselEvent } from '@/components/hero/EventCarousel';
+import EventShowcase from '@/components/hero/EventShowcase';
+import type { CarouselEvent } from '@/components/hero/EventShowcase';
 import HomeContent from '@/components/hero/HomeContent';
 import Testimonials from '@/components/Testimonials';
 import { createServerClient } from '@/lib/supabase';
@@ -156,7 +156,7 @@ export default async function Home() {
   return (
     <>
       {events.length > 0 ? (
-        <EventCarousel events={events} subscriptionTier={subscriptionTier} geoBlockedEventId={geoBlocked && activeEvent ? activeEvent.id : null} />
+        <EventShowcase events={events} subscriptionTier={subscriptionTier} geoBlockedEventId={geoBlocked && activeEvent ? activeEvent.id : null} />
       ) : (
         <Hero />
       )}

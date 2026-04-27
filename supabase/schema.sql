@@ -75,12 +75,19 @@ CREATE TABLE IF NOT EXISTS purchases (
   -- Boxer comp
   boxer_name                text,                    -- optional: boxer last name entered at checkout
 
+  -- Refunds / disputes — set by charge.refunded / charge.dispute.created webhooks
+  -- and by the admin refund tool. expires_at handles access; this powers revenue math.
+  refunded_at               timestamptz,
+
   created_at                timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE purchases ADD COLUMN IF NOT EXISTS refunded_at timestamptz;
 
 CREATE INDEX IF NOT EXISTS idx_purchases_email      ON purchases (email);
 CREATE INDEX IF NOT EXISTS idx_purchases_event_id   ON purchases (event_id);
 CREATE INDEX IF NOT EXISTS idx_purchases_user_id    ON purchases (user_id);
+CREATE INDEX IF NOT EXISTS idx_purchases_refunded   ON purchases (refunded_at) WHERE refunded_at IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_stripe_session ON purchases (stripe_session_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_stripe_pi  ON purchases (stripe_payment_intent_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_purchases_promo_dedup ON purchases (email, event_id, amount_paid) WHERE amount_paid = 0;

@@ -59,14 +59,15 @@ export default async function PromoterReportPage({
   }
 
   // Fetch all paid, non-refunded PPV purchases for this event only.
-  // session_version = 999 is the refund marker set by the charge.refunded webhook.
+  // refunded_at is set by the charge.refunded / charge.dispute.created webhooks
+  // and by the admin refund tool.
   const { data: purchases } = await supabase
     .from('purchases')
     .select('amount_paid, created_at')
     .eq('event_id', eventId)
     .eq('purchase_type', 'ppv')
     .gt('amount_paid', 0)
-    .neq('session_version', 999)
+    .is('refunded_at', null)
     .order('created_at', { ascending: true });
 
   const rows = purchases || [];

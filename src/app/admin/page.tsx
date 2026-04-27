@@ -11,6 +11,7 @@ import AdminLogout from './AdminLogout';
 import AdminStreamToggle from './AdminStreamToggle';
 import AdminCopyButton from './AdminCopyButton';
 import AdminFeedbackApprove from './AdminFeedbackApprove';
+import AdminRefundButton from './AdminRefundButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ export default async function AdminPage({
   // Fetch purchases — either search results or recent 50
   const query = supabase
     .from('purchases')
-    .select('id, email, product_name, purchase_type, amount_paid, created_at, expires_at, stripe_session_id')
+    .select('id, email, product_name, purchase_type, amount_paid, created_at, expires_at, stripe_session_id, stripe_payment_intent_id, refunded_at')
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -62,7 +63,15 @@ export default async function AdminPage({
   const { count: todayCount } = await supabase
     .from('purchases')
     .select('id', { count: 'exact', head: true })
-    .gte('created_at', today.toISOString());
+    .gte('created_at', today.toISOString())
+    .is('refunded_at', null);
+
+  const last30 = new Date();
+  last30.setDate(last30.getDate() - 30);
+  const { count: refundedCount } = await supabase
+    .from('purchases')
+    .select('id', { count: 'exact', head: true })
+    .gte('refunded_at', last30.toISOString());
 
   const { count: subCount } = await supabase
     .from('subscriptions')
@@ -83,6 +92,7 @@ export default async function AdminPage({
         .select('event_id, amount_paid')
         .eq('purchase_type', 'ppv')
         .gt('amount_paid', 0)
+        .is('refunded_at', null)
         .in('event_id', eventIds)
     : { data: [] };
 
@@ -102,6 +112,7 @@ export default async function AdminPage({
         .select('boxer_name')
         .eq('event_id', activeEvent.id)
         .eq('purchase_type', 'ppv')
+        .is('refunded_at', null)
         .not('boxer_name', 'is', null)
     : { data: [] };
 
@@ -207,10 +218,15 @@ export default async function AdminPage({
           <div className="border border-white/10 p-5">
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Purchases Today</p>
             <p className="text-3xl font-bold">{todayCount ?? 0}</p>
+            <p className="text-[10px] text-gray-600 mt-1">Excludes refunded.</p>
           </div>
           <div className="border border-white/10 p-5">
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Active Subscribers</p>
             <p className="text-3xl font-bold">{subCount ?? 0}</p>
+          </div>
+          <div className="border border-white/10 p-5">
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mb-1">Refunded (30d)</p>
+            <p className={`text-3xl font-bold ${(refundedCount ?? 0) > 0 ? 'text-red-400' : ''}`}>{refundedCount ?? 0}</p>
           </div>
         </div>
 
@@ -415,13 +431,17 @@ export default async function AdminPage({
                     <th className="text-left px-5 py-3 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500">Amount</th>
                     <th className="text-left px-5 py-3 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500">Date</th>
                     <th className="text-left px-5 py-3 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500">Expires</th>
+                    <th className="text-left px-5 py-3 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {purchases.map((p) => {
                     const expired = p.expires_at && new Date(p.expires_at) < new Date();
+                    const isRefunded = !!p.refunded_at;
+                    const isComp = p.amount_paid === 0;
+                    const canRefund = !isRefunded && !isComp && (p.stripe_payment_intent_id || p.stripe_session_id);
                     return (
-                      <tr key={p.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <tr key={p.id} className={`border-b border-white/5 hover:bg-white/[0.02] ${isRefunded ? 'opacity-60' : ''}`}>
                         <td className="px-5 py-3 text-white font-medium">
                           <a
                             href={`/admin?q=${encodeURIComponent(p.email)}`}
@@ -437,7 +457,9 @@ export default async function AdminPage({
                           </span>
                         </td>
                         <td className="px-5 py-3 text-gray-400">
-                          {p.amount_paid === 0 ? <span className="text-green-400 text-[10px] font-bold uppercase">Comp</span> : `$${(p.amount_paid / 100).toFixed(2)}`}
+                          {isComp
+                            ? <span className="text-green-400 text-[10px] font-bold uppercase">Comp</span>
+                            : <span className={isRefunded ? 'line-through text-gray-500' : ''}>${(p.amount_paid / 100).toFixed(2)}</span>}
                         </td>
                         <td className="px-5 py-3 text-gray-500 text-xs">
                           {new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -449,6 +471,21 @@ export default async function AdminPage({
                                 {expired && ' (exp)'}
                               </span>
                             : <span className="text-gray-600">—</span>
+                          }
+                        </td>
+                        <td className="px-5 py-3">
+                          {isRefunded
+                            ? <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-red-400 border border-red-900/50 px-2 py-0.5">
+                                Refunded {new Date(p.refunded_at!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                            : canRefund
+                              ? <AdminRefundButton
+                                  purchaseId={p.id}
+                                  email={p.email}
+                                  amountPaid={p.amount_paid}
+                                  productName={p.product_name || '—'}
+                                />
+                              : <span className="text-gray-700 text-[10px]">—</span>
                           }
                         </td>
                       </tr>

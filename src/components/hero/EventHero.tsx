@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import FightPassPrompt, { hasSeenFightPassPrompt, markFightPassPromptSeen } from '@/components/FightPassPrompt';
@@ -36,91 +36,6 @@ interface EventHeroProps {
   onInteraction?: (interacting: boolean) => void;
   geoBlocked?: boolean;
   ticketUrl?: string | null;
-}
-
-/* ── 3D Tilt + Float Poster Card ── */
-function PosterCard({
-  posterImage,
-  eventName,
-  accessState,
-}: {
-  posterImage: string | null;
-  eventName: string;
-  accessState: string;
-}) {
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  // Raw mouse position mapped to rotation degrees
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  // Spring-smoothed rotation for the tilt
-  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20 });
-  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20 });
-
-  // Shifting shadow for the "pop off screen" depth
-  const shadowX = useTransform(rotateY, [-8, 8], [20, -20]);
-  const shadowY = useTransform(rotateX, [-8, 8], [-20, 20]);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
-    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-
-  const handleMouseLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
-  return (
-    <motion.div
-      ref={cardRef}
-      className="relative h-[400px] md:h-[520px] lg:h-[600px]"
-      style={{ perspective: 900 }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' as const }}
-    >
-      <motion.div
-        className="relative h-full w-full overflow-hidden border border-white/10 will-change-transform"
-        style={{
-          rotateX,
-          rotateY,
-          boxShadow: useTransform(
-            [shadowX, shadowY],
-            ([sx, sy]) => `${sx}px ${sy}px 40px rgba(255,255,255,0.07)`,
-          ),
-        }}
-        animate={{ y: [0, -10, 0] }}
-        transition={{ duration: 4, repeat: Infinity, repeatType: 'mirror', ease: 'easeInOut' }}
-      >
-        {/* Poster (or logo fallback) */}
-        {posterImage ? (
-          <Image src={posterImage} alt={eventName} fill className="object-contain bg-black" priority />
-        ) : (
-          <div className="w-full h-full bg-white/[0.03] flex items-center justify-center">
-            <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={300} height={300} className="opacity-30" />
-          </div>
-        )}
-
-        {/* "Purchased" overlay badge */}
-        {accessState === 'has-access' && (
-          <div className="absolute top-4 right-4 z-10">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2">
-              <svg aria-hidden="true" className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-xs font-bold tracking-[0.2em] uppercase text-white">Purchased</span>
-            </div>
-          </div>
-        )}
-      </motion.div>
-    </motion.div>
-  );
 }
 
 function getTimeRemaining(targetDate: string) {
@@ -243,102 +158,160 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
   };
 
   /* ════════════════════════════════════════════
-     RENDER: Info layout
+     RENDER: Portrait poster + left text column
      ════════════════════════════════════════════ */
   return (
-    <section className="relative min-h-screen bg-black text-white overflow-hidden flex items-center">
-      {/* Background poster with dark overlay */}
-      {posterImage && (
+    <section className="relative min-h-[80vh] lg:min-h-[92vh] bg-black text-white overflow-hidden flex items-center">
+      {/* Cinematic atmosphere — blurred poster bleeds color into the whole section */}
+      {posterImage ? (
         <div className="absolute inset-0">
-          <Image src={posterImage} alt={eventName} fill className="object-cover opacity-20 blur-sm" priority />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black" />
+          <Image
+            src={posterImage}
+            alt=""
+            fill
+            priority
+            className="object-cover scale-125 blur-2xl opacity-70"
+          />
+          {/* Lighter horizontal fade so the blurred poster reads through */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10" />
+          {/* Slight vertical darken at top/bottom only */}
+          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/70 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-black" />
+        </div>
+      ) : (
+        /* No-poster fallback: brand-tinted atmosphere instead of straight black */
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-black to-black" />
+          {/* Radial red glow — boxing-brand atmosphere */}
+          <div
+            className="absolute inset-0 opacity-40"
+            style={{
+              background: 'radial-gradient(circle at 70% 40%, rgba(220,38,38,0.35) 0%, transparent 55%)',
+            }}
+          />
+          {/* Ring rope lines for texture */}
+          <div className="ring-ropes absolute inset-0 opacity-50" />
+          {/* Faint BoxStream watermark */}
+          <div className="absolute right-[-4rem] bottom-[-2rem] opacity-[0.04] hidden md:block pointer-events-none">
+            <Image
+              src="/logos/BoxStreamVerticalLogo.png"
+              alt=""
+              width={520}
+              height={520}
+            />
+          </div>
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-black" />
         </div>
       )}
-      {!posterImage && <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-black" />}
 
-      {/* Noise texture */}
-      <div className="noise-overlay" />
+      <div className="noise-overlay opacity-50" />
 
-      {/* Ring rope lines */}
-      <div className="ring-ropes absolute inset-0" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-24 md:py-32 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 lg:items-start">
-          {/* Top: Logo, fight name, date, countdown */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 py-20 md:py-24 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          {/* Portrait poster — mobile: top; desktop: right */}
           <motion.div
-            className="space-y-8"
+            className="lg:col-span-5 lg:col-start-8 order-1 lg:order-2"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+          >
+            <div className="relative aspect-[3/4] w-full max-w-xs sm:max-w-sm lg:max-w-none mx-auto flex items-center justify-center">
+              {posterImage ? (
+                /* object-contain so any aspect ratio (2:3, 3:4, 4:5, square) shows fully */
+                <Image
+                  src={posterImage}
+                  alt={eventName}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 24rem, 40vw"
+                  className="object-contain drop-shadow-2xl"
+                />
+              ) : (
+                <div className="aspect-[2/3] w-full bg-zinc-900 border border-white/10 flex items-center justify-center">
+                  <Image
+                    src="/logos/BoxStreamVerticalLogo.png"
+                    alt="BoxStream"
+                    width={220}
+                    height={220}
+                    className="opacity-40"
+                  />
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Text column — mobile: bottom; desktop: left */}
+          <motion.div
+            className="lg:col-span-7 lg:col-start-1 lg:row-start-1 order-2 lg:order-1 space-y-6"
             variants={stagger}
             initial="hidden"
             animate="visible"
           >
-            {/* Logo */}
-            <motion.div variants={fadeUp}>
-              <Image src="/logos/BoxStreamVerticalLogo.png" alt="BoxStream" width={200} height={50} className="mb-6" />
-              <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-400">{isActive ? 'Live Pay-Per-View' : 'Upcoming Event'}</p>
-            </motion.div>
-
-            <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] tracking-[-0.03em]">
-              {eventName}
-            </motion.h1>
-
-            <motion.div variants={widthGrow} className="w-16 h-[2px] bg-white" />
-
-            <motion.p variants={fadeUp} className="text-gray-400 text-lg">
-              {new Date(eventDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-            </motion.p>
-
-            {/* Countdown */}
-            {timeLeft ? (
-              <motion.div variants={fadeUp}>
-                <p className="text-xs font-bold tracking-[0.3em] uppercase text-gray-500 mb-4">Event Starts In</p>
-                <div className="flex gap-4">
-                  {[
-                    { value: timeLeft.days, label: 'Days' },
-                    { value: timeLeft.hours, label: 'Hours' },
-                    { value: timeLeft.minutes, label: 'Min' },
-                    { value: timeLeft.seconds, label: 'Sec' },
-                  ].map((unit) => (
-                    <div key={unit.label} className="text-center">
-                      <div className="bg-white/[0.05] border border-white/10 backdrop-blur-sm px-4 py-3 min-w-[72px]">
-                        <span className="text-3xl sm:text-4xl font-bold tabular-nums">
-                          {String(unit.value).padStart(2, '0')}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 mt-2 block">
-                        {unit.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            ) : isStreaming ? (
-              <motion.div variants={fadeUp} className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-sm font-bold tracking-[0.2em] uppercase text-red-400">Live Now</span>
-              </motion.div>
-            ) : replayUrl ? (
-              <motion.div variants={fadeUp} className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-[0.2em] uppercase text-gray-400">Replay Available</span>
-              </motion.div>
+          {/* Status row: date pill + Live badge + category */}
+          <motion.div variants={fadeUp} className="flex items-center gap-3 flex-wrap">
+            {isActive && isStreaming ? (
+              <span className="inline-flex items-center gap-2 bg-red-600 px-3 py-1.5 text-[10px] font-bold tracking-[0.2em] uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                Live Now
+              </span>
             ) : (
-              <motion.div variants={fadeUp} className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-yellow-500 rounded-full animate-pulse" />
-                <span className="text-sm font-bold tracking-[0.2em] uppercase text-yellow-400">Almost Showtime</span>
-              </motion.div>
+              <span className="inline-block bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 text-[10px] font-bold tracking-[0.2em] uppercase text-white">
+                {new Date(eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}
+              </span>
+            )}
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-300">
+              {isActive ? 'Pay-Per-View' : 'Upcoming Event'}
+            </span>
+            {accessState === 'has-access' && (
+              <span className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 px-2.5 py-1 text-[10px] font-bold tracking-[0.2em] uppercase">
+                <svg aria-hidden="true" className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+                Purchased
+              </span>
             )}
           </motion.div>
 
-          {/* Poster — mobile: after fight info; desktop: right col spanning both rows */}
-          <div className="lg:row-span-2 lg:row-start-1 lg:col-start-2">
-            <PosterCard
-              posterImage={posterImage}
-              eventName={eventName}
-              accessState={accessState}
-            />
-          </div>
+          {/* Title */}
+          <motion.h1
+            variants={fadeUp}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[0.95] tracking-[-0.03em] drop-shadow-lg"
+          >
+            {eventName}
+          </motion.h1>
 
-          {/* CTA — mobile: after poster; desktop: left col row 2 */}
-          <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-4 pt-2 lg:col-start-1 lg:row-start-2">
+          <motion.div variants={widthGrow} className="w-16 h-[2px] bg-white" />
+
+          {/* Date subtitle */}
+          <motion.p variants={fadeUp} className="text-gray-300 text-base md:text-lg max-w-md">
+            {new Date(eventDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </motion.p>
+
+          {/* Compact countdown (only if upcoming) */}
+          {timeLeft && (
+            <motion.div variants={fadeUp} className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mr-1">Starts In</span>
+              {[
+                { value: timeLeft.days, label: 'D' },
+                { value: timeLeft.hours, label: 'H' },
+                { value: timeLeft.minutes, label: 'M' },
+                { value: timeLeft.seconds, label: 'S' },
+              ].map((unit) => (
+                <div
+                  key={unit.label}
+                  className="bg-white/5 backdrop-blur-sm border border-white/10 px-2.5 py-1.5 min-w-[52px] text-center flex items-baseline justify-center gap-1"
+                >
+                  <span className="text-lg font-bold tabular-nums">
+                    {String(unit.value).padStart(2, '0')}
+                  </span>
+                  <span className="text-[9px] font-bold tracking-[0.15em] uppercase text-gray-500">{unit.label}</span>
+                </div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* CTA + access state — same logic as before, just inlined into the column */}
+          <motion.div variants={fadeUp} initial="hidden" animate="visible" className="space-y-4 pt-2">
             {geoBlocked && !replayUrl ? (
               /* Geo-blackout — no live access from this location */
               <div className="space-y-4">
@@ -513,6 +486,7 @@ export default function EventHero({ eventName, eventDate, posterImage, priceCent
               </div>
             )}
           </motion.div>
+        </motion.div>
         </div>
       </div>
 

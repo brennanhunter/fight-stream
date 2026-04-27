@@ -549,10 +549,12 @@ export async function POST(request: Request) {
 
         // Revoke access: set expires_at to now. check-purchase validates expires_at
         // from the DB, so any active JWT session is denied on the next access check.
+        const nowIso = new Date().toISOString();
         const { data: updated, error: refundError } = await supabase
           .from('purchases')
           .update({
-            expires_at: new Date().toISOString(),
+            expires_at: nowIso,
+            refunded_at: nowIso,
           })
           .eq('stripe_payment_intent_id', paymentIntentId)
           .select('id, email, product_name');
@@ -570,7 +572,7 @@ export async function POST(request: Request) {
             if (checkoutSessionId) {
               const { data: vodUpdated, error: vodRefundError } = await supabase
                 .from('purchases')
-                .update({ expires_at: new Date().toISOString() })
+                .update({ expires_at: nowIso, refunded_at: nowIso })
                 .eq('stripe_session_id', checkoutSessionId)
                 .select('id, email, product_name');
 
@@ -615,10 +617,12 @@ export async function POST(request: Request) {
         // Revoke access on dispute — same pattern as charge.refunded.
         // If the dispute is later resolved in the merchant's favor, access
         // can be re-granted manually via the admin grant tool.
+        const disputeNowIso = new Date().toISOString();
         const { data: disputed, error: disputeError } = await supabase
           .from('purchases')
           .update({
-            expires_at: new Date().toISOString(),
+            expires_at: disputeNowIso,
+            refunded_at: disputeNowIso,
           })
           .eq('stripe_payment_intent_id', paymentIntentId)
           .select('id, email, product_name');
@@ -639,7 +643,7 @@ export async function POST(request: Request) {
             if (checkoutSessionId) {
               const { data: legacy, error: legacyErr } = await supabase
                 .from('purchases')
-                .update({ expires_at: new Date().toISOString() })
+                .update({ expires_at: disputeNowIso, refunded_at: disputeNowIso })
                 .eq('stripe_session_id', checkoutSessionId)
                 .select('id, email, product_name');
               if (legacyErr) {
