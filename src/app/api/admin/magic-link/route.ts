@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     .sign(getSecretKey());
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://boxstreamtv.com';
-  const url = `${baseUrl}/watch-link?token=${token}`;
+  const url = `${baseUrl}/api/watch-link?token=${token}`;
 
   return NextResponse.json({ url });
 }
