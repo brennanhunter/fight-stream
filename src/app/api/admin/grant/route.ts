@@ -17,8 +17,26 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createServerClient();
+  const normalizedEmail = normalizeEmail(email);
+
+  // If an s3_key is provided, check for an existing purchase to avoid duplicates
+  let existingId: string | null = null;
+  if (s3Key) {
+    const { data: existing } = await supabase
+      .from('purchases')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .eq('s3_key', s3Key)
+      .maybeSingle();
+    existingId = existing?.id ?? null;
+  }
+
+  if (existingId) {
+    return NextResponse.json({ ok: true, purchaseId: existingId });
+  }
+
   const { data, error } = await supabase.from('purchases').insert({
-    email: normalizeEmail(email),
+    email: normalizedEmail,
     product_name: productName,
     purchase_type: purchaseType,
     event_id: eventId || null,
