@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { purchaseId, email, expiryDays = 30 } = await request.json();
+  const { purchaseId, email, expiryDays = 3650 } = await request.json();
 
   if (!purchaseId || !email) {
     return NextResponse.json({ error: 'purchaseId and email are required' }, { status: 400 });
