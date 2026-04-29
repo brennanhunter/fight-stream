@@ -310,3 +310,84 @@ INSERT INTO lower_third_state (id) VALUES (1) ON CONFLICT DO NOTHING;
 ALTER TABLE lower_third_state ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "lower_third public read" ON lower_third_state FOR SELECT USING (true);
 -- Service role key used in API route handles writes; no explicit write policy needed.
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: event_fighters
+-- Pre-populated roster of fighters per event. Operators pick from
+-- this table during a live broadcast instead of typing names.
+-- Service role only (no user-facing RLS policies).
+-- Added: 2026-04-27
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS event_fighters (
+  id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id            text        NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  display_name        text        NOT NULL,
+  record              text,                    -- e.g. "12-3 (5 KOs)"
+  weight_class        text,
+  height              text,                    -- free-form, e.g. 5'10" or 178 cm
+  reach               text,
+  age                 integer,
+  stance              text,                    -- orthodox | southpaw | switch
+  hometown            text,
+  photo_url           text,
+  promoter_logo_url   text,                    -- per-fighter promoter override
+  sort_order          integer     NOT NULL DEFAULT 0,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_fighters_event_id   ON event_fighters (event_id);
+CREATE INDEX IF NOT EXISTS idx_event_fighters_event_sort ON event_fighters (event_id, sort_order);
+
+ALTER TABLE event_fighters ENABLE ROW LEVEL SECURITY;
+-- No user-facing policies — service role (admin panel) only.
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: overlay_state
+-- Single source of truth for what each overlay type is currently
+-- showing. One row per overlay type. OBS browser sources subscribe
+-- to this table via Supabase Realtime.
+--
+-- payload examples:
+--   lower_third:    { "fighter_name": "...", "record": "...", "weight_class": "..." }
+--   boxer_card:     { "fighter_id": "uuid", "show_promoter_logo": true }
+--   tale_of_tape:   { "left_id": "uuid", "right_id": "uuid" }
+--   logo:           { } (no extra payload)
+--   promoter_logo:  { "url": "..." }
+--
+-- The lower_third_state table above will be retired in Phase 2 of
+-- the OVERLAY.md plan once the existing lower-third reads from here.
+-- Added: 2026-04-27
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS overlay_state (
+  overlay_type  text        PRIMARY KEY CHECK (
+                              overlay_type IN ('lower_third', 'boxer_card', 'tale_of_tape', 'logo', 'promoter_logo')
+                            ),
+  visible       boolean     NOT NULL DEFAULT false,
+  payload       jsonb       NOT NULL DEFAULT '{}'::jsonb,
+  updated_at    timestamptz NOT NULL DEFAULT now()
+);
+
+-- Seed one row per overlay type so the control panel always finds them
+INSERT INTO overlay_state (overlay_type) VALUES
+  ('lower_third'),
+  ('boxer_card'),
+  ('tale_of_tape'),
+  ('logo'),
+  ('promoter_logo')
+ON CONFLICT DO NOTHING;
+
+ALTER TABLE overlay_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "overlay_state public read" ON overlay_state FOR SELECT USING (true);
+-- Service role key used in admin API handles writes; no explicit write policy needed.
+
+-- Enable Supabase Realtime so OBS browser sources receive live updates
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE overlay_state;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+  WHEN undefined_object THEN NULL;
+END $$;
