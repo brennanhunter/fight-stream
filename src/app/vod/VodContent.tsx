@@ -262,7 +262,10 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
                     )}
                   </div>
                 ) : product.available && product.priceId ? (
-                  <VodBuyButton priceId={product.priceId} subscriptionTier={subscriptionTier} />
+                  <div className="flex flex-col items-center gap-1.5">
+                    <VodBuyButton priceId={product.priceId} subscriptionTier={subscriptionTier} />
+                    <span className="text-[10px] text-gray-500 tracking-wider uppercase">72-hour access</span>
+                  </div>
                 ) : !product.available ? (
                   <span className="px-6 py-3 bg-transparent text-gray-500 text-sm font-bold border border-white/20 uppercase tracking-wider cursor-default">
                     Coming Soon
@@ -372,7 +375,10 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
                     )}
                   </div>
                 ) : product.available && product.priceId ? (
-                  <VodBuyButton priceId={product.priceId} subscriptionTier={subscriptionTier} />
+                  <div className="flex flex-col items-center gap-1.5">
+                    <VodBuyButton priceId={product.priceId} subscriptionTier={subscriptionTier} />
+                    <span className="text-[10px] text-gray-500 tracking-wider uppercase">72-hour access</span>
+                  </div>
                 ) : !product.available ? (
                   <button
                     disabled

@@ -51,6 +51,10 @@ const faqs = [
         a: 'PPV access is valid for 48 hours from the event start time, giving you time to watch the replay if you miss the live show.',
       },
       {
+        q: 'How long do I have to watch a VOD purchase?',
+        a: 'VOD purchases give you 72 hours of access from the moment you buy. Once your window starts, a countdown will appear on the watch page so you always know how much time is left.',
+      },
+      {
         q: 'Do I need an account to purchase PPV?',
         a: 'No. You can purchase as a guest using just your email. Creating an account makes it easier to manage purchases and recover access.',
       },

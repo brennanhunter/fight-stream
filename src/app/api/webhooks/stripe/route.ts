@@ -9,7 +9,7 @@ import { subscriptionCanceledEmail } from '@/lib/emails/subscription-canceled';
 import { paymentFailedEmail } from '@/lib/emails/payment-failed';
 import { subscriptionRenewedEmail } from '@/lib/emails/subscription-renewed';
 import { purchaseConfirmationEmail } from '@/lib/emails/purchase-confirmation';
-import { REPLAY_WINDOW_DAYS } from '@/lib/constants';
+import { REPLAY_WINDOW_DAYS, VOD_ACCESS_HOURS } from '@/lib/constants';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -102,6 +102,7 @@ export async function POST(request: Request) {
             const price = lineItem?.price;
 
             if (product?.metadata?.s3_key) {
+              const vodExpiresAt = new Date(Date.now() + VOD_ACCESS_HOURS * 60 * 60 * 1000).toISOString();
               // Upsert to handle race with save-session
               const vodRow = {
                 email: customerEmail,
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
                 s3_key: product.metadata.s3_key,
                 amount_paid: price?.unit_amount || 0,
                 currency: price?.currency || 'usd',
-                expires_at: null,
+                expires_at: vodExpiresAt,
                 user_id: session.metadata?.user_id || null,
                 session_version: 1,
               };
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
                 try {
                   const { html, text } = purchaseConfirmationEmail({
                     eventName: product.name,
-                    expiresAt: null,
+                    expiresAt: vodExpiresAt,
                     amountPaid: price?.unit_amount || 0,
                     purchaseType: 'vod',
                     vodPurchaseId: vodPurchase?.id,

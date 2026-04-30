@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/rate-limit';
 import { stripeServer } from '@/lib/stripe';
 import { normalizeEmail } from '@/lib/utils';
+import { VOD_ACCESS_HOURS } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   if (!stripeServer) {
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
             const paymentIntentId = typeof stripeSession.payment_intent === 'string'
               ? stripeSession.payment_intent
               : stripeSession.payment_intent?.id || null;
+            const vodExpiresAt = new Date(Date.now() + VOD_ACCESS_HOURS * 60 * 60 * 1000).toISOString();
             await supabase.from('purchases').upsert({
               email: customerEmail,
               purchase_type: 'vod',
@@ -66,7 +68,7 @@ export async function POST(req: NextRequest) {
               s3_key: product.metadata.s3_key,
               amount_paid: price?.unit_amount || 0,
               currency: price?.currency || 'usd',
-              expires_at: null,
+              expires_at: vodExpiresAt,
               user_id: userId,
               session_claimed_at: new Date().toISOString(),
               session_version: 1,

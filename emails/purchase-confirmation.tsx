@@ -10,7 +10,7 @@ interface Props {
 
 export default function PurchaseConfirmation({
   eventName = 'Fight Night',
-  expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+  expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
   amountPaid = 4999,
 }: Props) {
   const expiryFormatted = new Date(expiresAt).toLocaleDateString('en-US', {
