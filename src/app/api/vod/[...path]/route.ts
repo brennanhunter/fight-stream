@@ -62,7 +62,35 @@ export async function GET(
     return new NextResponse(rewritten, { status: 200, headers });
   }
 
-  // For all other assets (segments, MP4s), redirect the client directly to CloudFront.
-  // This avoids proxying video bytes through the serverless function.
-  return NextResponse.redirect(signedUrl, { status: 302 });
+  // For MP4 files, redirect the client directly to CloudFront.
+  // The native <video> element follows redirects without CORS restrictions,
+  // and MP4s are the primary source of CPU spikes (large files held open).
+  if (s3Path.endsWith('.mp4')) {
+    return NextResponse.redirect(signedUrl, { status: 302 });
+  }
+
+  // For HLS segments (.ts) and anything else, proxy through to avoid CORS issues.
+  // HLS.js uses XHR which enforces CORS on cross-origin redirects.
+  const fetchHeaders: HeadersInit = {};
+  const rangeHeader = request.headers.get('range');
+  if (rangeHeader) fetchHeaders['Range'] = rangeHeader;
+
+  const upstream = await fetch(signedUrl, { headers: fetchHeaders });
+
+  if (!upstream.ok && upstream.status !== 206) {
+    return new NextResponse(upstream.body, { status: upstream.status });
+  }
+
+  const headers = new Headers();
+  const contentType = upstream.headers.get('content-type');
+  if (contentType) headers.set('content-type', contentType);
+  const contentLength = upstream.headers.get('content-length');
+  if (contentLength) headers.set('content-length', contentLength);
+  const contentRange = upstream.headers.get('content-range');
+  if (contentRange) headers.set('content-range', contentRange);
+  const acceptRanges = upstream.headers.get('accept-ranges');
+  if (acceptRanges) headers.set('accept-ranges', acceptRanges);
+  headers.set('cache-control', 'private, max-age=3600');
+
+  return new NextResponse(upstream.body, { status: upstream.status, headers });
 }
