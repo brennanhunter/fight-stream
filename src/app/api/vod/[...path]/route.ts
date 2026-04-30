@@ -46,48 +46,23 @@ export async function GET(
     dateLessThan: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
   });
 
-  // Forward Range header for byte-range requests (needed for MP4 seeking)
-  const fetchHeaders: HeadersInit = {};
-  const rangeHeader = request.headers.get('range');
-  if (rangeHeader) {
-    fetchHeaders['Range'] = rangeHeader;
-  }
-
-  // Fetch from CloudFront
-  const upstream = await fetch(signedUrl, { headers: fetchHeaders });
-
-  if (!upstream.ok && upstream.status !== 206) {
-    return new NextResponse(upstream.body, { status: upstream.status });
-  }
-
-  // Stream the response back with appropriate headers
-  const headers = new Headers();
-  const contentType = upstream.headers.get('content-type');
-  if (contentType) headers.set('content-type', contentType);
-
-  // For HLS manifests, rewrite relative paths to include auth query params
+  // For HLS manifests, proxy and rewrite relative paths to include auth query params
   // so that HLS.js sub-requests (sub-playlists, segments) also pass auth.
   if (s3Path.endsWith('.m3u8')) {
+    const upstream = await fetch(signedUrl);
+    if (!upstream.ok) {
+      return new NextResponse(null, { status: upstream.status });
+    }
     const text = await upstream.text();
     const qs = `?token=${token}&prefix=${encodeURIComponent(prefix)}`;
     const rewritten = text.replace(/^(?!#)(\S+)$/gm, (match) => match + qs);
+    const headers = new Headers();
     headers.set('content-type', 'application/vnd.apple.mpegurl');
     headers.set('cache-control', 'private, max-age=5');
     return new NextResponse(rewritten, { status: 200, headers });
   }
 
-  const contentLength = upstream.headers.get('content-length');
-  if (contentLength) headers.set('content-length', contentLength);
-
-  // Pass through range response headers for seeking support
-  const contentRange = upstream.headers.get('content-range');
-  if (contentRange) headers.set('content-range', contentRange);
-  const acceptRanges = upstream.headers.get('accept-ranges');
-  if (acceptRanges) headers.set('accept-ranges', acceptRanges);
-
-  if (s3Path.endsWith('.ts')) {
-    headers.set('cache-control', 'private, max-age=3600');
-  }
-
-  return new NextResponse(upstream.body, { status: upstream.status, headers });
+  // For all other assets (segments, MP4s), redirect the client directly to CloudFront.
+  // This avoids proxying video bytes through the serverless function.
+  return NextResponse.redirect(signedUrl, { status: 302 });
 }
