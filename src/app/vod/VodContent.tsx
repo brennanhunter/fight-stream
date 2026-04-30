@@ -124,9 +124,9 @@ export default function VodContent({ events, ownedProducts, subscriptionTier, in
 
               {/* Event Poster - Full display, no cropping */}
               <div className="relative bg-black overflow-hidden">
-                {event.image ? (
+                {(event.image || event.products.find(p => p.image)?.image) ? (
                   <Image
-                    src={event.image}
+                    src={(event.image || event.products.find(p => p.image)?.image)!}
                     alt={event.name}
                     width={600}
                     height={900}

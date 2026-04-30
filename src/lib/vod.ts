@@ -85,9 +85,15 @@ export function groupByEvent(products: VodProduct[]): EventGroup[] {
     groups[product.eventSlug].products.push(product);
     groups[product.eventSlug].fightCount++;
     if (product.eventImage) {
-      groups[product.eventSlug].image = product.eventImage;
-    } else if (!groups[product.eventSlug].image && product.image) {
-      groups[product.eventSlug].image = product.image;
+      // Prefer explicit event_image metadata; full-event overrides any earlier value
+      if (!groups[product.eventSlug].image || product.featured === 'full-event') {
+        groups[product.eventSlug].image = product.eventImage;
+      }
+    } else if (product.image) {
+      // Fall back to Stripe product image; full-event product wins over others
+      if (!groups[product.eventSlug].image || product.featured === 'full-event') {
+        groups[product.eventSlug].image = product.image;
+      }
     }
     if (product.featured === 'full-event') {
       groups[product.eventSlug].hasFullEvent = true;
