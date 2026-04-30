@@ -10,6 +10,7 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isGoogleAccount, setIsGoogleAccount] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -19,6 +20,20 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // Check if this email is a Google OAuth account
+    const providerRes = await fetch('/api/auth/check-provider', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const { provider } = await providerRes.json();
+
+    if (provider === 'google') {
+      setIsGoogleAccount(true);
+      setLoading(false);
+      return;
+    }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/confirm?type=recovery`,
@@ -34,6 +49,25 @@ export default function ForgotPasswordPage() {
     setSuccess(true);
     setLoading(false);
     turnstileRef.current?.reset();
+  }
+
+  if (isGoogleAccount) {
+    return (
+      <div className="text-center">
+        <h1 className="text-xl font-bold text-white tracking-[0.15em] uppercase mb-4">
+          Sign In with Google
+        </h1>
+        <p className="text-sm text-gray-400 mb-6">
+          <span className="text-white">{email}</span> is linked to a Google account. You don&apos;t have a password — sign in with Google instead.
+        </p>
+        <Link
+          href="/login"
+          className="inline-block px-6 py-2.5 bg-white text-black text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-gray-200 transition-colors"
+        >
+          Go to Sign In
+        </Link>
+      </div>
+    );
   }
 
   if (success) {
