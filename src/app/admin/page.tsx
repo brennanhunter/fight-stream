@@ -13,6 +13,7 @@ import AdminCopyButton from './AdminCopyButton';
 import AdminFeedbackApprove from './AdminFeedbackApprove';
 import AdminRefundButton from './AdminRefundButton';
 import AdminRefundBackfillButton from './AdminRefundBackfillButton';
+import AdminSendVodRecoveryForm from './AdminSendVodRecoveryForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -312,6 +313,15 @@ export default async function AdminPage({
         <div className="border border-white/10 p-6 mb-10">
           <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-4">Grant Access</h2>
           <AdminGrantForm activeEventId={activeEvent?.id ?? null} activeEventName={activeEvent?.name ?? null} />
+        </div>
+
+        {/* Send VOD Recovery Link */}
+        <div className="border border-white/10 p-6 mb-10">
+          <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400 mb-1">Send VOD Recovery Link</h2>
+          <p className="text-xs text-gray-500 mb-4">
+            For guest VOD buyers who lost the cookie or are on a new device. Emails them a one-click link to restore access.
+          </p>
+          <AdminSendVodRecoveryForm />
         </div>
 
         {/* Feedback */}

@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
 import { PageTransition } from '@/components/motion';
 import VodContent from './VodContent';
+import VodRecoverForm from '@/components/VodRecoverForm';
 import { createServerClient } from '@/lib/supabase';
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { getSubscriptionTier } from '@/lib/access';
@@ -103,20 +104,27 @@ async function getSubscriptionInfo(): Promise<'basic' | 'premium' | null> {
   }
 }
 
-export default async function VodPage() {
-  const [products, ownedProducts, subscriptionTier] = await Promise.all([
+export default async function VodPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ recover?: string }>;
+}) {
+  const [{ recover }, products, ownedProducts, subscriptionTier] = await Promise.all([
+    searchParams,
     getProducts(),
     getOwnedProducts(),
     getSubscriptionInfo(),
   ]);
   const events = groupByEvent(products);
 
-  // Fetch user's watchlist favorites
+  // Fetch user's watchlist favorites + detect logged-in state for recovery form
   let watchlistIds: string[] = [];
+  let isLoggedIn = false;
   try {
     const authClient = await createAuthServerClient();
     const { data: { user } } = await authClient.auth.getUser();
     if (user) {
+      isLoggedIn = true;
       const supabase = createServerClient();
       const { data } = await supabase
         .from('favorites')
@@ -128,6 +136,10 @@ export default async function VodPage() {
   } catch {
     // Not logged in — no watchlist
   }
+
+  // Show the recovery form to guests who don't yet have any owned products
+  // visible (covers cross-device / cleared-cookie cases).
+  const showRecoverForm = !isLoggedIn && Object.keys(ownedProducts).length === 0;
 
   return (
     <PageTransition>
@@ -142,6 +154,22 @@ export default async function VodPage() {
             </h1>
             <div className="w-16 h-[2px] bg-white mt-6" />
           </div>
+
+          {recover === 'success' && (
+            <div className="mb-6 border border-green-500/40 bg-green-500/10 px-5 py-4 text-sm text-green-300">
+              Access restored. Your replays are below.
+            </div>
+          )}
+          {recover === 'invalid' && (
+            <div className="mb-6 border border-red-500/40 bg-red-500/10 px-5 py-4 text-sm text-red-300">
+              That recovery link is invalid or expired. Request a new one below.
+            </div>
+          )}
+          {recover === 'missing' && (
+            <div className="mb-6 border border-yellow-500/40 bg-yellow-500/10 px-5 py-4 text-sm text-yellow-300">
+              No recovery token found in that link. Request a new one below.
+            </div>
+          )}
 
           {events.length === 0 ? (
             <div className="text-center py-24">
@@ -168,6 +196,12 @@ export default async function VodPage() {
               )}
 
               <VodContent events={events} ownedProducts={ownedProducts} subscriptionTier={subscriptionTier} initialWatchlist={watchlistIds} />
+
+              {showRecoverForm && (
+                <div className="mt-12 max-w-xl mx-auto">
+                  <VodRecoverForm />
+                </div>
+              )}
             </>
           )}
         </div>
