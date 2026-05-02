@@ -246,9 +246,9 @@ function NamePlate({
         gap: '8px',
         padding: '0 14px',
         height: '30px',
-        // White for ~80% of the plate, soft fade into the corner color over the
-        // remaining 20% — color presence on the edge without a hard transition.
-        background: `linear-gradient(to right, #ffffff 0%, #ffffff 80%, ${accentColor} 100%)`,
+        // White for the first ~65% of the plate, then a long smooth fade into
+        // the corner color — bigger color presence on the right.
+        background: `linear-gradient(to right, #ffffff 0%, #ffffff 65%, ${accentColor} 100%)`,
         border: `1px solid ${accentSoft}`,
         boxShadow: `0 0 10px ${accentSoft}`,
         overflow: 'hidden',
@@ -276,12 +276,13 @@ function NamePlate({
         <span
           style={{
             fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-            fontSize: '12px',
-            fontWeight: 700,
+            fontSize: '14px',
+            fontWeight: 800,
             fontVariantNumeric: 'tabular-nums',
-            color: 'rgba(10,10,10,0.6)',
+            color: '#0a0a0a',
             whiteSpace: 'nowrap',
             flexShrink: 0,
+            letterSpacing: '0.02em',
           }}
         >
           {record}

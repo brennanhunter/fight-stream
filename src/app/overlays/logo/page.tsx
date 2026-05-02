@@ -42,8 +42,8 @@ export default function LogoDisplay() {
             <Image
               src="/logos/BoxStreamThumbnail.png"
               alt="BoxStreamTV"
-              width={88}
-              height={88}
+              width={112}
+              height={112}
               priority
               style={{ display: 'block' }}
             />
