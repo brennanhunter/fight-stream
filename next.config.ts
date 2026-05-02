@@ -23,7 +23,19 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
     ],
+  },
+  experimental: {
+    serverActions: {
+      // Allow boxer photo uploads up to ~10 MB. PhotoUploader caps the file
+      // at 8 MB; this just gives the server action a little headroom.
+      bodySizeLimit: '10mb',
+    },
   },
   async redirects() {
     return [

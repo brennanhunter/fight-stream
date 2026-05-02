@@ -325,17 +325,20 @@ CREATE TABLE IF NOT EXISTS event_fighters (
   display_name        text        NOT NULL,
   record              text,                    -- e.g. "12-3 (5 KOs)"
   weight_class        text,
-  height              text,                    -- free-form, e.g. 5'10" or 178 cm
+  height              text,                    -- formatted by UI as 5'10" — stored as plain string
   reach               text,
   age                 integer,
   stance              text,                    -- orthodox | southpaw | switch
   hometown            text,
+  nationality         text,                    -- e.g. "Mexico", "USA", "Ireland"
   photo_url           text,
   promoter_logo_url   text,                    -- per-fighter promoter override
   sort_order          integer     NOT NULL DEFAULT 0,
   created_at          timestamptz NOT NULL DEFAULT now(),
   updated_at          timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE event_fighters ADD COLUMN IF NOT EXISTS nationality text;
 
 CREATE INDEX IF NOT EXISTS idx_event_fighters_event_id   ON event_fighters (event_id);
 CREATE INDEX IF NOT EXISTS idx_event_fighters_event_sort ON event_fighters (event_id, sort_order);
@@ -363,18 +366,28 @@ ALTER TABLE event_fighters ENABLE ROW LEVEL SECURITY;
 -- ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS overlay_state (
   overlay_type  text        PRIMARY KEY CHECK (
-                              overlay_type IN ('lower_third', 'boxer_card', 'tale_of_tape', 'logo', 'promoter_logo')
+                              overlay_type IN ('lower_third', 'boxer_card', 'tale_of_tape', 'round_timer', 'logo', 'promoter_logo')
                             ),
   visible       boolean     NOT NULL DEFAULT false,
   payload       jsonb       NOT NULL DEFAULT '{}'::jsonb,
   updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
+-- If the table already exists with the older CHECK constraint, widen it to
+-- include round_timer. Drop+re-add is the only path for a CHECK change.
+DO $$
+BEGIN
+  ALTER TABLE overlay_state DROP CONSTRAINT IF EXISTS overlay_state_overlay_type_check;
+  ALTER TABLE overlay_state ADD CONSTRAINT overlay_state_overlay_type_check
+    CHECK (overlay_type IN ('lower_third', 'boxer_card', 'tale_of_tape', 'round_timer', 'logo', 'promoter_logo'));
+END $$;
+
 -- Seed one row per overlay type so the control panel always finds them
 INSERT INTO overlay_state (overlay_type) VALUES
   ('lower_third'),
   ('boxer_card'),
   ('tale_of_tape'),
+  ('round_timer'),
   ('logo'),
   ('promoter_logo')
 ON CONFLICT DO NOTHING;
@@ -416,3 +429,37 @@ CREATE INDEX IF NOT EXISTS idx_event_vod_mapping_product ON event_vod_mapping (s
 
 ALTER TABLE event_vod_mapping ENABLE ROW LEVEL SECURITY;
 -- No user-facing policies — service role (admin panel) only.
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: event_matches
+-- Bouts on a given event card. Pairs two event_fighters rows and
+-- captures round/timing config. The /control panel uses this as
+-- its primary navigation: pick a match, all overlay actions scope
+-- to it.
+--
+-- A 3-fight card = 6 event_fighters rows + 3 event_matches rows.
+-- Added: 2026-05-02
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS event_matches (
+  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id          text        NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  sequence          integer     NOT NULL,                       -- 1, 2, 3 — order on card
+  fighter_left_id   uuid        NOT NULL REFERENCES event_fighters(id),
+  fighter_right_id  uuid        NOT NULL REFERENCES event_fighters(id),
+  label             text,                                       -- "Main Event", "Title Fight", etc.
+  scheduled_rounds  integer     NOT NULL DEFAULT 3,             -- 3 / 6 / 8 / 10 / 12
+  round_seconds     integer     NOT NULL DEFAULT 180,           -- 3:00 default
+  rest_seconds      integer     NOT NULL DEFAULT 60,            -- 1:00 default
+  status            text        NOT NULL DEFAULT 'scheduled'
+                                CHECK (status IN ('scheduled', 'in_progress', 'completed')),
+  created_at        timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE event_matches ADD COLUMN IF NOT EXISTS label text;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_event_matches_event_seq ON event_matches (event_id, sequence);
+CREATE INDEX IF NOT EXISTS idx_event_matches_event ON event_matches (event_id);
+
+ALTER TABLE event_matches ENABLE ROW LEVEL SECURITY;
+-- Service role (admin panel + control panel) only.

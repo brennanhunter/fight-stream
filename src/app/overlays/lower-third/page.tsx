@@ -4,20 +4,19 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useScramble } from 'use-scramble';
-import { createBrowserClient } from '@/lib/supabase';
+import { useOverlay } from '@/lib/use-overlay';
 
-interface LowerThirdState {
-  fighter_name: string;
-  record: string;
-  weight_class: string;
-  visible: boolean;
-}
-
-const DEFAULT_STATE: LowerThirdState = {
-  fighter_name: '',
-  record: '',
-  weight_class: '',
-  visible: false,
+/**
+ * Payload written by /control when the lower third is shown. Snapshot of the
+ * fighter at show time — see OVERLAY.md "Snapshot at show time, don't reference
+ * live fighter rows".
+ */
+type LowerThirdPayload = {
+  match_id?: string;
+  fighter_id?: string;
+  display_name?: string;
+  record?: string;
+  weight_class?: string;
 };
 
 const ASCII_CHARS = '!@#$%&*+-=|;:.<>?/~▓▒░█■□●◆◇※✦⌬╳╲╱┃═╬╪╫';
@@ -36,8 +35,12 @@ function randomAsciiBlock(): string {
 }
 
 export default function LowerThirdDisplay() {
-  const [state, setState] = useState<LowerThirdState>(DEFAULT_STATE);
-  const [ready, setReady] = useState(false);
+  const { visible, payload, loading } = useOverlay<LowerThirdPayload>('lower_third');
+  const ready = !loading;
+  const fighter_name = payload.display_name ?? '';
+  const record = payload.record ?? '';
+  const weight_class = payload.weight_class ?? '';
+
   const [displayVisible, setDisplayVisible] = useState(false);
   const [scrambleName, setScrambleName] = useState('');
   const [scrambleStats, setScrambleStats] = useState('');
@@ -70,10 +73,10 @@ export default function LowerThirdDisplay() {
 
   useEffect(() => {
     if (!ready) return;
-    if (state.visible) {
+    if (visible) {
       setDisplayVisible(true);
-      const t1 = setTimeout(() => setScrambleName(state.fighter_name), 380);
-      const subline = [state.record, state.weight_class].filter(Boolean).join('   //   ');
+      const t1 = setTimeout(() => setScrambleName(fighter_name), 380);
+      const subline = [record, weight_class].filter(Boolean).join('   //   ');
       const t2 = setTimeout(() => setScrambleStats(subline), 680);
       return () => {
         clearTimeout(t1);
@@ -84,7 +87,7 @@ export default function LowerThirdDisplay() {
       setScrambleName('');
       setScrambleStats('');
     }
-  }, [state.visible, state.fighter_name, state.record, state.weight_class, ready]);
+  }, [visible, fighter_name, record, weight_class, ready]);
 
   useEffect(() => {
     if (!displayVisible) {
@@ -101,31 +104,8 @@ export default function LowerThirdDisplay() {
     return () => clearInterval(id);
   }, [displayVisible]);
 
-  useEffect(() => {
-    fetch('/api/overlay/lower-third')
-      .then((r) => r.json())
-      .then((data: LowerThirdState) => {
-        setState(data);
-        setReady(true);
-      })
-      .catch(() => setReady(true));
-
-    const supabase = createBrowserClient();
-    const channel = supabase
-      .channel('lower_third_realtime')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'lower_third_state' },
-        (payload) => {
-          setState(payload.new as LowerThirdState);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  // Realtime subscription + heartbeat poll handled by useOverlay() at the top
+  // of this component. No separate Supabase wiring here anymore.
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', background: 'transparent', overflow: 'hidden' }}>
@@ -282,7 +262,7 @@ export default function LowerThirdDisplay() {
                   ref={nameRef}
                   style={{
                     fontFamily: 'var(--font-barlow-condensed), ui-sans-serif, system-ui, sans-serif',
-                    fontSize: `clamp(56px, min(11vw, calc((92vw - 336px) / ${Math.max(state.fighter_name.length, 6) * 0.6})), 150px)`,
+                    fontSize: `clamp(56px, min(11vw, calc((92vw - 336px) / ${Math.max(fighter_name.length, 6) * 0.6})), 150px)`,
                     fontWeight: 800,
                     color: '#ffffff',
                     letterSpacing: '0.04em',
@@ -291,11 +271,11 @@ export default function LowerThirdDisplay() {
                     whiteSpace: 'nowrap',
                     minHeight: '1em',
                     overflow: 'hidden',
-                    animation: state.visible ? 'glowPulse 3s ease-in-out 1s 2' : undefined,
+                    animation: visible ? 'glowPulse 3s ease-in-out 1s 2' : undefined,
                   }}
                 />
                 {/* Sweep */}
-                {state.visible && (
+                {visible && (
                   <motion.div
                     initial={{ x: '-120%' }}
                     animate={{ x: '420%' }}

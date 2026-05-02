@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Megaphone,
   MessageSquare,
+  Radio,
   Settings,
   ShoppingCart,
   Users,
@@ -42,6 +43,7 @@ const groups: NavGroup[] = [
     items: [
       { label: 'Feedback', href: '/admin/feedback', icon: MessageSquare },
       { label: 'Marketing', href: '/admin/marketing', icon: Megaphone },
+      { label: 'Overlays', href: '/admin/overlays', icon: Radio },
     ],
   },
   {
