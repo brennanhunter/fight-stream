@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
 import { createServerClient } from '@/lib/supabase';
+import type { OverlayType } from '@/lib/use-overlay';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -12,6 +13,22 @@ async function requireAdmin() {
 }
 
 type Result = { ok: true } | { ok: false; error: string };
+
+/** Generic hide — works for any overlay type. */
+export async function hideOverlay(type: OverlayType): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ visible: false, updated_at: new Date().toISOString() })
+    .eq('overlay_type', type);
+
+  if (error) {
+    console.error(`hideOverlay(${type}):`, error);
+    return { ok: false, error: 'Failed to hide overlay' };
+  }
+  return { ok: true };
+}
 
 /**
  * Show the lower third with a snapshot of the given fighter.
@@ -56,18 +73,59 @@ export async function showLowerThird(
   return { ok: true };
 }
 
-export async function hideLowerThird(): Promise<Result> {
+/**
+ * Show the tale of the tape for a match. Snapshots both fighters' full stat
+ * lines into the payload at show time so roster edits don't bleed onto the
+ * live overlay.
+ */
+export async function showTaleOfTape(matchId: string): Promise<Result> {
   await requireAdmin();
   const supabase = createServerClient();
+
+  const { data: match, error: matchErr } = await supabase
+    .from('event_matches')
+    .select('id, label, fighter_left_id, fighter_right_id')
+    .eq('id', matchId)
+    .maybeSingle();
+
+  if (matchErr || !match) {
+    return { ok: false, error: 'Match not found' };
+  }
+
+  const { data: fighters, error: fightersErr } = await supabase
+    .from('event_fighters')
+    .select(
+      'id, display_name, record, weight_class, height, reach, age, stance, hometown, nationality, photo_url',
+    )
+    .in('id', [match.fighter_left_id, match.fighter_right_id]);
+
+  if (fightersErr || !fighters || fighters.length < 2) {
+    return { ok: false, error: 'Could not load both fighters' };
+  }
+
+  const left = fighters.find((f) => f.id === match.fighter_left_id);
+  const right = fighters.find((f) => f.id === match.fighter_right_id);
+  if (!left || !right) {
+    return { ok: false, error: 'Could not match fighters to match' };
+  }
+
+  const payload = {
+    match_id: match.id,
+    match_label: match.label ?? '',
+    left,
+    right,
+  };
+
   const { error } = await supabase
     .from('overlay_state')
-    .update({ visible: false, updated_at: new Date().toISOString() })
-    .eq('overlay_type', 'lower_third');
+    .update({ visible: true, payload, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'tale_of_tape');
 
   if (error) {
-    console.error('hideLowerThird:', error);
-    return { ok: false, error: 'Failed to hide lower third' };
+    console.error('showTaleOfTape:', error);
+    return { ok: false, error: 'Failed to show tale of the tape' };
   }
+
   return { ok: true };
 }
 

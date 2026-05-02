@@ -2,12 +2,17 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Skull } from 'lucide-react';
+import { Eye, EyeOff, Skull, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useOverlay } from '@/lib/use-overlay';
-import { hideLowerThird, killAllOverlays, showLowerThird } from '../actions';
+import {
+  hideOverlay,
+  killAllOverlays,
+  showLowerThird,
+  showTaleOfTape,
+} from '../actions';
 
 export type ControlFighter = {
   id: string;
@@ -52,6 +57,7 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
   const right = activeMatch ? fighterById.get(activeMatch.fighter_right_id) : undefined;
 
   const lowerThird = useOverlay<LowerThirdPayload>('lower_third');
+  const taleOfTape = useOverlay<{ match_id?: string }>('tale_of_tape');
 
   const [pending, startTransition] = useTransition();
 
@@ -64,10 +70,27 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
     });
   }
 
-  function handleHide() {
+  function handleHideLowerThird() {
     startTransition(async () => {
-      const res = await hideLowerThird();
+      const res = await hideOverlay('lower_third');
       if (res.ok) toast.success('Lower third hidden');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleShowTaleOfTape() {
+    if (!activeMatch) return;
+    startTransition(async () => {
+      const res = await showTaleOfTape(activeMatch.id);
+      if (res.ok) toast.success('Tale of the tape on air');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleHideTaleOfTape() {
+    startTransition(async () => {
+      const res = await hideOverlay('tale_of_tape');
+      if (res.ok) toast.success('Tale of the tape hidden');
       else toast.error(res.error);
     });
   }
@@ -204,13 +227,55 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
                   </div>
                   <Button
                     variant="ghost"
-                    onClick={handleHide}
+                    onClick={handleHideLowerThird}
                     disabled={pending || !lowerThird.visible}
                     className="w-full"
                   >
                     <EyeOff />
                     Hide lower third
                   </Button>
+                </div>
+
+                {/* Tale of the Tape */}
+                <div className="space-y-2 border-t pt-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-medium">Tale of the Tape</h3>
+                    {taleOfTape.visible && taleOfTape.payload.match_id === activeMatch.id ? (
+                      <Badge className="bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/10">
+                        <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+                        On air
+                      </Badge>
+                    ) : taleOfTape.visible ? (
+                      <Badge variant="outline" className="text-amber-400 border-amber-500/40">
+                        On air (different match)
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Hidden
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="default"
+                      onClick={handleShowTaleOfTape}
+                      disabled={pending}
+                    >
+                      <Swords />
+                      Show comparison
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={handleHideTaleOfTape}
+                      disabled={pending || !taleOfTape.visible}
+                    >
+                      <EyeOff />
+                      Hide
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Full-screen comparison. Auto-snapshots both fighters&rsquo; stats at show time.
+                  </p>
                 </div>
               </CardContent>
             </Card>

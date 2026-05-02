@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { createServerClient } from '@/lib/supabase';
+import ObsSetupReference from './_components/ObsSetupReference';
 
 export const dynamic = 'force-dynamic';
 
@@ -162,6 +163,8 @@ export default function OverlaysPage() {
       <Suspense fallback={<EventListSkeleton />}>
         <EventList />
       </Suspense>
+
+      <ObsSetupReference />
     </div>
   );
 }
