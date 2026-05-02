@@ -46,6 +46,8 @@ export default function Header() {
 
   if (pathname.startsWith('/report/')) return null;
   if (pathname.startsWith('/admin')) return null;
+  if (pathname.startsWith('/control')) return null;
+  if (pathname.startsWith('/overlays/')) return null;
 
   return (
     <header
