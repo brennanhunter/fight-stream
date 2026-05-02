@@ -29,22 +29,6 @@ type TaleOfTapePayload = {
 
 type StatRow = { label: string; left: string; right: string };
 
-// Same character pool the lower third uses for its corner ASCII blocks.
-const ASCII_CHARS = '!@#$%&*+-=|;:.<>?/~▓▒░█■□●◆◇※✦⌬╳╲╱┃═╬╪╫';
-const ASCII_COLS = 7;
-const ASCII_ROWS = 14;
-
-function randomAsciiBlock(): string {
-  let out = '';
-  for (let r = 0; r < ASCII_ROWS; r++) {
-    for (let c = 0; c < ASCII_COLS; c++) {
-      out += ASCII_CHARS[Math.floor(Math.random() * ASCII_CHARS.length)];
-    }
-    if (r < ASCII_ROWS - 1) out += '\n';
-  }
-  return out;
-}
-
 function buildStatRows(left: FighterSnapshot, right: FighterSnapshot): StatRow[] {
   const rows: StatRow[] = [];
   function add(label: string, l?: string | number | null, r?: string | number | null) {
@@ -68,7 +52,7 @@ function capitalize(s: string | null | undefined): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-const SCRAMBLE_OPTS = {
+const NAME_SCRAMBLE_OPTS = {
   speed: 0.5,
   tick: 1,
   step: 2,
@@ -76,6 +60,19 @@ const SCRAMBLE_OPTS = {
   seed: 6,
   chance: 1,
   range: [65, 90] as [number, number],
+  overdrive: false,
+};
+
+// Lighter scramble for stat values — same settings as the lower third's
+// record/weight subline so the two overlays feel consistent.
+const STAT_SCRAMBLE_OPTS = {
+  speed: 0.55,
+  tick: 1,
+  step: 1,
+  scramble: 12,
+  seed: 4,
+  chance: 0.85,
+  range: [48, 90] as [number, number],
   overdrive: false,
 };
 
@@ -105,27 +102,8 @@ export default function TaleOfTapeDisplay() {
     setScrambleRightName('');
   }, [show, left?.display_name, right?.display_name]);
 
-  const { ref: leftNameRef } = useScramble({ text: scrambleLeftName, ...SCRAMBLE_OPTS });
-  const { ref: rightNameRef } = useScramble({ text: scrambleRightName, ...SCRAMBLE_OPTS });
-
-  // Animated ASCII corner blocks (matches lower-third decoration).
-  const [asciiBlocks, setAsciiBlocks] = useState<string[]>(['', '', '', '']);
-  useEffect(() => {
-    if (!show) {
-      setAsciiBlocks(['', '', '', '']);
-      return;
-    }
-    const tick = () =>
-      setAsciiBlocks([
-        randomAsciiBlock(),
-        randomAsciiBlock(),
-        randomAsciiBlock(),
-        randomAsciiBlock(),
-      ]);
-    tick();
-    const id = setInterval(tick, 110);
-    return () => clearInterval(id);
-  }, [show]);
+  const { ref: leftNameRef } = useScramble({ text: scrambleLeftName, ...NAME_SCRAMBLE_OPTS });
+  const { ref: rightNameRef } = useScramble({ text: scrambleRightName, ...NAME_SCRAMBLE_OPTS });
 
   const leftNat = left ? formatNationality(left.nationality) : { flag: '', label: '' };
   const rightNat = right ? formatNationality(right.nationality) : { flag: '', label: '' };
@@ -183,12 +161,6 @@ export default function TaleOfTapeDisplay() {
               }}
             />
 
-            {/* ASCII corner blocks — same vocabulary as the lower third */}
-            <AsciiCorner block={asciiBlocks[0]} pos={{ top: '14px', left: '18px' }} />
-            <AsciiCorner block={asciiBlocks[1]} pos={{ top: '14px', right: '18px' }} />
-            <AsciiCorner block={asciiBlocks[2]} pos={{ bottom: '14px', left: '18px' }} />
-            <AsciiCorner block={asciiBlocks[3]} pos={{ bottom: '14px', right: '18px' }} />
-
             {/* Header band */}
             <motion.div
               initial={{ opacity: 0, y: -16 }}
@@ -232,13 +204,15 @@ export default function TaleOfTapeDisplay() {
               </h1>
             </motion.div>
 
-            {/* Body — three columns */}
+            {/* Body — three columns. Stats column gets the most room since
+                 longer values like "14-2-1 (3 KOs)" or city names need to fit
+                 on one line without wrapping. */}
             <div
               style={{
                 flex: 1,
                 display: 'grid',
-                gridTemplateColumns: '1fr 1.15fr 1fr',
-                gap: '3vw',
+                gridTemplateColumns: '0.85fr 1.5fr 0.85fr',
+                gap: '2.5vw',
                 padding: '4vh 6vw',
                 alignItems: 'center',
                 position: 'relative',
@@ -265,62 +239,12 @@ export default function TaleOfTapeDisplay() {
                 }}
               >
                 {rows.map((row, i) => (
-                  <motion.div
+                  <ScrambleStatRow
                     key={row.label}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      delay: 0.55 + i * 0.08,
-                      duration: 0.4,
-                      ease: 'easeOut',
-                    }}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr auto 1fr',
-                      gap: '24px',
-                      alignItems: 'baseline',
-                      padding: '14px 0',
-                      borderBottom:
-                        i === rows.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.08)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        textAlign: 'right',
-                        fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                        fontSize: 'clamp(18px, 2.2vw, 36px)',
-                        fontWeight: 600,
-                        fontVariantNumeric: 'tabular-nums',
-                        color: '#ffffff',
-                      }}
-                    >
-                      {row.left}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 'clamp(11px, 1.1vw, 16px)',
-                        fontWeight: 700,
-                        letterSpacing: '0.3em',
-                        textTransform: 'uppercase',
-                        color: 'rgba(255,255,255,0.55)',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {row.label}
-                    </div>
-                    <div
-                      style={{
-                        textAlign: 'left',
-                        fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                        fontSize: 'clamp(18px, 2.2vw, 36px)',
-                        fontWeight: 600,
-                        fontVariantNumeric: 'tabular-nums',
-                        color: '#ffffff',
-                      }}
-                    >
-                      {row.right}
-                    </div>
-                  </motion.div>
+                    row={row}
+                    delaySec={0.55 + i * 0.08}
+                    isLast={i === rows.length - 1}
+                  />
                 ))}
               </div>
 
@@ -339,31 +263,90 @@ export default function TaleOfTapeDisplay() {
   );
 }
 
-function AsciiCorner({
-  block,
-  pos,
+function ScrambleStatRow({
+  row,
+  delaySec,
+  isLast,
 }: {
-  block: string;
-  pos: { top?: string; bottom?: string; left?: string; right?: string };
+  row: StatRow;
+  delaySec: number;
+  isLast: boolean;
 }) {
+  // Empty until the row's stagger window opens, then snap to the real value.
+  // use-scramble cycles characters from '' → real text, giving the same
+  // wash-in feel the lower third uses for its record/weight subline.
+  const [scrambleLeft, setScrambleLeft] = useState('');
+  const [scrambleRight, setScrambleRight] = useState('');
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setScrambleLeft(row.left), delaySec * 1000);
+    const t2 = setTimeout(() => setScrambleRight(row.right), delaySec * 1000 + 60);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [row.left, row.right, delaySec]);
+
+  const { ref: leftRef } = useScramble({ text: scrambleLeft, ...STAT_SCRAMBLE_OPTS });
+  const { ref: rightRef } = useScramble({ text: scrambleRight, ...STAT_SCRAMBLE_OPTS });
+
   return (
-    <pre
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: delaySec, duration: 0.35, ease: 'easeOut' }}
       style={{
-        position: 'absolute',
-        ...pos,
-        margin: 0,
-        fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-        fontSize: 'clamp(8px, 0.8vw, 12px)',
-        lineHeight: 1,
-        letterSpacing: 0,
-        color: 'rgba(255,255,255,0.16)',
-        pointerEvents: 'none',
-        userSelect: 'none',
-        zIndex: 3,
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        gap: '24px',
+        alignItems: 'baseline',
+        padding: '14px 0',
+        borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      {block}
-    </pre>
+      <div
+        ref={leftRef}
+        style={{
+          textAlign: 'right',
+          fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+          fontSize: 'clamp(15px, 1.7vw, 26px)',
+          fontWeight: 600,
+          fontVariantNumeric: 'tabular-nums',
+          color: '#ffffff',
+          minHeight: '1em',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      />
+      <div
+        style={{
+          fontSize: 'clamp(11px, 1.1vw, 16px)',
+          fontWeight: 700,
+          letterSpacing: '0.3em',
+          textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.55)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {row.label}
+      </div>
+      <div
+        ref={rightRef}
+        style={{
+          textAlign: 'left',
+          fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+          fontSize: 'clamp(15px, 1.7vw, 26px)',
+          fontWeight: 600,
+          fontVariantNumeric: 'tabular-nums',
+          color: '#ffffff',
+          minHeight: '1em',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      />
+    </motion.div>
   );
 }
 
