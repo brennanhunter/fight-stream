@@ -42,22 +42,36 @@ export async function showLowerThird(
   await requireAdmin();
   const supabase = createServerClient();
 
-  const { data: fighter, error: lookupErr } = await supabase
-    .from('event_fighters')
-    .select('display_name, record, weight_class')
-    .eq('id', fighterId)
-    .maybeSingle();
+  const [{ data: match }, { data: fighter, error: lookupErr }] = await Promise.all([
+    supabase
+      .from('event_matches')
+      .select('id, label, fighter_left_id, fighter_right_id')
+      .eq('id', matchId)
+      .maybeSingle(),
+    supabase
+      .from('event_fighters')
+      .select('display_name, record, weight_class, nationality')
+      .eq('id', fighterId)
+      .maybeSingle(),
+  ]);
 
   if (lookupErr || !fighter) {
     return { ok: false, error: 'Fighter not found' };
   }
 
+  // Determine corner color based on which side this fighter is on in the match.
+  const corner: 'blue' | 'red' =
+    match?.fighter_left_id === fighterId ? 'blue' : 'red';
+
   const payload = {
     match_id: matchId,
     fighter_id: fighterId,
+    match_label: match?.label ?? '',
     display_name: fighter.display_name,
     record: fighter.record ?? '',
     weight_class: fighter.weight_class ?? '',
+    nationality: fighter.nationality ?? '',
+    corner,
   };
 
   const { error } = await supabase

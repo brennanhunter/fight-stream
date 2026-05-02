@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import Image from 'next/image';
 import { useScramble } from 'use-scramble';
 import { useOverlay } from '@/lib/use-overlay';
+import { formatNationality } from '@/lib/countries';
 
 /**
  * Payload written by /control when the lower third is shown. Snapshot of the
@@ -14,14 +14,17 @@ import { useOverlay } from '@/lib/use-overlay';
 type LowerThirdPayload = {
   match_id?: string;
   fighter_id?: string;
+  match_label?: string;
   display_name?: string;
   record?: string;
   weight_class?: string;
+  nationality?: string;
+  corner?: 'blue' | 'red';
 };
 
 const ASCII_CHARS = '!@#$%&*+-=|;:.<>?/~▓▒░█■□●◆◇※✦⌬╳╲╱┃═╬╪╫';
-const ASCII_COLS = 7;
-const ASCII_ROWS = 14;
+const ASCII_COLS = 5;
+const ASCII_ROWS = 8;
 
 function randomAsciiBlock(): string {
   let out = '';
@@ -37,15 +40,24 @@ function randomAsciiBlock(): string {
 export default function LowerThirdDisplay() {
   const { visible, payload, loading } = useOverlay<LowerThirdPayload>('lower_third');
   const ready = !loading;
-  const fighter_name = payload.display_name ?? '';
+
+  const fighterName = (payload.display_name ?? '').toUpperCase();
   const record = payload.record ?? '';
-  const weight_class = payload.weight_class ?? '';
+  const weightClass = payload.weight_class ?? '';
+  const matchLabel = payload.match_label ?? '';
+  const corner: 'blue' | 'red' = payload.corner ?? 'blue';
+  const { flag, label: countryLabel } = formatNationality(payload.nationality ?? '');
+
+  const isBlue = corner === 'blue';
+  const accentColor = isBlue ? '#2563eb' : '#dc2626';
+  const accentSoft = isBlue ? 'rgba(37,99,235,0.55)' : 'rgba(220,38,38,0.55)';
+  const accentGlow = isBlue ? 'rgba(37,99,235,0.45)' : 'rgba(220,38,38,0.45)';
+  const cornerLabel = isBlue ? 'BLUE CORNER' : 'RED CORNER';
 
   const [displayVisible, setDisplayVisible] = useState(false);
   const [scrambleName, setScrambleName] = useState('');
-  const [scrambleStats, setScrambleStats] = useState('');
-  const [asciiLeft, setAsciiLeft] = useState('');
-  const [asciiRight, setAsciiRight] = useState('');
+  const [scrambleSub, setScrambleSub] = useState('');
+  const [asciiBlock, setAsciiBlock] = useState('');
 
   const { ref: nameRef } = useScramble({
     text: scrambleName,
@@ -59,9 +71,9 @@ export default function LowerThirdDisplay() {
     overdrive: false,
   });
 
-  const { ref: statsRef } = useScramble({
-    text: scrambleStats,
-    speed: 0.55,
+  const { ref: subRef } = useScramble({
+    text: scrambleSub,
+    speed: 0.6,
     tick: 1,
     step: 1,
     scramble: 12,
@@ -75,9 +87,10 @@ export default function LowerThirdDisplay() {
     if (!ready) return;
     if (visible) {
       setDisplayVisible(true);
-      const t1 = setTimeout(() => setScrambleName(fighter_name), 380);
-      const subline = [record, weight_class].filter(Boolean).join('   //   ');
-      const t2 = setTimeout(() => setScrambleStats(subline), 680);
+      const t1 = setTimeout(() => setScrambleName(fighterName), 380);
+      const subParts = [weightClass, countryLabel, cornerLabel].filter(Boolean);
+      const subline = subParts.join('   ///   ');
+      const t2 = setTimeout(() => setScrambleSub(subline), 620);
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
@@ -85,332 +98,323 @@ export default function LowerThirdDisplay() {
     } else {
       setDisplayVisible(false);
       setScrambleName('');
-      setScrambleStats('');
+      setScrambleSub('');
     }
-  }, [visible, fighter_name, record, weight_class, ready]);
+  }, [visible, fighterName, weightClass, countryLabel, cornerLabel, ready]);
 
   useEffect(() => {
     if (!displayVisible) {
-      setAsciiLeft('');
-      setAsciiRight('');
+      setAsciiBlock('');
       return;
     }
-    const tick = () => {
-      setAsciiLeft(randomAsciiBlock());
-      setAsciiRight(randomAsciiBlock());
-    };
+    const tick = () => setAsciiBlock(randomAsciiBlock());
     tick();
     const id = setInterval(tick, 110);
     return () => clearInterval(id);
   }, [displayVisible]);
 
-  // Realtime subscription + heartbeat poll handled by useOverlay() at the top
-  // of this component. No separate Supabase wiring here anymore.
+  // Tighten the name slightly for very long names so it never truncates.
+  const nameFontSize =
+    fighterName.length > 18 ? '52px' : fighterName.length > 14 ? '60px' : '70px';
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', background: 'transparent', overflow: 'hidden' }}>
+    <div
+      style={{
+        width: '100vw',
+        height: '100vh',
+        background: 'transparent',
+        overflow: 'hidden',
+      }}
+    >
       <AnimatePresence>
         {ready && displayVisible && (
           <motion.div
             key="lower-third"
-            initial={{ y: '108%', opacity: 0.4 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '108%', opacity: 0, transition: { duration: 0.24, ease: [0.6, 0, 1, 0.4] } }}
-            transition={{ type: 'spring', stiffness: 220, damping: 30, mass: 1.1 }}
+            initial={{ x: '-110%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '-110%', opacity: 0, transition: { duration: 0.28, ease: [0.6, 0, 1, 0.4] } }}
+            transition={{ type: 'spring', stiffness: 180, damping: 26, mass: 1.05 }}
             style={{
               position: 'absolute',
-              left: '4vw',
-              right: '4vw',
-              bottom: '5vh',
-              height: '42vh',
+              bottom: '6vh',
+              left: '8vw',
+              width: '960px',
               background: 'rgba(4, 4, 4, 0.96)',
-              border: '1px solid rgba(255,255,255,0.85)',
-              boxShadow:
-                '0 30px 80px rgba(0,0,0,0.95), 0 0 80px rgba(255,255,255,0.06), inset 0 0 1px rgba(255,255,255,0.5)',
-              display: 'grid',
-              gridTemplateColumns: '110px 1fr 110px',
-              gridTemplateRows: '52px 1fr 44px',
+              border: `1px solid ${accentSoft}`,
+              boxShadow: `0 24px 60px rgba(0,0,0,0.92), 0 0 60px ${accentGlow}, inset 0 0 1px rgba(255,255,255,0.5)`,
+              fontFamily: 'var(--font-barlow-condensed), ui-sans-serif, system-ui, sans-serif',
+              color: '#ffffff',
               overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
-            {/* ── Top header strip */}
+            {/* ── Top broadcast band */}
             <motion.div
-              initial={{ opacity: 0, y: -14 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18, duration: 0.32, ease: 'easeOut' }}
               style={{
-                gridColumn: '1 / 4',
-                gridRow: '1',
-                borderBottom: '1px solid rgba(255,255,255,0.22)',
-                background: 'rgba(255,255,255,0.04)',
+                flexShrink: 0,
+                height: '30px',
+                background: 'rgba(255,255,255,0.05)',
+                borderBottom: '1px solid rgba(255,255,255,0.18)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 18,
-                padding: '0 22px',
+                padding: '0 18px',
+                gap: '14px',
+                fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+                fontSize: '12px',
+                fontWeight: 700,
+                letterSpacing: '0.34em',
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.78)',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Image
-                src="/logos/BoxStreamThumbnail.png"
-                alt="BoxStreamTV"
-                width={36}
-                height={36}
-                priority
-                style={{ filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))' }}
-              />
-              <div
+              <span>{'// NOW ENTERING'}</span>
+              {matchLabel && (
+                <>
+                  <span style={{ color: 'rgba(255,255,255,0.3)' }}>{'///'}</span>
+                  <span style={{ color: '#ffffff' }}>{matchLabel}</span>
+                </>
+              )}
+              <span
                 style={{
-                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                  fontSize: 15,
-                  fontWeight: 700,
-                  letterSpacing: '0.32em',
-                  color: 'rgba(255,255,255,0.78)',
-                  textTransform: 'uppercase',
+                  flex: 1,
+                  height: 1,
+                  background:
+                    'repeating-linear-gradient(to right, rgba(255,255,255,0.35) 0 6px, transparent 6px 12px)',
                 }}
-              >
-                {'// FIGHTER_PROFILE.DAT'}
-              </div>
-              <div style={{ flex: 1, height: 1, background: 'repeating-linear-gradient(to right, rgba(255,255,255,0.35) 0 6px, transparent 6px 12px)' }} />
-              <div
+              />
+              <span
                 style={{
-                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  letterSpacing: '0.28em',
-                  color: '#ef4444',
-                  textShadow: '0 0 10px rgba(239,68,68,0.7)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
+                  gap: 6,
+                  color: '#ef4444',
+                  textShadow: '0 0 10px rgba(239,68,68,0.7)',
                 }}
               >
                 <motion.span
                   animate={{ opacity: [1, 0.25, 1] }}
                   transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 12px #ef4444' }}
-                />
-                BROADCASTING
-              </div>
-            </motion.div>
-
-            {/* ── Left ASCII column */}
-            <motion.pre
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.22, duration: 0.4 }}
-              style={{
-                gridColumn: '1',
-                gridRow: '2',
-                margin: 0,
-                padding: '14px 0',
-                fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                fontSize: 16,
-                lineHeight: 1.25,
-                color: 'rgba(255,255,255,0.32)',
-                textAlign: 'center',
-                borderRight: '1px solid rgba(255,255,255,0.1)',
-                overflow: 'hidden',
-                whiteSpace: 'pre',
-                userSelect: 'none',
-                background:
-                  'linear-gradient(to bottom, transparent, rgba(255,255,255,0.025) 50%, transparent)',
-              }}
-            >
-              {asciiLeft}
-            </motion.pre>
-
-            {/* ── Center content */}
-            <div
-              style={{
-                gridColumn: '2',
-                gridRow: '2',
-                position: 'relative',
-                padding: '14px 36px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                gap: 10,
-                overflow: 'hidden',
-              }}
-            >
-              {/* ASCII top frame */}
-              <motion.div
-                initial={{ scaleX: 0, opacity: 0 }}
-                animate={{ scaleX: 1, opacity: 1 }}
-                transition={{ delay: 0.26, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                style={{
-                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                  fontSize: 14,
-                  letterSpacing: '0.05em',
-                  color: 'rgba(255,255,255,0.42)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transformOrigin: 'left',
-                  whiteSpace: 'nowrap',
-                  minWidth: 0,
-                  overflow: 'hidden',
-                }}
-              >
-                <span>{'┌─[ ID:0001 ]─[ ENTRY:LIVE ]─'}</span>
-                <span style={{ flex: 1, borderTop: '1px dashed currentColor', height: 0 }} />
-                <span>{'─┐'}</span>
-              </motion.div>
-
-              {/* Fighter name — scrambled. Font shrinks with longer names. */}
-              <div style={{ position: 'relative' }}>
-                <div
-                  ref={nameRef}
                   style={{
-                    fontFamily: 'var(--font-barlow-condensed), ui-sans-serif, system-ui, sans-serif',
-                    fontSize: `clamp(56px, min(11vw, calc((92vw - 336px) / ${Math.max(fighter_name.length, 6) * 0.6})), 150px)`,
-                    fontWeight: 800,
-                    color: '#ffffff',
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    lineHeight: 0.95,
-                    whiteSpace: 'nowrap',
-                    minHeight: '1em',
-                    overflow: 'hidden',
-                    animation: visible ? 'glowPulse 3s ease-in-out 1s 2' : undefined,
+                    display: 'inline-block',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#ef4444',
+                    boxShadow: '0 0 10px #ef4444',
                   }}
                 />
-                {/* Sweep */}
-                {visible && (
-                  <motion.div
-                    initial={{ x: '-120%' }}
-                    animate={{ x: '420%' }}
-                    transition={{ delay: 0.7, duration: 0.9, ease: 'easeInOut' }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      bottom: 0,
-                      left: 0,
-                      width: '22%',
-                      background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.28), transparent)',
-                      transform: 'skewX(-14deg)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                )}
-              </div>
+                LIVE
+              </span>
+            </motion.div>
 
-              {/* Stats — scrambled, monospace */}
+            {/* ── Name plate — white→accent gradient, HUGE name */}
+            <div
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '18px',
+                padding: '0 26px',
+                height: '108px',
+                background: `linear-gradient(to right, #ffffff 0%, #ffffff 62%, ${accentColor} 100%)`,
+                borderBottom: `1px solid ${accentSoft}`,
+                overflow: 'hidden',
+              }}
+            >
+              {/* Subtle scan grid in the gradient */}
               <div
-                ref={statsRef}
+                aria-hidden
                 style={{
-                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                  fontSize: 'clamp(20px, 2.2vw, 36px)',
-                  fontWeight: 600,
-                  color: 'rgba(255,255,255,0.82)',
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                  lineHeight: 1,
-                  whiteSpace: 'nowrap',
-                  minHeight: '1em',
-                  textShadow: '0 0 18px rgba(255,255,255,0.25)',
+                  position: 'absolute',
+                  inset: 0,
+                  pointerEvents: 'none',
+                  backgroundImage:
+                    'repeating-linear-gradient(to bottom, rgba(0,0,0,0.04) 0 1px, transparent 1px 4px)',
+                  mixBlendMode: 'multiply',
                 }}
               />
 
-              {/* ASCII bottom frame */}
-              <motion.div
-                initial={{ scaleX: 0, opacity: 0 }}
-                animate={{ scaleX: 1, opacity: 1 }}
-                transition={{ delay: 0.32, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              {flag && (
+                <motion.span
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.32, type: 'spring', stiffness: 320, damping: 22 }}
+                  style={{ fontSize: '52px', flexShrink: 0, lineHeight: 1, position: 'relative' }}
+                >
+                  {flag}
+                </motion.span>
+              )}
+
+              <span
+                ref={nameRef}
                 style={{
-                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                  fontSize: 14,
-                  letterSpacing: '0.05em',
-                  color: 'rgba(255,255,255,0.42)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transformOrigin: 'right',
+                  fontSize: nameFontSize,
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
+                  color: '#0a0a0a',
                   whiteSpace: 'nowrap',
-                  minWidth: 0,
                   overflow: 'hidden',
+                  flex: 1,
+                  minWidth: 0,
+                  lineHeight: 1,
+                  textTransform: 'uppercase',
+                  position: 'relative',
+                  textShadow: '0 1px 0 rgba(255,255,255,0.4)',
                 }}
-              >
-                <span>{'└─'}</span>
-                <span style={{ flex: 1, borderTop: '1px dashed currentColor', height: 0 }} />
-                <span>{'─[ STATUS:ACTIVE ]─[ SIG:OK ]─┘'}</span>
-              </motion.div>
+              />
+
+              {record && (
+                <motion.span
+                  initial={{ x: 30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.42, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+                    fontSize: '32px',
+                    fontWeight: 800,
+                    fontVariantNumeric: 'tabular-nums',
+                    color: '#0a0a0a',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    letterSpacing: '0.02em',
+                    position: 'relative',
+                  }}
+                >
+                  {record}
+                </motion.span>
+              )}
+
+              {/* White sweep across the plate */}
+              {visible && (
+                <motion.div
+                  initial={{ x: '-120%' }}
+                  animate={{ x: '420%' }}
+                  transition={{ delay: 0.7, duration: 0.95, ease: 'easeInOut' }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    width: '22%',
+                    background:
+                      'linear-gradient(to right, transparent, rgba(255,255,255,0.6), transparent)',
+                    transform: 'skewX(-14deg)',
+                    pointerEvents: 'none',
+                  }}
+                />
+              )}
 
               {/* Vertical scan line */}
               <motion.div
                 initial={{ y: '-100%', opacity: 0 }}
                 animate={{ y: '120%', opacity: [0, 0.45, 0] }}
-                transition={{ delay: 0.5, duration: 1.6, ease: 'easeInOut' }}
+                transition={{ delay: 0.55, duration: 1.5, ease: 'easeInOut' }}
                 style={{
                   position: 'absolute',
                   left: 0,
                   right: 0,
                   height: 2,
                   background:
-                    'linear-gradient(to bottom, transparent, rgba(255,255,255,0.85), transparent)',
+                    'linear-gradient(to bottom, transparent, rgba(0,0,0,0.4), transparent)',
                   filter: 'blur(1px)',
                   pointerEvents: 'none',
                 }}
               />
             </div>
 
-            {/* ── Right ASCII column */}
-            <motion.pre
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.22, duration: 0.4 }}
+            {/* ── Subline: stats + ASCII block on right */}
+            <div
               style={{
-                gridColumn: '3',
-                gridRow: '2',
-                margin: 0,
-                padding: '14px 0',
-                fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                fontSize: 16,
-                lineHeight: 1.25,
-                color: 'rgba(255,255,255,0.32)',
-                textAlign: 'center',
-                borderLeft: '1px solid rgba(255,255,255,0.1)',
-                overflow: 'hidden',
-                whiteSpace: 'pre',
-                userSelect: 'none',
-                background:
-                  'linear-gradient(to bottom, transparent, rgba(255,255,255,0.025) 50%, transparent)',
-              }}
-            >
-              {asciiRight}
-            </motion.pre>
-
-            {/* ── Footer */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.42, duration: 0.4 }}
-              style={{
-                gridColumn: '1 / 4',
-                gridRow: '3',
-                borderTop: '1px solid rgba(255,255,255,0.22)',
-                background: 'rgba(255,255,255,0.04)',
+                flexShrink: 0,
+                height: '46px',
                 display: 'flex',
-                alignItems: 'center',
-                padding: '0 22px',
-                gap: 22,
-                fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                fontSize: 13,
-                letterSpacing: '0.26em',
-                color: 'rgba(255,255,255,0.55)',
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
+                alignItems: 'stretch',
+                background: 'rgba(255,255,255,0.03)',
               }}
             >
-              <span>[ BOXSTREAM.TV ]</span>
-              <span style={{ color: 'rgba(255,255,255,0.25)' }}>{'///'}</span>
-              <span>BROADCAST_FEED</span>
-              <span style={{ color: 'rgba(255,255,255,0.25)' }}>{'///'}</span>
-              <span style={{ flex: 1, color: 'rgba(255,255,255,0.3)' }}>
-                ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░ ▓▒░
-              </span>
-              <span>SIGNAL OK</span>
-            </motion.div>
+              {/* ASCII corner detail — left. Fixed width so glyph-width
+                  variance can't shift the stats line beside it. */}
+              <motion.pre
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.46, duration: 0.4 }}
+                style={{
+                  flexShrink: 0,
+                  width: '70px',
+                  boxSizing: 'border-box',
+                  margin: 0,
+                  padding: '4px 10px',
+                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+                  fontSize: 8,
+                  lineHeight: 1.05,
+                  color: 'rgba(255,255,255,0.28)',
+                  whiteSpace: 'pre',
+                  overflow: 'hidden',
+                  userSelect: 'none',
+                  borderRight: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {asciiBlock}
+              </motion.pre>
+
+              {/* Stats scramble */}
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 18px',
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  ref={subRef}
+                  style={{
+                    fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    letterSpacing: '0.32em',
+                    color: 'rgba(255,255,255,0.85)',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    flex: 1,
+                    minWidth: 0,
+                    textShadow: '0 0 12px rgba(255,255,255,0.2)',
+                  }}
+                />
+              </div>
+
+              {/* Right-side accent block */}
+              <div
+                style={{
+                  flexShrink: 0,
+                  width: '90px',
+                  background: `linear-gradient(to right, transparent, ${accentColor})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  padding: '0 14px',
+                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  letterSpacing: '0.32em',
+                  color: '#ffffff',
+                  textShadow: `0 0 12px ${accentGlow}`,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {isBlue ? '◆ BLUE' : '◆ RED'}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
