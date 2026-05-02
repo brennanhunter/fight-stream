@@ -83,7 +83,7 @@ export default function RoundTimerDisplay() {
               bottom: '4vh',
               left: '14vw',
               width: '600px',
-              height: '90px',
+              height: '106px',
               background: 'rgba(4, 4, 4, 0.96)',
               border: `1px solid ${isPaused ? 'rgba(220,38,38,0.85)' : 'rgba(255,255,255,0.85)'}`,
               boxShadow: isPaused
@@ -94,57 +94,74 @@ export default function RoundTimerDisplay() {
               overflow: 'hidden',
               transition: 'border-color 0.3s, box-shadow 0.3s',
               display: 'flex',
-              alignItems: 'stretch',
+              flexDirection: 'column',
             }}
           >
-            {/* Timer column — left */}
+            {/* Match label band — top */}
+            {payload.match_label && (
+              <div
+                style={{
+                  flexShrink: 0,
+                  height: '26px',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderBottom: '1px solid rgba(255,255,255,0.18)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  letterSpacing: '0.4em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.7)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {`// ${payload.match_label} //`}
+              </div>
+            )}
+
+            {/* Body — timer left, name plates right */}
             <div
               style={{
+                flex: 1,
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '2px',
-                padding: '8px 18px',
-                minWidth: '160px',
-                borderRight: '1px solid rgba(255,255,255,0.15)',
+                alignItems: 'stretch',
+                minHeight: 0,
               }}
             >
-              {payload.match_label ? (
+              {/* Timer column — left */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  padding: '8px 18px',
+                  minWidth: '170px',
+                  borderRight: '1px solid rgba(255,255,255,0.15)',
+                }}
+              >
                 <div
                   style={{
                     fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                    fontSize: '8px',
-                    fontWeight: 700,
-                    letterSpacing: '0.35em',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    letterSpacing: '0.18em',
                     textTransform: 'uppercase',
-                    color: 'rgba(255,255,255,0.5)',
+                    color: 'rgba(255,255,255,0.75)',
                     lineHeight: 1,
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {payload.match_label}
+                  Round{' '}
+                  <span style={{ color: '#ffffff' }}>{payload.current_round ?? 1}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    {' / '}
+                    {payload.total_rounds ?? 1}
+                  </span>
                 </div>
-              ) : null}
-              <div
-                style={{
-                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  letterSpacing: '0.3em',
-                  textTransform: 'uppercase',
-                  color: 'rgba(255,255,255,0.7)',
-                  lineHeight: 1,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Round{' '}
-                <span style={{ color: '#ffffff' }}>{payload.current_round ?? 1}</span>
-                <span style={{ color: 'rgba(255,255,255,0.3)' }}>
-                  {' / '}
-                  {payload.total_rounds ?? 1}
-                </span>
-              </div>
               <div
                 style={{
                   fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
@@ -207,6 +224,7 @@ export default function RoundTimerDisplay() {
                 nationality={payload.right_nationality ?? ''}
                 corner="red"
               />
+            </div>
             </div>
           </motion.div>
         )}
