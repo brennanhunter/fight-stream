@@ -51,9 +51,9 @@ export default function PromoterLogoDisplay() {
               alt="Promoter"
               style={{
                 display: 'block',
-                height: '56px',
+                height: '64px',
                 width: 'auto',
-                maxWidth: '180px',
+                maxWidth: '200px',
                 objectFit: 'contain',
               }}
             />

@@ -30,8 +30,6 @@ export default function RoundTimerDisplay() {
   const ready = !loading;
 
   const [now, setNow] = useState(() => Date.now());
-
-  // Local tick — only runs when actively fighting. Paused / ended hold their value.
   useEffect(() => {
     if (!visible || payload.state !== 'fighting') return;
     const id = setInterval(() => setNow(Date.now()), 100);
@@ -48,8 +46,6 @@ export default function RoundTimerDisplay() {
     } else if (payload.state === 'fighting') {
       const elapsed = (now - new Date(payload.state_started_at!).getTime()) / 1000;
       remaining = total - elapsed;
-    } else if (payload.state === 'ended') {
-      remaining = 0;
     }
   }
 
@@ -81,7 +77,8 @@ export default function RoundTimerDisplay() {
               position: 'absolute',
               bottom: '4vh',
               left: '14vw',
-              width: '540px',
+              width: '600px',
+              height: '90px',
               background: 'rgba(4, 4, 4, 0.96)',
               border: `1px solid ${isPaused ? 'rgba(220,38,38,0.85)' : 'rgba(255,255,255,0.85)'}`,
               boxShadow: isPaused
@@ -91,122 +88,110 @@ export default function RoundTimerDisplay() {
               color: '#ffffff',
               overflow: 'hidden',
               transition: 'border-color 0.3s, box-shadow 0.3s',
+              display: 'flex',
+              alignItems: 'stretch',
             }}
           >
-            {/* Match label */}
-            {payload.match_label && (
-              <div
-                style={{
-                  borderBottom: '1px solid rgba(255,255,255,0.18)',
-                  background: 'rgba(255,255,255,0.04)',
-                  padding: '8px 16px',
-                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  letterSpacing: '0.4em',
-                  textTransform: 'uppercase',
-                  color: 'rgba(255,255,255,0.6)',
-                  textAlign: 'center',
-                }}
-              >
-                {'// '} {payload.match_label} {' //'}
-              </div>
-            )}
-
-            {/* Body — name plates left, round/timer right */}
+            {/* Timer column — left */}
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr auto',
-                gap: '14px',
-                padding: '14px',
-                alignItems: 'stretch',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '2px',
+                padding: '8px 18px',
+                minWidth: '160px',
+                borderRight: '1px solid rgba(255,255,255,0.15)',
               }}
             >
-              {/* Stacked name plates */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  minWidth: 0,
-                }}
-              >
-                <NamePlate name={leftName} corner="blue" />
-                <NamePlate name={rightName} corner="red" />
-              </div>
-
-              {/* Round + Time */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  justifyContent: 'space-between',
-                  paddingLeft: '6px',
-                  borderLeft: '1px solid rgba(255,255,255,0.12)',
-                  minWidth: '128px',
-                }}
-              >
+              {payload.match_label ? (
                 <div
                   style={{
                     fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                    fontSize: '11px',
+                    fontSize: '8px',
                     fontWeight: 700,
-                    letterSpacing: '0.3em',
+                    letterSpacing: '0.35em',
                     textTransform: 'uppercase',
-                    color: 'rgba(255,255,255,0.6)',
-                    textAlign: 'right',
+                    color: 'rgba(255,255,255,0.5)',
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  Round
-                  <div
-                    style={{
-                      fontSize: '20px',
-                      letterSpacing: '0.05em',
-                      color: '#ffffff',
-                      marginTop: '2px',
-                    }}
-                  >
-                    {payload.current_round ?? 1}
-                    <span style={{ color: 'rgba(255,255,255,0.3)' }}>
-                      {' / '}
-                      {payload.total_rounds ?? 1}
-                    </span>
-                  </div>
+                  {payload.match_label}
                 </div>
-
+              ) : null}
+              <div
+                style={{
+                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  letterSpacing: '0.3em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.7)',
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Round{' '}
+                <span style={{ color: '#ffffff' }}>{payload.current_round ?? 1}</span>
+                <span style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  {' / '}
+                  {payload.total_rounds ?? 1}
+                </span>
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+                  fontSize: '36px',
+                  fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                  lineHeight: 1,
+                  letterSpacing: '0.04em',
+                  color: isPaused ? '#dc2626' : isEnded ? 'rgba(255,255,255,0.65)' : '#ffffff',
+                  transition: 'color 0.3s',
+                  textShadow: isPaused
+                    ? '0 0 14px rgba(220,38,38,0.5)'
+                    : isEnded
+                      ? 'none'
+                      : '0 0 10px rgba(255,255,255,0.12)',
+                  marginTop: '2px',
+                }}
+              >
+                {display}
+              </div>
+              {(isPaused || isEnded) && (
                 <div
                   style={{
                     fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                    fontSize: '38px',
+                    fontSize: '8px',
                     fontWeight: 700,
-                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '0.4em',
+                    textTransform: 'uppercase',
+                    color: isPaused ? '#dc2626' : 'rgba(255,255,255,0.5)',
                     lineHeight: 1,
-                    letterSpacing: '0.04em',
-                    color: isPaused ? '#dc2626' : isEnded ? 'rgba(255,255,255,0.65)' : '#ffffff',
-                    transition: 'color 0.3s',
+                    marginTop: '2px',
                   }}
                 >
-                  {display}
+                  {isPaused ? '// PAUSED //' : '// ENDED //'}
                 </div>
+              )}
+            </div>
 
-                {(isPaused || isEnded) && (
-                  <div
-                    style={{
-                      fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      letterSpacing: '0.4em',
-                      textTransform: 'uppercase',
-                      color: isPaused ? '#dc2626' : 'rgba(255,255,255,0.5)',
-                      marginTop: '4px',
-                    }}
-                  >
-                    {isPaused ? '// PAUSED //' : '// ENDED //'}
-                  </div>
-                )}
-              </div>
+            {/* Name plates column — right, stacked */}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '10px 14px',
+                minWidth: 0,
+              }}
+            >
+              <NamePlate name={leftName} corner="blue" />
+              <NamePlate name={rightName} corner="red" />
             </div>
           </motion.div>
         )}
@@ -215,45 +200,64 @@ export default function RoundTimerDisplay() {
   );
 }
 
+/**
+ * Name plate per spec: mostly white/black background with the corner color
+ * occupying the right ~25% as a solid tab.
+ *  - Blue corner (top): white plate with black text + blue tab on right.
+ *  - Red corner (bottom): black plate with white text + red tab on right.
+ */
 function NamePlate({ name, corner }: { name: string; corner: 'blue' | 'red' }) {
-  // Per spec: red→black gradient (red corner) and blue→white gradient (blue corner).
-  // Text aligned left so it always sits in the colored zone — the white/black tail
-  // is decorative.
-  const gradient =
-    corner === 'blue'
-      ? 'linear-gradient(to right, #2563eb 0%, #1e3a8a 50%, rgba(255,255,255,0.9) 100%)'
-      : 'linear-gradient(to right, #dc2626 0%, #7f1d1d 50%, #000000 100%)';
+  const isBlue = corner === 'blue';
+  const baseColor = isBlue ? '#f5f5f5' : '#0a0a0a';
+  const textColor = isBlue ? '#0a0a0a' : '#ffffff';
+  const accentColor = isBlue ? '#2563eb' : '#dc2626';
+  const accentSoft = isBlue ? 'rgba(37,99,235,0.45)' : 'rgba(220,38,38,0.45)';
 
   return (
     <div
       style={{
         position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        height: '36px',
-        padding: '0 14px',
-        background: gradient,
-        border: `1px solid ${corner === 'blue' ? 'rgba(37,99,235,0.6)' : 'rgba(220,38,38,0.6)'}`,
-        boxShadow: `inset 0 0 1px rgba(255,255,255,0.4), 0 0 12px ${corner === 'blue' ? 'rgba(37,99,235,0.3)' : 'rgba(220,38,38,0.3)'}`,
+        display: 'grid',
+        gridTemplateColumns: '1fr 28%',
+        alignItems: 'stretch',
+        height: '30px',
+        border: `1px solid ${accentSoft}`,
+        boxShadow: `0 0 10px ${accentSoft}`,
         overflow: 'hidden',
       }}
     >
-      <span
+      {/* Name area — mostly white or black */}
+      <div
         style={{
-          fontSize: '20px',
-          fontWeight: 800,
-          letterSpacing: '0.06em',
-          color: '#ffffff',
-          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          // Constrain to ~70% of the plate so the colored end is always visible
-          maxWidth: '70%',
+          background: baseColor,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 12px',
+          minWidth: 0,
         }}
       >
-        {name || '—'}
-      </span>
+        <span
+          style={{
+            fontSize: '18px',
+            fontWeight: 800,
+            letterSpacing: '0.06em',
+            color: textColor,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {name || '—'}
+        </span>
+      </div>
+
+      {/* Color tab on the right */}
+      <div
+        style={{
+          background: accentColor,
+          boxShadow: 'inset 2px 0 0 rgba(255,255,255,0.35), inset 0 0 14px rgba(0,0,0,0.18)',
+        }}
+      />
     </div>
   );
 }
