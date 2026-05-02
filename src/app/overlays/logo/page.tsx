@@ -29,7 +29,7 @@ export default function LogoDisplay() {
               position: 'absolute',
               bottom: '4vh',
               left: '2vw',
-              padding: '12px 18px',
+              padding: '8px 14px',
               background: 'rgba(4, 4, 4, 0.92)',
               border: '1px solid rgba(255,255,255,0.85)',
               boxShadow:
@@ -42,8 +42,8 @@ export default function LogoDisplay() {
             <Image
               src="/logos/BoxStreamThumbnail.png"
               alt="BoxStreamTV"
-              width={64}
-              height={64}
+              width={88}
+              height={88}
               priority
               style={{ display: 'block' }}
             />

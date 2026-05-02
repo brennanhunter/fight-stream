@@ -3,12 +3,17 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useOverlay } from '@/lib/use-overlay';
+import { formatNationality } from '@/lib/countries';
 
 type RoundTimerPayload = {
   match_id?: string;
   match_label?: string;
   left_name?: string;
+  left_record?: string;
+  left_nationality?: string;
   right_name?: string;
+  right_record?: string;
+  right_nationality?: string;
   current_round?: number;
   total_rounds?: number;
   round_seconds?: number;
@@ -190,8 +195,18 @@ export default function RoundTimerDisplay() {
                 minWidth: 0,
               }}
             >
-              <NamePlate name={leftName} corner="blue" />
-              <NamePlate name={rightName} corner="red" />
+              <NamePlate
+                name={leftName}
+                record={payload.left_record ?? ''}
+                nationality={payload.left_nationality ?? ''}
+                corner="blue"
+              />
+              <NamePlate
+                name={rightName}
+                record={payload.right_record ?? ''}
+                nationality={payload.right_nationality ?? ''}
+                corner="red"
+              />
             </div>
           </motion.div>
         )}
@@ -202,62 +217,76 @@ export default function RoundTimerDisplay() {
 
 /**
  * Name plate per spec: mostly white/black background with the corner color
- * occupying the right ~25% as a solid tab.
+ * occupying the right ~25% as a solid tab. Inline content: flag · name · record.
  *  - Blue corner (top): white plate with black text + blue tab on right.
  *  - Red corner (bottom): black plate with white text + red tab on right.
  */
-function NamePlate({ name, corner }: { name: string; corner: 'blue' | 'red' }) {
+function NamePlate({
+  name,
+  record,
+  nationality,
+  corner,
+}: {
+  name: string;
+  record: string;
+  nationality: string;
+  corner: 'blue' | 'red';
+}) {
   const isBlue = corner === 'blue';
-  const baseColor = isBlue ? '#f5f5f5' : '#0a0a0a';
-  const textColor = isBlue ? '#0a0a0a' : '#ffffff';
   const accentColor = isBlue ? '#2563eb' : '#dc2626';
   const accentSoft = isBlue ? 'rgba(37,99,235,0.45)' : 'rgba(220,38,38,0.45)';
+  const { flag } = formatNationality(nationality);
 
   return (
     <div
       style={{
         position: 'relative',
-        display: 'grid',
-        gridTemplateColumns: '1fr 28%',
-        alignItems: 'stretch',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '0 14px',
         height: '30px',
+        // White for ~80% of the plate, soft fade into the corner color over the
+        // remaining 20% — color presence on the edge without a hard transition.
+        background: `linear-gradient(to right, #ffffff 0%, #ffffff 80%, ${accentColor} 100%)`,
         border: `1px solid ${accentSoft}`,
         boxShadow: `0 0 10px ${accentSoft}`,
         overflow: 'hidden',
       }}
     >
-      {/* Name area — mostly white or black */}
-      <div
+      {flag && (
+        <span style={{ fontSize: '16px', flexShrink: 0, lineHeight: 1 }}>{flag}</span>
+      )}
+      <span
         style={{
-          background: baseColor,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 12px',
+          fontSize: '18px',
+          fontWeight: 800,
+          letterSpacing: '0.06em',
+          color: '#0a0a0a',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          flex: 1,
           minWidth: 0,
         }}
       >
+        {name || '—'}
+      </span>
+      {record && (
         <span
           style={{
-            fontSize: '18px',
-            fontWeight: 800,
-            letterSpacing: '0.06em',
-            color: textColor,
+            fontFamily: 'var(--font-geist-mono), ui-monospace, monospace',
+            fontSize: '12px',
+            fontWeight: 700,
+            fontVariantNumeric: 'tabular-nums',
+            color: 'rgba(10,10,10,0.6)',
             whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            flexShrink: 0,
           }}
         >
-          {name || '—'}
+          {record}
         </span>
-      </div>
-
-      {/* Color tab on the right */}
-      <div
-        style={{
-          background: accentColor,
-          boxShadow: 'inset 2px 0 0 rgba(255,255,255,0.35), inset 0 0 14px rgba(0,0,0,0.18)',
-        }}
-      />
+      )}
     </div>
   );
 }

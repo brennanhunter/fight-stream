@@ -179,7 +179,11 @@ type RoundTimerPayload = {
   match_id: string;
   match_label: string;
   left_name: string;
+  left_record: string;
+  left_nationality: string;
   right_name: string;
+  right_record: string;
+  right_nationality: string;
   current_round: number;
   total_rounds: number;
   round_seconds: number;
@@ -205,7 +209,7 @@ export async function showRoundTimer(matchId: string): Promise<Result> {
 
   const { data: fighters } = await supabase
     .from('event_fighters')
-    .select('id, display_name')
+    .select('id, display_name, record, nationality')
     .in('id', [match.fighter_left_id, match.fighter_right_id]);
 
   const leftFighter = fighters?.find((f) => f.id === match.fighter_left_id);
@@ -215,7 +219,11 @@ export async function showRoundTimer(matchId: string): Promise<Result> {
     match_id: match.id,
     match_label: match.label ?? '',
     left_name: leftFighter?.display_name ?? '',
+    left_record: leftFighter?.record ?? '',
+    left_nationality: leftFighter?.nationality ?? '',
     right_name: rightFighter?.display_name ?? '',
+    right_record: rightFighter?.record ?? '',
+    right_nationality: rightFighter?.nationality ?? '',
     current_round: 1,
     total_rounds: match.scheduled_rounds,
     round_seconds: match.round_seconds,

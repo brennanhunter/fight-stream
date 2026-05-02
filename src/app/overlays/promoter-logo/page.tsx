@@ -33,7 +33,7 @@ export default function PromoterLogoDisplay() {
               position: 'absolute',
               bottom: '4vh',
               left: '8vw',
-              padding: '12px 18px',
+              padding: '8px 14px',
               background: 'rgba(4, 4, 4, 0.92)',
               border: '1px solid rgba(255,255,255,0.85)',
               boxShadow:
@@ -51,9 +51,9 @@ export default function PromoterLogoDisplay() {
               alt="Promoter"
               style={{
                 display: 'block',
-                height: '64px',
+                height: '88px',
                 width: 'auto',
-                maxWidth: '200px',
+                maxWidth: '240px',
                 objectFit: 'contain',
               }}
             />
