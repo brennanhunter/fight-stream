@@ -129,6 +129,237 @@ export async function showTaleOfTape(matchId: string): Promise<Result> {
   return { ok: true };
 }
 
+type RoundTimerPayload = {
+  match_id: string;
+  match_label: string;
+  current_round: number;
+  total_rounds: number;
+  round_seconds: number;
+  rest_seconds: number;
+  state: 'fighting' | 'paused' | 'ended';
+  state_started_at: string;
+  paused_remaining_seconds?: number;
+};
+
+/** Show the round timer at round 1, fighting state, fresh start. */
+export async function showRoundTimer(matchId: string): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const { data: match } = await supabase
+    .from('event_matches')
+    .select('id, label, scheduled_rounds, round_seconds, rest_seconds')
+    .eq('id', matchId)
+    .maybeSingle();
+
+  if (!match) return { ok: false, error: 'Match not found' };
+
+  const payload: RoundTimerPayload = {
+    match_id: match.id,
+    match_label: match.label ?? '',
+    current_round: 1,
+    total_rounds: match.scheduled_rounds,
+    round_seconds: match.round_seconds,
+    rest_seconds: match.rest_seconds,
+    state: 'fighting',
+    state_started_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ visible: true, payload, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'round_timer');
+
+  if (error) {
+    console.error('showRoundTimer:', error);
+    return { ok: false, error: 'Failed to show round timer' };
+  }
+  return { ok: true };
+}
+
+/** Pause: freeze remaining seconds into the payload so the browser can hold
+ * the value while server isn't ticking. */
+export async function pauseRoundTimer(): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const { data } = await supabase
+    .from('overlay_state')
+    .select('payload')
+    .eq('overlay_type', 'round_timer')
+    .maybeSingle();
+
+  const current = data?.payload as RoundTimerPayload | undefined;
+  if (!current?.match_id) return { ok: false, error: 'No active timer' };
+  if (current.state !== 'fighting') return { ok: false, error: 'Timer is not running' };
+
+  const elapsed =
+    (Date.now() - new Date(current.state_started_at).getTime()) / 1000;
+  const remaining = Math.max(0, current.round_seconds - elapsed);
+
+  const next: RoundTimerPayload = {
+    ...current,
+    state: 'paused',
+    paused_remaining_seconds: remaining,
+    state_started_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ payload: next, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'round_timer');
+
+  if (error) return { ok: false, error: 'Failed to pause' };
+  return { ok: true };
+}
+
+/** Resume: time-shift state_started_at so elapsed continues from pause. */
+export async function resumeRoundTimer(): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const { data } = await supabase
+    .from('overlay_state')
+    .select('payload')
+    .eq('overlay_type', 'round_timer')
+    .maybeSingle();
+
+  const current = data?.payload as RoundTimerPayload | undefined;
+  if (!current?.match_id) return { ok: false, error: 'No active timer' };
+  if (current.state !== 'paused') return { ok: false, error: 'Timer is not paused' };
+
+  const remaining = current.paused_remaining_seconds ?? current.round_seconds;
+  const elapsedAtPause = current.round_seconds - remaining;
+  const newStartedAt = new Date(Date.now() - elapsedAtPause * 1000).toISOString();
+
+  const next: RoundTimerPayload = {
+    ...current,
+    state: 'fighting',
+    state_started_at: newStartedAt,
+    paused_remaining_seconds: undefined,
+  };
+
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ payload: next, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'round_timer');
+
+  if (error) return { ok: false, error: 'Failed to resume' };
+  return { ok: true };
+}
+
+/** Advance to the next round. Resets timer to full round_seconds. */
+export async function nextRound(): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const { data } = await supabase
+    .from('overlay_state')
+    .select('payload')
+    .eq('overlay_type', 'round_timer')
+    .maybeSingle();
+
+  const current = data?.payload as RoundTimerPayload | undefined;
+  if (!current?.match_id) return { ok: false, error: 'No active timer' };
+  if (current.current_round >= current.total_rounds) {
+    return { ok: false, error: 'Already on the final round — use End match' };
+  }
+
+  const next: RoundTimerPayload = {
+    ...current,
+    current_round: current.current_round + 1,
+    state: 'fighting',
+    state_started_at: new Date().toISOString(),
+    paused_remaining_seconds: undefined,
+  };
+
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ payload: next, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'round_timer');
+
+  if (error) return { ok: false, error: 'Failed to advance round' };
+  return { ok: true };
+}
+
+/** Mark match ended — timer holds at 0:00 until hidden. */
+export async function endMatchTimer(): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const { data } = await supabase
+    .from('overlay_state')
+    .select('payload')
+    .eq('overlay_type', 'round_timer')
+    .maybeSingle();
+
+  const current = data?.payload as RoundTimerPayload | undefined;
+  if (!current?.match_id) return { ok: false, error: 'No active timer' };
+
+  const next: RoundTimerPayload = {
+    ...current,
+    state: 'ended',
+    state_started_at: new Date().toISOString(),
+    paused_remaining_seconds: undefined,
+  };
+
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ payload: next, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'round_timer');
+
+  if (error) return { ok: false, error: 'Failed to end match' };
+  return { ok: true };
+}
+
+/** Show the BoxStream logo. No payload — the asset is hard-coded. */
+export async function showLogo(): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ visible: true, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'logo');
+
+  if (error) return { ok: false, error: 'Failed to show logo' };
+  return { ok: true };
+}
+
+/** Show the promoter logo using the URL stored on the active event. */
+export async function showPromoterLogo(): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const { data: event } = await supabase
+    .from('events')
+    .select('id, name, promoter_logo_url')
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (!event) {
+    return { ok: false, error: 'No active event — set is_active = true on an event' };
+  }
+  if (!event.promoter_logo_url) {
+    return {
+      ok: false,
+      error: 'Active event has no promoter logo URL set — add one in /admin/overlays',
+    };
+  }
+
+  const payload = {
+    event_id: event.id,
+    url: event.promoter_logo_url,
+  };
+
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ visible: true, payload, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'promoter_logo');
+
+  if (error) return { ok: false, error: 'Failed to show promoter logo' };
+  return { ok: true };
+}
+
 /** Hide every overlay at once — panic button. */
 export async function killAllOverlays(): Promise<Result> {
   await requireAdmin();

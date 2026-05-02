@@ -302,6 +302,30 @@ export async function uploadBoxerPhoto(
   return { ok: true, url: data.publicUrl };
 }
 
+/** Persist the event-level promoter logo URL. Read by the live /control
+ * panel when the operator clicks "Show promoter logo". */
+export async function setEventPromoterLogo(
+  eventId: string,
+  url: string | null,
+): Promise<Result> {
+  await requireAdmin();
+  if (!eventId) return { ok: false, error: 'Missing eventId' };
+
+  const supabase = createServerClient();
+  const { error } = await supabase
+    .from('events')
+    .update({ promoter_logo_url: url || null })
+    .eq('id', eventId);
+
+  if (error) {
+    console.error('setEventPromoterLogo:', error);
+    return { ok: false, error: 'Failed to save logo URL' };
+  }
+
+  revalidatePath(`/admin/overlays/${eventId}`);
+  return { ok: true };
+}
+
 export async function deleteMatch(matchId: string, eventId: string): Promise<Result> {
   await requireAdmin();
 

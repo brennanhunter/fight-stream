@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS events (
   is_streaming          boolean     NOT NULL DEFAULT false, -- controls Watch Now CTA visibility
   promoter_email        text,                          -- OTP gate for promoter report
   promoter_name         text,                          -- displayed as greeting on report
+  promoter_logo_url     text,                          -- shown on broadcast promoter logo overlay
   reminder_sent_at      timestamptz,                   -- set by Inngest when reminder email fires
   starting_sent_at      timestamptz,                   -- set by Inngest when "starting soon" email fires
   created_at            timestamptz NOT NULL DEFAULT now()
@@ -209,7 +210,8 @@ ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
 -- ─────────────────────────────────────────────────────────────
 -- COLUMN ADDITIONS (safe to re-run)
 -- ─────────────────────────────────────────────────────────────
-ALTER TABLE events    ADD COLUMN IF NOT EXISTS survey_sent_at  timestamptz;
+ALTER TABLE events    ADD COLUMN IF NOT EXISTS survey_sent_at      timestamptz;
+ALTER TABLE events    ADD COLUMN IF NOT EXISTS promoter_logo_url   text;
 ALTER TABLE purchases ADD COLUMN IF NOT EXISTS survey_sent_at  timestamptz;
 
 

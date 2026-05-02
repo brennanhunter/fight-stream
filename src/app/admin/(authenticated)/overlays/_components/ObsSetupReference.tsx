@@ -6,9 +6,9 @@ const OVERLAY_PATHS: { label: string; path: string; built: boolean }[] = [
   { label: 'Lower Third', path: '/overlays/lower-third', built: true },
   { label: 'Boxer Card', path: '/overlays/boxer-card', built: false },
   { label: 'Tale of the Tape', path: '/overlays/tale-of-the-tape', built: true },
-  { label: 'Round Timer', path: '/overlays/round-timer', built: false },
-  { label: 'BoxStream Logo', path: '/overlays/logo', built: false },
-  { label: 'Promoter Logo', path: '/overlays/promoter-logo', built: false },
+  { label: 'Round Timer', path: '/overlays/round-timer', built: true },
+  { label: 'BoxStream Logo', path: '/overlays/logo', built: true },
+  { label: 'Promoter Logo', path: '/overlays/promoter-logo', built: true },
 ];
 
 export default function ObsSetupReference() {

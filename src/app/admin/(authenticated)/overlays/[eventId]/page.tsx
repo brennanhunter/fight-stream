@@ -5,6 +5,7 @@ import { createServerClient } from '@/lib/supabase';
 import { buttonVariants } from '@/components/ui/button';
 import RosterBuilder, { type Fighter } from './_components/RosterBuilder';
 import MatchBuilder, { type Match } from './_components/MatchBuilder';
+import PromoterLogoInput from './_components/PromoterLogoInput';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,11 @@ export default async function EventOverlaySetupPage({
   const supabase = createServerClient();
 
   const [{ data: event }, { data: fighters }, { data: matches }] = await Promise.all([
-    supabase.from('events').select('id, name, date, is_active').eq('id', eventId).maybeSingle(),
+    supabase
+      .from('events')
+      .select('id, name, date, is_active, promoter_logo_url')
+      .eq('id', eventId)
+      .maybeSingle(),
     supabase
       .from('event_fighters')
       .select(
@@ -75,6 +80,11 @@ export default async function EventOverlaySetupPage({
           </a>
         </div>
       </div>
+
+      <PromoterLogoInput
+        eventId={eventId}
+        initialUrl={(event as { promoter_logo_url?: string | null }).promoter_logo_url ?? null}
+      />
 
       <RosterBuilder eventId={eventId} initialFighters={(fighters ?? []) as Fighter[]} />
 

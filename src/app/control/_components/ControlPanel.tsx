@@ -2,15 +2,33 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Eye, EyeOff, RefreshCw, Skull, Swords } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Flag,
+  Pause,
+  Play,
+  RefreshCw,
+  SkipForward,
+  Skull,
+  Swords,
+  Timer,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useOverlay } from '@/lib/use-overlay';
 import {
+  endMatchTimer,
   hideOverlay,
   killAllOverlays,
+  nextRound,
+  pauseRoundTimer,
+  resumeRoundTimer,
+  showLogo,
   showLowerThird,
+  showPromoterLogo,
+  showRoundTimer,
   showTaleOfTape,
 } from '../actions';
 
@@ -58,6 +76,14 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
 
   const lowerThird = useOverlay<LowerThirdPayload>('lower_third');
   const taleOfTape = useOverlay<{ match_id?: string }>('tale_of_tape');
+  const roundTimer = useOverlay<{
+    match_id?: string;
+    current_round?: number;
+    total_rounds?: number;
+    state?: 'fighting' | 'paused' | 'ended';
+  }>('round_timer');
+  const logo = useOverlay('logo');
+  const promoterLogo = useOverlay('promoter_logo');
 
   const [pending, startTransition] = useTransition();
 
@@ -116,6 +142,87 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
       const res = await showTaleOfTape(matchId);
       if (res.ok) toast.success('Tale of the tape refreshed');
       else toast.error(res.error);
+    });
+  }
+
+  // ─── Round timer handlers ──────────────────────────────────────────
+  function handleShowRoundTimer() {
+    if (!activeMatch) return;
+    startTransition(async () => {
+      const res = await showRoundTimer(activeMatch.id);
+      if (res.ok) toast.success('Round 1 — fight!');
+      else toast.error(res.error);
+    });
+  }
+
+  function handlePauseRoundTimer() {
+    startTransition(async () => {
+      const res = await pauseRoundTimer();
+      if (res.ok) toast.success('Timer paused');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleResumeRoundTimer() {
+    startTransition(async () => {
+      const res = await resumeRoundTimer();
+      if (res.ok) toast.success('Timer resumed');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleNextRound() {
+    startTransition(async () => {
+      const res = await nextRound();
+      if (res.ok) toast.success('Next round');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleEndMatchTimer() {
+    if (!confirm('End the match timer? This holds at 0:00 until you hide it.')) return;
+    startTransition(async () => {
+      const res = await endMatchTimer();
+      if (res.ok) toast.success('Match ended');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleHideRoundTimer() {
+    startTransition(async () => {
+      const res = await hideOverlay('round_timer');
+      if (res.ok) toast.success('Round timer hidden');
+      else toast.error(res.error);
+    });
+  }
+
+  const timerActive = roundTimer.visible && roundTimer.payload.match_id === activeMatch?.id;
+  const timerRunning = timerActive && roundTimer.payload.state === 'fighting';
+  const timerPaused = timerActive && roundTimer.payload.state === 'paused';
+  const timerEnded = timerActive && roundTimer.payload.state === 'ended';
+  const onFinalRound =
+    timerActive &&
+    (roundTimer.payload.current_round ?? 0) >= (roundTimer.payload.total_rounds ?? 1);
+
+  // ─── Logo toggles ──────────────────────────────────────────────────
+  function handleToggleLogo() {
+    startTransition(async () => {
+      const res = logo.visible ? await hideOverlay('logo') : await showLogo();
+      if (res.ok) toast.success(logo.visible ? 'BoxStream logo hidden' : 'BoxStream logo on air');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleTogglePromoterLogo() {
+    startTransition(async () => {
+      const res = promoterLogo.visible
+        ? await hideOverlay('promoter_logo')
+        : await showPromoterLogo();
+      if (res.ok) {
+        toast.success(promoterLogo.visible ? 'Promoter logo hidden' : 'Promoter logo on air');
+      } else {
+        toast.error(res.error);
+      }
     });
   }
 
@@ -320,11 +427,139 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
                     after editing roster data to push the latest values to a live overlay.
                   </p>
                 </div>
+
+                {/* Round Timer */}
+                <div className="space-y-2 border-t pt-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-medium">Round Timer</h3>
+                    {timerActive ? (
+                      <Badge
+                        className={
+                          timerRunning
+                            ? 'bg-green-500/10 text-green-400 border-green-500/30 hover:bg-green-500/10'
+                            : timerPaused
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/10'
+                              : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/10'
+                        }
+                      >
+                        <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+                        {timerRunning && `Round ${roundTimer.payload.current_round} running`}
+                        {timerPaused && `Round ${roundTimer.payload.current_round} paused`}
+                        {timerEnded && 'Match ended'}
+                      </Badge>
+                    ) : roundTimer.visible ? (
+                      <Badge variant="outline" className="text-amber-400 border-amber-500/40">
+                        On air (different match)
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Hidden
+                      </Badge>
+                    )}
+                  </div>
+
+                  {!timerActive ? (
+                    <Button
+                      variant="default"
+                      onClick={handleShowRoundTimer}
+                      disabled={pending}
+                      className="w-full"
+                    >
+                      <Timer />
+                      Start Round 1 — show timer
+                    </Button>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        {timerRunning && (
+                          <Button
+                            variant="outline"
+                            onClick={handlePauseRoundTimer}
+                            disabled={pending}
+                          >
+                            <Pause />
+                            Pause
+                          </Button>
+                        )}
+                        {timerPaused && (
+                          <Button
+                            variant="default"
+                            onClick={handleResumeRoundTimer}
+                            disabled={pending}
+                          >
+                            <Play />
+                            Resume
+                          </Button>
+                        )}
+                        {timerEnded && (
+                          <Button variant="outline" disabled className="cursor-not-allowed">
+                            Ended
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          onClick={handleNextRound}
+                          disabled={pending || onFinalRound || timerEnded}
+                          title={onFinalRound ? 'Already on the final round' : undefined}
+                        >
+                          <SkipForward />
+                          Next Round
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="destructive"
+                          onClick={handleEndMatchTimer}
+                          disabled={pending || timerEnded}
+                        >
+                          <Flag />
+                          End Match
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={handleHideRoundTimer}
+                          disabled={pending}
+                        >
+                          <EyeOff />
+                          Hide
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Browser source ticks locally — server only writes on state changes.
+                    Operator clicks Next Round at the bell.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}
         </section>
       </div>
+
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t bg-background/60 px-6 py-3">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">Global</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant={logo.visible ? 'default' : 'outline'}
+            onClick={handleToggleLogo}
+            disabled={pending}
+          >
+            <Eye />
+            BoxStream logo {logo.visible ? '· On' : '· Off'}
+          </Button>
+          <Button
+            size="sm"
+            variant={promoterLogo.visible ? 'default' : 'outline'}
+            onClick={handleTogglePromoterLogo}
+            disabled={pending}
+          >
+            <Eye />
+            Promoter logo {promoterLogo.visible ? '· On' : '· Off'}
+          </Button>
+        </div>
+      </footer>
     </main>
   );
 }
