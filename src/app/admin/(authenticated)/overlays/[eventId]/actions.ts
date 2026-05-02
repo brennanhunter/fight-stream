@@ -113,6 +113,45 @@ export async function updateFighter(
   return { ok: true };
 }
 
+/**
+ * Persist a photo URL change directly to the fighter row. Called from the
+ * PhotoUploader after an upload succeeds in edit mode, so the new photo
+ * survives even if the operator closes the form without clicking Save.
+ */
+export async function updateFighterPhoto(
+  fighterId: string,
+  photoUrl: string | null,
+): Promise<Result> {
+  await requireAdmin();
+  if (!fighterId) return { ok: false, error: 'Missing fighterId' };
+
+  const supabase = createServerClient();
+
+  const { data: fighter } = await supabase
+    .from('event_fighters')
+    .select('event_id')
+    .eq('id', fighterId)
+    .maybeSingle();
+
+  const { error } = await supabase
+    .from('event_fighters')
+    .update({
+      photo_url: photoUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', fighterId);
+
+  if (error) {
+    console.error('updateFighterPhoto:', error);
+    return { ok: false, error: 'Failed to save photo' };
+  }
+
+  if (fighter?.event_id) {
+    revalidatePath(`/admin/overlays/${fighter.event_id}`);
+  }
+  return { ok: true };
+}
+
 export async function deleteFighter(fighterId: string, eventId: string): Promise<Result> {
   await requireAdmin();
 

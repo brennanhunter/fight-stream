@@ -463,6 +463,7 @@ function FighterForm({
           value={form.photo_url ?? ''}
           onChange={(url) => update('photo_url', url)}
           displayName={form.display_name}
+          fighterId={mode === 'edit' ? fighterId : undefined}
         />
       </Field>
 

@@ -2,18 +2,26 @@
 
 import { useRef, useState, useTransition, type DragEvent } from 'react';
 import { Upload, X, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { uploadBoxerPhoto } from '../actions';
+import { uploadBoxerPhoto, updateFighterPhoto } from '../actions';
 
+/**
+ * `fighterId` (when present) puts the uploader into edit mode — successful
+ * uploads are persisted directly to the fighter row, so the change survives
+ * even if the operator closes the form without clicking Save changes.
+ */
 export default function PhotoUploader({
   value,
   onChange,
   displayName,
+  fighterId,
 }: {
   value: string;
   onChange: (url: string) => void;
   displayName: string;
+  fighterId?: string;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -26,10 +34,20 @@ export default function PhotoUploader({
     fd.append('file', file);
     startTransition(async () => {
       const res = await uploadBoxerPhoto(fd);
-      if (res.ok) {
-        onChange(res.url);
-      } else {
+      if (!res.ok) {
         setError(res.error);
+        return;
+      }
+      onChange(res.url);
+      // In edit mode, persist the new photo immediately so it doesn't get lost
+      // if the form is closed without saving the rest of the fields.
+      if (fighterId) {
+        const persistRes = await updateFighterPhoto(fighterId, res.url);
+        if (persistRes.ok) {
+          toast.success('Photo saved');
+        } else {
+          toast.error('Photo uploaded but not saved', { description: persistRes.error });
+        }
       }
     });
   }
@@ -59,6 +77,16 @@ export default function PhotoUploader({
 
   function clearPhoto() {
     onChange('');
+    if (fighterId) {
+      startTransition(async () => {
+        const res = await updateFighterPhoto(fighterId, null);
+        if (res.ok) {
+          toast.success('Photo removed');
+        } else {
+          toast.error('Failed to remove photo', { description: res.error });
+        }
+      });
+    }
   }
 
   return (
