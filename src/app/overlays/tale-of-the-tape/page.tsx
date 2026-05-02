@@ -142,6 +142,41 @@ export default function TaleOfTapeDisplay() {
               overflow: 'hidden',
             }}
           >
+            {/* Boxing corner gradients — blue (left) + red (right) bleed in
+                from the card edges. Subtle but reads at any size. */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.6, ease: 'easeOut' }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: '32%',
+                background:
+                  'linear-gradient(to right, rgba(37, 99, 235, 0.22), rgba(37, 99, 235, 0.06) 60%, transparent)',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.6, ease: 'easeOut' }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: '32%',
+                background:
+                  'linear-gradient(to left, rgba(220, 38, 38, 0.22), rgba(220, 38, 38, 0.06) 60%, transparent)',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+
             {/* Top sweep — same effect the lower third uses on its name reveal */}
             <motion.div
               initial={{ x: '-120%' }}
@@ -220,12 +255,13 @@ export default function TaleOfTapeDisplay() {
                 minHeight: 0,
               }}
             >
-              {/* LEFT FIGHTER */}
+              {/* LEFT FIGHTER — blue corner */}
               <FighterCard
                 fighter={left!}
                 nat={leftNat}
                 nameRef={leftNameRef}
                 slideFrom="left"
+                corner="blue"
               />
 
               {/* CENTER STATS */}
@@ -248,12 +284,13 @@ export default function TaleOfTapeDisplay() {
                 ))}
               </div>
 
-              {/* RIGHT FIGHTER */}
+              {/* RIGHT FIGHTER — red corner */}
               <FighterCard
                 fighter={right!}
                 nat={rightNat}
                 nameRef={rightNameRef}
                 slideFrom="right"
+                corner="red"
               />
             </div>
           </motion.div>
@@ -355,13 +392,17 @@ function FighterCard({
   nat,
   nameRef,
   slideFrom,
+  corner,
 }: {
   fighter: FighterSnapshot;
   nat: { flag: string; label: string };
   nameRef: React.RefObject<HTMLDivElement | null>;
   slideFrom: 'left' | 'right';
+  corner: 'blue' | 'red';
 }) {
   const dir = slideFrom === 'left' ? -60 : 60;
+  const cornerColor = corner === 'blue' ? '#2563eb' : '#dc2626';
+  const cornerSoft = corner === 'blue' ? 'rgba(37,99,235,0.55)' : 'rgba(220,38,38,0.55)';
 
   return (
     <motion.div
@@ -382,7 +423,8 @@ function FighterCard({
           maxWidth: '360px',
           aspectRatio: '3 / 4',
           background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.18)',
+          border: `2px solid ${cornerSoft}`,
+          boxShadow: `0 0 24px ${cornerSoft}`,
           overflow: 'hidden',
         }}
       >
@@ -424,12 +466,12 @@ function FighterCard({
             pointerEvents: 'none',
           }}
         />
-        {/* Inset glow to match lower-third frame */}
+        {/* Inset glow tinted with the corner color */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            boxShadow: 'inset 0 0 1px rgba(255,255,255,0.4)',
+            boxShadow: `inset 0 0 1px rgba(255,255,255,0.4), inset 0 0 60px ${cornerSoft}`,
             pointerEvents: 'none',
           }}
         />
@@ -463,6 +505,16 @@ function FighterCard({
             minHeight: '1em',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
+          }}
+        />
+        {/* Corner accent line — blue under fighter A's name, red under B's */}
+        <div
+          style={{
+            width: '60px',
+            height: '3px',
+            background: cornerColor,
+            margin: '14px auto 0',
+            boxShadow: `0 0 12px ${cornerColor}`,
           }}
         />
       </div>
