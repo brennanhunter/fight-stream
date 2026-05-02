@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Skull, Swords } from 'lucide-react';
+import { Eye, EyeOff, RefreshCw, Skull, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -91,6 +91,30 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
     startTransition(async () => {
       const res = await hideOverlay('tale_of_tape');
       if (res.ok) toast.success('Tale of the tape hidden');
+      else toast.error(res.error);
+    });
+  }
+
+  /** Re-snapshot the currently-on-air lower third with fresh data from the
+   * fighter row. Useful after editing a fighter's photo or stats. */
+  function handleRefreshLowerThird() {
+    const matchId = lowerThird.payload.match_id;
+    const fighterId = lowerThird.payload.fighter_id;
+    if (!matchId || !fighterId) return;
+    startTransition(async () => {
+      const res = await showLowerThird(matchId, fighterId);
+      if (res.ok) toast.success('Lower third refreshed');
+      else toast.error(res.error);
+    });
+  }
+
+  /** Re-snapshot the currently-on-air tale of the tape. */
+  function handleRefreshTaleOfTape() {
+    const matchId = taleOfTape.payload.match_id;
+    if (!matchId) return;
+    startTransition(async () => {
+      const res = await showTaleOfTape(matchId);
+      if (res.ok) toast.success('Tale of the tape refreshed');
       else toast.error(res.error);
     });
   }
@@ -225,15 +249,24 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
                       );
                     })}
                   </div>
-                  <Button
-                    variant="ghost"
-                    onClick={handleHideLowerThird}
-                    disabled={pending || !lowerThird.visible}
-                    className="w-full"
-                  >
-                    <EyeOff />
-                    Hide lower third
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={handleRefreshLowerThird}
+                      disabled={pending || !lowerThird.visible}
+                    >
+                      <RefreshCw />
+                      Refresh
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={handleHideLowerThird}
+                      disabled={pending || !lowerThird.visible}
+                    >
+                      <EyeOff />
+                      Hide
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Tale of the Tape */}
@@ -255,14 +288,23 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
                       </Badge>
                     )}
                   </div>
+                  <Button
+                    variant="default"
+                    onClick={handleShowTaleOfTape}
+                    disabled={pending}
+                    className="w-full"
+                  >
+                    <Swords />
+                    Show comparison
+                  </Button>
                   <div className="grid grid-cols-2 gap-2">
                     <Button
-                      variant="default"
-                      onClick={handleShowTaleOfTape}
-                      disabled={pending}
+                      variant="ghost"
+                      onClick={handleRefreshTaleOfTape}
+                      disabled={pending || !taleOfTape.visible}
                     >
-                      <Swords />
-                      Show comparison
+                      <RefreshCw />
+                      Refresh
                     </Button>
                     <Button
                       variant="ghost"
@@ -274,7 +316,8 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Full-screen comparison. Auto-snapshots both fighters&rsquo; stats at show time.
+                    Full-screen comparison. Snapshots both fighters at Show time — use Refresh
+                    after editing roster data to push the latest values to a live overlay.
                   </p>
                 </div>
               </CardContent>
