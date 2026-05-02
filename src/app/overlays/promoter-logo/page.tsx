@@ -25,14 +25,14 @@ export default function PromoterLogoDisplay() {
         {show && (
           <motion.div
             key="promoter-logo"
-            initial={{ y: '-110%', opacity: 0 }}
+            initial={{ y: '110%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '-110%', opacity: 0, transition: { duration: 0.24, ease: [0.6, 0, 1, 0.4] } }}
+            exit={{ y: '110%', opacity: 0, transition: { duration: 0.24, ease: [0.6, 0, 1, 0.4] } }}
             transition={{ type: 'spring', stiffness: 220, damping: 28, mass: 1, delay: 0.05 }}
             style={{
               position: 'absolute',
-              top: '4vh',
-              left: '14vw',
+              bottom: '4vh',
+              left: '8vw',
               padding: '12px 18px',
               background: 'rgba(4, 4, 4, 0.92)',
               border: '1px solid rgba(255,255,255,0.85)',

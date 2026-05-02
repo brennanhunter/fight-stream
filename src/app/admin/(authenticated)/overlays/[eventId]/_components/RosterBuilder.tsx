@@ -7,7 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { addFighter, updateFighter, deleteFighter, type FighterInput } from '../actions';
+import {
+  addFighter,
+  updateFighter,
+  updateFighterPhoto,
+  deleteFighter,
+  type FighterInput,
+} from '../actions';
 import {
   MAIN_BOXING_COUNTRIES,
   formatNationality,
@@ -463,7 +469,12 @@ function FighterForm({
           value={form.photo_url ?? ''}
           onChange={(url) => update('photo_url', url)}
           displayName={form.display_name}
-          fighterId={mode === 'edit' ? fighterId : undefined}
+          kind="fighter"
+          onAutoSave={
+            mode === 'edit' && fighterId
+              ? (url) => updateFighterPhoto(fighterId, url)
+              : undefined
+          }
         />
       </Field>
 

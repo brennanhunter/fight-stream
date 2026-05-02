@@ -6,6 +6,7 @@ import {
   Eye,
   EyeOff,
   Flag,
+  IdCard,
   Pause,
   Play,
   RefreshCw,
@@ -19,12 +20,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useOverlay } from '@/lib/use-overlay';
 import {
+  displayRoundTimer,
   endMatchTimer,
   hideOverlay,
+  hideRoundTimer,
   killAllOverlays,
   nextRound,
   pauseRoundTimer,
   resumeRoundTimer,
+  showBoxerCard,
   showLogo,
   showLowerThird,
   showPromoterLogo,
@@ -75,6 +79,7 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
   const right = activeMatch ? fighterById.get(activeMatch.fighter_right_id) : undefined;
 
   const lowerThird = useOverlay<LowerThirdPayload>('lower_third');
+  const boxerCard = useOverlay<{ match_id?: string; fighter_id?: string }>('boxer_card');
   const taleOfTape = useOverlay<{ match_id?: string }>('tale_of_tape');
   const roundTimer = useOverlay<{
     match_id?: string;
@@ -100,6 +105,34 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
     startTransition(async () => {
       const res = await hideOverlay('lower_third');
       if (res.ok) toast.success('Lower third hidden');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleShowBoxerCard(fighter: ControlFighter | undefined) {
+    if (!activeMatch || !fighter) return;
+    startTransition(async () => {
+      const res = await showBoxerCard(activeMatch.id, fighter.id);
+      if (res.ok) toast.success(`Boxer card: ${fighter.display_name}`);
+      else toast.error(res.error);
+    });
+  }
+
+  function handleHideBoxerCard() {
+    startTransition(async () => {
+      const res = await hideOverlay('boxer_card');
+      if (res.ok) toast.success('Boxer card hidden');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleRefreshBoxerCard() {
+    const matchId = boxerCard.payload.match_id;
+    const fighterId = boxerCard.payload.fighter_id;
+    if (!matchId || !fighterId) return;
+    startTransition(async () => {
+      const res = await showBoxerCard(matchId, fighterId);
+      if (res.ok) toast.success('Boxer card refreshed');
       else toast.error(res.error);
     });
   }
@@ -190,8 +223,16 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
 
   function handleHideRoundTimer() {
     startTransition(async () => {
-      const res = await hideOverlay('round_timer');
-      if (res.ok) toast.success('Round timer hidden');
+      const res = await hideRoundTimer();
+      if (res.ok) toast.success('Round timer hidden — state preserved');
+      else toast.error(res.error);
+    });
+  }
+
+  function handleDisplayRoundTimer() {
+    startTransition(async () => {
+      const res = await displayRoundTimer();
+      if (res.ok) toast.success('Round timer back on air');
       else toast.error(res.error);
     });
   }
@@ -376,6 +417,65 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
                   </div>
                 </div>
 
+                {/* Boxer Card — single-fighter spotlight */}
+                <div className="space-y-2 border-t pt-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-medium">Boxer Card</h3>
+                    {boxerCard.visible ? (
+                      <Badge className="bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/10">
+                        <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+                        On air
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Hidden
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {[left, right].map((f) => {
+                      if (!f) return null;
+                      const isCurrent =
+                        boxerCard.visible && boxerCard.payload.fighter_id === f.id;
+                      return (
+                        <Button
+                          key={f.id}
+                          variant={isCurrent ? 'default' : 'outline'}
+                          onClick={() => handleShowBoxerCard(f)}
+                          disabled={pending}
+                          className="h-auto justify-start py-3"
+                        >
+                          <IdCard />
+                          <span className="text-left">
+                            <span className="block font-semibold">{f.display_name}</span>
+                            {f.weight_class && (
+                              <span className="block text-xs opacity-70">{f.weight_class}</span>
+                            )}
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={handleRefreshBoxerCard}
+                      disabled={pending || !boxerCard.visible}
+                    >
+                      <RefreshCw />
+                      Refresh
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={handleHideBoxerCard}
+                      disabled={pending || !boxerCard.visible}
+                    >
+                      <EyeOff />
+                      Hide
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Tale of the Tape */}
                 <div className="space-y-2 border-t pt-4">
                   <div className="flex items-center justify-between gap-3">
@@ -459,15 +559,38 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
                   </div>
 
                   {!timerActive ? (
-                    <Button
-                      variant="default"
-                      onClick={handleShowRoundTimer}
-                      disabled={pending}
-                      className="w-full"
-                    >
-                      <Timer />
-                      Start Round 1 — show timer
-                    </Button>
+                    roundTimer.payload.match_id === activeMatch.id ? (
+                      // Saved state for this match — let operator resume or restart
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="default"
+                          onClick={handleDisplayRoundTimer}
+                          disabled={pending}
+                        >
+                          <Eye />
+                          Resume display
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleShowRoundTimer}
+                          disabled={pending}
+                          title="Reset to round 1 and start over"
+                        >
+                          <Timer />
+                          Restart from R1
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="default"
+                        onClick={handleShowRoundTimer}
+                        disabled={pending}
+                        className="w-full"
+                      >
+                        <Timer />
+                        Start Round 1 — show timer
+                      </Button>
+                    )
                   ) : (
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">

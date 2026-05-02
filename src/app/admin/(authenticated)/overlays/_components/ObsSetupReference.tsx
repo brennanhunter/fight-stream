@@ -4,7 +4,7 @@ import AdminCopyButton from '../../../AdminCopyButton';
 
 const OVERLAY_PATHS: { label: string; path: string; built: boolean }[] = [
   { label: 'Lower Third', path: '/overlays/lower-third', built: true },
-  { label: 'Boxer Card', path: '/overlays/boxer-card', built: false },
+  { label: 'Boxer Card', path: '/overlays/boxer-card', built: true },
   { label: 'Tale of the Tape', path: '/overlays/tale-of-the-tape', built: true },
   { label: 'Round Timer', path: '/overlays/round-timer', built: true },
   { label: 'BoxStream Logo', path: '/overlays/logo', built: true },

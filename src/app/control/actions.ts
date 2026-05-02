@@ -74,6 +74,52 @@ export async function showLowerThird(
 }
 
 /**
+ * Show a single-fighter spotlight card. Bigger than a lower third, smaller
+ * than tale of the tape. Snapshots the fighter's full stat line + the match
+ * label into the payload at show time.
+ */
+export async function showBoxerCard(matchId: string, fighterId: string): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const [{ data: match }, { data: fighter }] = await Promise.all([
+    supabase
+      .from('event_matches')
+      .select('id, label')
+      .eq('id', matchId)
+      .maybeSingle(),
+    supabase
+      .from('event_fighters')
+      .select(
+        'id, display_name, record, weight_class, height, reach, age, stance, hometown, nationality, photo_url',
+      )
+      .eq('id', fighterId)
+      .maybeSingle(),
+  ]);
+
+  if (!match) return { ok: false, error: 'Match not found' };
+  if (!fighter) return { ok: false, error: 'Fighter not found' };
+
+  const payload = {
+    match_id: match.id,
+    match_label: match.label ?? '',
+    fighter_id: fighter.id,
+    fighter,
+  };
+
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ visible: true, payload, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'boxer_card');
+
+  if (error) {
+    console.error('showBoxerCard:', error);
+    return { ok: false, error: 'Failed to show boxer card' };
+  }
+  return { ok: true };
+}
+
+/**
  * Show the tale of the tape for a match. Snapshots both fighters' full stat
  * lines into the payload at show time so roster edits don't bleed onto the
  * live overlay.
@@ -132,6 +178,8 @@ export async function showTaleOfTape(matchId: string): Promise<Result> {
 type RoundTimerPayload = {
   match_id: string;
   match_label: string;
+  left_name: string;
+  right_name: string;
   current_round: number;
   total_rounds: number;
   round_seconds: number;
@@ -141,22 +189,33 @@ type RoundTimerPayload = {
   paused_remaining_seconds?: number;
 };
 
-/** Show the round timer at round 1, fighting state, fresh start. */
+/** Show the round timer at round 1, fighting state, fresh start.
+ * Resets all timer state — use this for a new match or to restart. */
 export async function showRoundTimer(matchId: string): Promise<Result> {
   await requireAdmin();
   const supabase = createServerClient();
 
   const { data: match } = await supabase
     .from('event_matches')
-    .select('id, label, scheduled_rounds, round_seconds, rest_seconds')
+    .select('id, label, scheduled_rounds, round_seconds, rest_seconds, fighter_left_id, fighter_right_id')
     .eq('id', matchId)
     .maybeSingle();
 
   if (!match) return { ok: false, error: 'Match not found' };
 
+  const { data: fighters } = await supabase
+    .from('event_fighters')
+    .select('id, display_name')
+    .in('id', [match.fighter_left_id, match.fighter_right_id]);
+
+  const leftFighter = fighters?.find((f) => f.id === match.fighter_left_id);
+  const rightFighter = fighters?.find((f) => f.id === match.fighter_right_id);
+
   const payload: RoundTimerPayload = {
     match_id: match.id,
     match_label: match.label ?? '',
+    left_name: leftFighter?.display_name ?? '',
+    right_name: rightFighter?.display_name ?? '',
     current_round: 1,
     total_rounds: match.scheduled_rounds,
     round_seconds: match.round_seconds,
@@ -174,6 +233,89 @@ export async function showRoundTimer(matchId: string): Promise<Result> {
     console.error('showRoundTimer:', error);
     return { ok: false, error: 'Failed to show round timer' };
   }
+  return { ok: true };
+}
+
+/** Re-display the round timer without resetting state. Used after a Hide
+ * to bring the timer back at the current round/state. */
+export async function displayRoundTimer(): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const { data } = await supabase
+    .from('overlay_state')
+    .select('payload')
+    .eq('overlay_type', 'round_timer')
+    .maybeSingle();
+
+  const current = data?.payload as RoundTimerPayload | undefined;
+  if (!current?.match_id) {
+    return { ok: false, error: 'No saved timer state — start a fresh match first' };
+  }
+
+  // If we were paused at hide, just flip visible. If we were fighting,
+  // re-anchor state_started_at so elapsed continues from where it was hidden.
+  // Actually — the timer was either paused (display held) or fighting (display
+  // continued ticking via local interval, but the elapsed kept growing because
+  // state_started_at didn't change). Hiding doesn't pause. So we DO need to
+  // hold the fighting elapsed during hide, otherwise the round runs out
+  // invisibly and shows 0:00 on re-display.
+  //
+  // Solution: if state was 'fighting' on hide, snapshot remaining → 'paused'
+  // when hiding (handled in hideRoundTimer below). Re-display just flips
+  // visible: true.
+  const { error } = await supabase
+    .from('overlay_state')
+    .update({ visible: true, updated_at: new Date().toISOString() })
+    .eq('overlay_type', 'round_timer');
+
+  if (error) return { ok: false, error: 'Failed to display timer' };
+  return { ok: true };
+}
+
+/** Hide the round timer while preserving state. If the timer was fighting,
+ * automatically pauses so elapsed time doesn't keep ticking invisibly. */
+export async function hideRoundTimer(): Promise<Result> {
+  await requireAdmin();
+  const supabase = createServerClient();
+
+  const { data } = await supabase
+    .from('overlay_state')
+    .select('payload')
+    .eq('overlay_type', 'round_timer')
+    .maybeSingle();
+
+  const current = data?.payload as RoundTimerPayload | undefined;
+
+  // If currently fighting, snapshot remaining and flip to paused so the timer
+  // doesn't keep ticking down invisibly while hidden.
+  let nextPayload: RoundTimerPayload | undefined = current;
+  if (current?.state === 'fighting') {
+    const elapsed =
+      (Date.now() - new Date(current.state_started_at).getTime()) / 1000;
+    const remaining = Math.max(0, current.round_seconds - elapsed);
+    nextPayload = {
+      ...current,
+      state: 'paused',
+      paused_remaining_seconds: remaining,
+      state_started_at: new Date().toISOString(),
+    };
+  }
+
+  const update: { visible: boolean; updated_at: string; payload?: RoundTimerPayload } = {
+    visible: false,
+    updated_at: new Date().toISOString(),
+  };
+  if (nextPayload && nextPayload !== current) {
+    update.payload = nextPayload;
+  }
+
+  const { error } = await supabase
+    .from('overlay_state')
+    .update(update)
+    .eq('overlay_type', 'round_timer');
+
+  if (error) return { ok: false, error: 'Failed to hide timer' };
   return { ok: true };
 }
 

@@ -5,23 +5,33 @@ import { Upload, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { uploadBoxerPhoto, updateFighterPhoto } from '../actions';
+import { uploadBoxerPhoto } from '../actions';
+
+type Kind = 'fighter' | 'logo';
+
+type AutoSaveResult = { ok: true } | { ok: false; error: string };
 
 /**
- * `fighterId` (when present) puts the uploader into edit mode — successful
- * uploads are persisted directly to the fighter row, so the change survives
- * even if the operator closes the form without clicking Save changes.
+ * Generic image uploader (drag/drop or click). Uploads to Supabase Storage via
+ * `uploadBoxerPhoto` and returns the public URL. Caller decides what to do
+ * with the URL via `onChange`.
+ *
+ * If `onAutoSave` is provided, the uploader also persists the URL through that
+ * callback the moment the upload finishes — useful for edit-mode flows where
+ * the operator might close the form without clicking Save.
  */
 export default function PhotoUploader({
   value,
   onChange,
   displayName,
-  fighterId,
+  kind = 'fighter',
+  onAutoSave,
 }: {
   value: string;
   onChange: (url: string) => void;
-  displayName: string;
-  fighterId?: string;
+  displayName?: string;
+  kind?: Kind;
+  onAutoSave?: (url: string | null) => Promise<AutoSaveResult>;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
@@ -39,14 +49,12 @@ export default function PhotoUploader({
         return;
       }
       onChange(res.url);
-      // In edit mode, persist the new photo immediately so it doesn't get lost
-      // if the form is closed without saving the rest of the fields.
-      if (fighterId) {
-        const persistRes = await updateFighterPhoto(fighterId, res.url);
+      if (onAutoSave) {
+        const persistRes = await onAutoSave(res.url);
         if (persistRes.ok) {
-          toast.success('Photo saved');
+          toast.success(kind === 'logo' ? 'Logo saved' : 'Photo saved');
         } else {
-          toast.error('Photo uploaded but not saved', { description: persistRes.error });
+          toast.error('Uploaded but not saved', { description: persistRes.error });
         }
       }
     });
@@ -55,7 +63,6 @@ export default function PhotoUploader({
   function onFileChosen(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) pickFile(file);
-    // reset so picking the same file twice still triggers onChange
     e.target.value = '';
   }
 
@@ -77,34 +84,53 @@ export default function PhotoUploader({
 
   function clearPhoto() {
     onChange('');
-    if (fighterId) {
+    if (onAutoSave) {
       startTransition(async () => {
-        const res = await updateFighterPhoto(fighterId, null);
+        const res = await onAutoSave(null);
         if (res.ok) {
-          toast.success('Photo removed');
+          toast.success(kind === 'logo' ? 'Logo removed' : 'Photo removed');
         } else {
-          toast.error('Failed to remove photo', { description: res.error });
+          toast.error('Failed to remove', { description: res.error });
         }
       });
     }
   }
 
+  const recommendation =
+    kind === 'logo'
+      ? 'PNG with transparent background reads cleanest on broadcast. ~400×400 or larger.'
+      : '1500×2000 portrait (3:4), head & shoulders centered, plain background renders cleanly on every overlay.';
+
+  const dropHint =
+    kind === 'logo'
+      ? 'Drop a logo image here or click to upload'
+      : 'Drop a photo here or click to upload';
+
   return (
     <div className="space-y-2">
       {value ? (
         <div className="flex items-start gap-3">
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md border bg-muted">
+          <div
+            className={`relative shrink-0 overflow-hidden rounded-md border bg-muted ${
+              kind === 'logo' ? 'h-24 w-24 p-2' : 'h-24 w-24'
+            }`}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value} alt={displayName || ''} className="h-full w-full object-cover" />
+            <img
+              src={value}
+              alt={displayName ?? ''}
+              className="h-full w-full"
+              style={{ objectFit: kind === 'logo' ? 'contain' : 'cover' }}
+            />
           </div>
           <div className="flex-1 space-y-2">
             <Input
               value={value}
               onChange={(e) => onChange(e.target.value)}
-              placeholder="https://…/photo.jpg"
+              placeholder="https://…/image.jpg"
               className="text-xs font-mono"
             />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 size="sm"
@@ -154,13 +180,12 @@ export default function PhotoUploader({
             <>
               <Upload className="h-5 w-5 text-muted-foreground" />
               <p className="text-sm">
-                <span className="font-medium">Drop a photo here</span>{' '}
+                <span className="font-medium">{dropHint.split(' or ')[0]}</span>{' '}
                 <span className="text-muted-foreground">or click to upload</span>
               </p>
               <div className="space-y-0.5 text-xs text-muted-foreground">
                 <p>
-                  <span className="text-foreground/80">Recommended:</span> 1500×2000 portrait (3:4),
-                  head &amp; shoulders centered, plain background
+                  <span className="text-foreground/80">Recommended:</span> {recommendation}
                 </p>
                 <p>JPEG · PNG · WebP · AVIF · max 8 MB</p>
               </div>
@@ -171,8 +196,7 @@ export default function PhotoUploader({
 
       {value && !pending && (
         <p className="text-xs text-muted-foreground">
-          <span className="text-foreground/80">Tip:</span> 1500×2000 portrait (3:4), head &amp;
-          shoulders centered, plain background renders cleanly on every overlay.
+          <span className="text-foreground/80">Tip:</span> {recommendation}
         </p>
       )}
 
