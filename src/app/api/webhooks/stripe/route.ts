@@ -101,6 +101,12 @@ export async function POST(request: Request) {
             const product = lineItem?.price?.product as Stripe.Product | undefined;
             const price = lineItem?.price;
 
+            // Use the line item's amount_total (post-discount, post-tax) so promo
+            // codes and 100%-off coupons are reflected. Fall back to session total,
+            // then to the list price as a last resort.
+            const actualAmountPaid =
+              lineItem?.amount_total ?? fullSession.amount_total ?? price?.unit_amount ?? 0;
+
             if (product?.metadata?.s3_key) {
               const vodExpiresAt = new Date(Date.now() + VOD_ACCESS_HOURS * 60 * 60 * 1000).toISOString();
               // Upsert to handle race with save-session
@@ -113,7 +119,7 @@ export async function POST(request: Request) {
                 product_name: product.name,
                 product_image: product.images?.[0] || null,
                 s3_key: product.metadata.s3_key,
-                amount_paid: price?.unit_amount || 0,
+                amount_paid: actualAmountPaid,
                 currency: price?.currency || 'usd',
                 expires_at: vodExpiresAt,
                 user_id: session.metadata?.user_id || null,
@@ -129,7 +135,7 @@ export async function POST(request: Request) {
                   const { html, text } = purchaseConfirmationEmail({
                     eventName: product.name,
                     expiresAt: vodExpiresAt,
-                    amountPaid: price?.unit_amount || 0,
+                    amountPaid: actualAmountPaid,
                     purchaseType: 'vod',
                     vodPurchaseId: vodPurchase?.id,
                   });

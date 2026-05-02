@@ -391,3 +391,28 @@ EXCEPTION
   WHEN duplicate_object THEN NULL;
   WHEN undefined_object THEN NULL;
 END $$;
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: event_vod_mapping
+-- Explicit join between events.id and Stripe VOD product ids.
+-- Solves the "event and VOD products are sometimes named differently"
+-- problem: instead of inferring via product metadata.event_slug, the
+-- admin manually links VOD products to events via the new admin UI.
+--
+-- One event ↔ many VOD products (full event replay + per-fight cards).
+-- A VOD product can also belong to multiple events (e.g. "Best Of"
+-- compilations) — the composite primary key allows this.
+-- Added: 2026-05-02
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS event_vod_mapping (
+  event_id          text        NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  stripe_product_id text        NOT NULL,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (event_id, stripe_product_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_vod_mapping_product ON event_vod_mapping (stripe_product_id);
+
+ALTER TABLE event_vod_mapping ENABLE ROW LEVEL SECURITY;
+-- No user-facing policies — service role (admin panel) only.

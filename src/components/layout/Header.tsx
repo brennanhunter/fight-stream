@@ -45,6 +45,7 @@ export default function Header() {
   const isActive = (href: string) => pathname === href;
 
   if (pathname.startsWith('/report/')) return null;
+  if (pathname.startsWith('/admin')) return null;
 
   return (
     <header

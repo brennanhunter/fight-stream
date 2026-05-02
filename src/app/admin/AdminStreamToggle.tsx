@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Radio, Square } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function AdminStreamToggle({ isStreaming }: { isStreaming: boolean }) {
   const [loading, setLoading] = useState(false);
@@ -18,17 +20,19 @@ export default function AdminStreamToggle({ isStreaming }: { isStreaming: boolea
     setLoading(false);
   };
 
+  if (isStreaming) {
+    return (
+      <Button onClick={toggle} disabled={loading} variant="destructive">
+        <Square className="fill-current" />
+        {loading ? 'Updating…' : 'End Stream'}
+      </Button>
+    );
+  }
+
   return (
-    <button
-      onClick={toggle}
-      disabled={loading}
-      className={`px-6 py-2.5 text-[10px] font-bold tracking-[0.2em] uppercase transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-        isStreaming
-          ? 'bg-red-600 text-white hover:bg-red-700'
-          : 'bg-green-600 text-white hover:bg-green-700'
-      }`}
-    >
-      {loading ? 'Updating…' : isStreaming ? 'End Stream' : 'Go Live'}
-    </button>
+    <Button onClick={toggle} disabled={loading}>
+      <Radio />
+      {loading ? 'Updating…' : 'Go Live'}
+    </Button>
   );
 }

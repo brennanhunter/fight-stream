@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function AdminRefundBackfillButton() {
   const router = useRouter();
@@ -42,15 +43,11 @@ export default function AdminRefundBackfillButton() {
 
   return (
     <div className="space-y-2">
-      <button
-        onClick={run}
-        disabled={busy}
-        className="text-[10px] font-bold tracking-[0.2em] uppercase border border-white/20 px-3 py-1.5 text-gray-300 hover:border-white hover:text-white transition-colors disabled:opacity-50"
-      >
+      <Button onClick={run} disabled={busy} variant="outline" size="sm">
         {busy ? 'Scanning Stripe…' : 'Backfill Refunds (24h)'}
-      </button>
-      {result && <p className="text-[10px] text-green-400 max-w-xs">{result}</p>}
-      {error && <p className="text-[10px] text-red-400 max-w-xs">{error}</p>}
+      </Button>
+      {result && <p className="max-w-xs text-xs text-green-400">{result}</p>}
+      {error && <p className="max-w-xs text-xs text-red-400">{error}</p>}
     </div>
   );
 }

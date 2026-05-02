@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export default function AdminSendVodRecoveryForm() {
   const [email, setEmail] = useState('');
@@ -36,25 +38,21 @@ export default function AdminSendVodRecoveryForm() {
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="customer@example.com"
-          className="flex-1 bg-white/5 border border-white/20 text-white placeholder-gray-500 px-4 py-2.5 text-sm focus:outline-none focus:border-white transition-colors"
+          className="flex-1"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-6 py-2.5 bg-white text-black text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-gray-200 transition-colors disabled:opacity-50"
-        >
+        <Button type="submit" disabled={loading}>
           {loading ? 'Sending…' : 'Send Recovery Link'}
-        </button>
+        </Button>
       </div>
-      {result && <p className="text-[11px] text-green-400">{result}</p>}
-      {error && <p className="text-[11px] text-red-400">{error}</p>}
+      {result && <p className="text-xs text-green-400">{result}</p>}
+      {error && <p className="text-xs text-red-400">{error}</p>}
     </form>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function AdminRefundButton({
   purchaseId,
@@ -50,14 +51,10 @@ export default function AdminRefundButton({
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <button
-        onClick={handleRefund}
-        disabled={busy}
-        className="text-[10px] font-bold tracking-[0.1em] uppercase px-2 py-0.5 border border-red-900/50 text-red-400 hover:border-red-500 hover:text-red-300 transition-colors disabled:opacity-50"
-      >
+      <Button onClick={handleRefund} disabled={busy} variant="destructive" size="xs">
         {busy ? 'Refunding…' : 'Refund'}
-      </button>
-      {error && <span className="text-[10px] text-red-400 max-w-[160px]">{error}</span>}
+      </Button>
+      {error && <span className="max-w-[160px] text-xs text-red-400">{error}</span>}
     </div>
   );
 }

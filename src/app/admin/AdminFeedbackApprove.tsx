@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function AdminFeedbackApprove({
   id,
@@ -27,16 +29,15 @@ export default function AdminFeedbackApprove({
   }
 
   return (
-    <button
+    <Button
       onClick={toggle}
       disabled={loading}
-      className={`text-[10px] font-bold tracking-[0.1em] uppercase px-2 py-0.5 border transition-colors disabled:opacity-50 ${
-        current
-          ? 'border-amber-500/50 text-amber-400 hover:border-amber-500/80'
-          : 'border-white/10 text-gray-600 hover:border-white/30 hover:text-gray-400'
-      }`}
+      variant={current ? 'default' : 'outline'}
+      size="xs"
+      className={current ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : undefined}
     >
-      {current ? '★ Approved' : 'Approve'}
-    </button>
+      <Star className={current ? 'fill-current' : ''} />
+      {current ? 'Approved' : 'Approve'}
+    </Button>
   );
 }
