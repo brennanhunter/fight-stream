@@ -14,6 +14,88 @@ async function requireAdmin() {
 
 type Result = { ok: true } | { ok: false; error: string };
 
+// Cover overlays auto-hide the logo + promoter_logo while they're up. When all
+// covers go away, any logo we auto-hid is restored. Logos the operator
+// manually turned off stay off because we only mark auto-hidden ones with
+// `payload.auto_hidden = true`.
+const COVER_TYPES: OverlayType[] = ['lower_third', 'tale_of_tape'];
+const LOGO_TYPES: OverlayType[] = ['logo', 'promoter_logo'];
+
+type SupabaseClient = ReturnType<typeof createServerClient>;
+
+async function autoHideLogos(supabase: SupabaseClient): Promise<void> {
+  const { data: rows } = await supabase
+    .from('overlay_state')
+    .select('overlay_type, visible, payload')
+    .in('overlay_type', LOGO_TYPES);
+
+  if (!rows) return;
+
+  for (const row of rows) {
+    if (!row.visible) continue;
+    const existing = (row.payload ?? {}) as Record<string, unknown>;
+    const newPayload = { ...existing, auto_hidden: true };
+    await supabase
+      .from('overlay_state')
+      .update({
+        visible: false,
+        payload: newPayload,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('overlay_type', row.overlay_type);
+  }
+}
+
+async function restoreLogosIfNoCover(supabase: SupabaseClient): Promise<void> {
+  const { data: covers } = await supabase
+    .from('overlay_state')
+    .select('overlay_type, visible')
+    .in('overlay_type', COVER_TYPES);
+
+  const anyCoverActive = covers?.some((c) => c.visible) ?? false;
+  if (anyCoverActive) return;
+
+  const { data: rows } = await supabase
+    .from('overlay_state')
+    .select('overlay_type, visible, payload')
+    .in('overlay_type', LOGO_TYPES);
+
+  if (!rows) return;
+
+  for (const row of rows) {
+    if (row.visible) continue;
+    const payload = (row.payload ?? {}) as Record<string, unknown>;
+    if (payload.auto_hidden !== true) continue;
+    const { auto_hidden: _drop, ...rest } = payload;
+    await supabase
+      .from('overlay_state')
+      .update({
+        visible: true,
+        payload: rest,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('overlay_type', row.overlay_type);
+  }
+}
+
+async function clearAutoHiddenFlag(
+  supabase: SupabaseClient,
+  type: OverlayType,
+): Promise<void> {
+  const { data: row } = await supabase
+    .from('overlay_state')
+    .select('payload')
+    .eq('overlay_type', type)
+    .maybeSingle();
+  const payload = (row?.payload ?? {}) as Record<string, unknown>;
+  if (payload.auto_hidden !== true) return;
+  const { auto_hidden: _drop, ...rest } = payload;
+  await supabase
+    .from('overlay_state')
+    .update({ payload: rest, updated_at: new Date().toISOString() })
+    .eq('overlay_type', type);
+}
+
 /** Generic hide — works for any overlay type. */
 export async function hideOverlay(type: OverlayType): Promise<Result> {
   await requireAdmin();
@@ -27,6 +109,14 @@ export async function hideOverlay(type: OverlayType): Promise<Result> {
     console.error(`hideOverlay(${type}):`, error);
     return { ok: false, error: 'Failed to hide overlay' };
   }
+
+  if (COVER_TYPES.includes(type)) {
+    await restoreLogosIfNoCover(supabase);
+  } else if (LOGO_TYPES.includes(type)) {
+    // Operator manually hid a logo — make sure we don't auto-restore it later.
+    await clearAutoHiddenFlag(supabase, type);
+  }
+
   return { ok: true };
 }
 
@@ -84,6 +174,7 @@ export async function showLowerThird(
     return { ok: false, error: 'Failed to show lower third' };
   }
 
+  await autoHideLogos(supabase);
   return { ok: true };
 }
 
@@ -186,6 +277,7 @@ export async function showTaleOfTape(matchId: string): Promise<Result> {
     return { ok: false, error: 'Failed to show tale of the tape' };
   }
 
+  await autoHideLogos(supabase);
   return { ok: true };
 }
 
@@ -480,6 +572,8 @@ export async function endMatchTimer(): Promise<Result> {
 export async function showLogo(): Promise<Result> {
   await requireAdmin();
   const supabase = createServerClient();
+  // Manual show always wins over auto-hide bookkeeping.
+  await clearAutoHiddenFlag(supabase, 'logo');
   const { error } = await supabase
     .from('overlay_state')
     .update({ visible: true, updated_at: new Date().toISOString() })
@@ -510,6 +604,8 @@ export async function showPromoterLogo(): Promise<Result> {
     };
   }
 
+  // payload is rebuilt fresh on every show, so any prior auto_hidden flag is
+  // implicitly cleared.
   const payload = {
     event_id: event.id,
     url: event.promoter_logo_url,
@@ -537,5 +633,8 @@ export async function killAllOverlays(): Promise<Result> {
     console.error('killAllOverlays:', error);
     return { ok: false, error: 'Failed to kill overlays' };
   }
+
+  // Wipe auto_hidden flags so the next show cycle starts clean.
+  await Promise.all(LOGO_TYPES.map((t) => clearAutoHiddenFlag(supabase, t)));
   return { ok: true };
 }
