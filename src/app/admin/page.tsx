@@ -4,6 +4,7 @@ import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
 import { createServerClient } from '@/lib/supabase';
 import { generateReportToken } from '@/lib/report-token';
 import { getPromoterRate, getTierLabel } from '@/lib/promoter-rate';
+import { getProducts } from '@/lib/vod';
 import { PURCHASE_WINDOW_DAYS, REPLAY_WINDOW_DAYS } from '@/lib/constants';
 import AdminGrantForm from './AdminGrantForm';
 import AdminAnnounceForm from './AdminAnnounceForm';
@@ -107,6 +108,35 @@ export default async function AdminPage({
     });
   }
 
+  // VOD stats per event — VOD purchases don't have event_id set, so we join
+  // through the Stripe product's event_slug metadata (typically matches events.id).
+  const [{ data: paidVodPurchases }, vodProducts] = await Promise.all([
+    supabase
+      .from('purchases')
+      .select('stripe_product_id, amount_paid')
+      .eq('purchase_type', 'vod')
+      .gt('amount_paid', 0)
+      .is('refunded_at', null),
+    getProducts(),
+  ]);
+
+  const productToEventSlug = new Map<string, string>();
+  for (const p of vodProducts) {
+    productToEventSlug.set(p.id, p.eventSlug);
+  }
+
+  const vodStatsByEvent = new Map<string, { count: number; revenue: number }>();
+  for (const p of paidVodPurchases || []) {
+    if (!p.stripe_product_id) continue;
+    const slug = productToEventSlug.get(p.stripe_product_id);
+    if (!slug) continue;
+    const existing = vodStatsByEvent.get(slug) ?? { count: 0, revenue: 0 };
+    vodStatsByEvent.set(slug, {
+      count: existing.count + 1,
+      revenue: existing.revenue + p.amount_paid,
+    });
+  }
+
   // Boxer comp leaderboard — count per boxer_name for the active event
   const { data: boxerRows } = activeEvent
     ? await supabase
@@ -130,11 +160,14 @@ export default async function AdminPage({
   const eventPayouts = await Promise.all(
     (allEvents || []).map(async (event) => {
       const stats = statsByEvent.get(event.id) ?? { count: 0, revenue: 0 };
+      const vodStats = vodStatsByEvent.get(event.id) ?? { count: 0, revenue: 0 };
       const rate = getPromoterRate(stats.count);
       const token = await generateReportToken(event.id);
       return {
         ...event,
         ...stats,
+        vodCount: vodStats.count,
+        vodRevenue: vodStats.revenue,
         rate,
         tier: getTierLabel(stats.count),
         promoterCut: Math.round(stats.revenue * rate),
@@ -260,13 +293,13 @@ export default async function AdminPage({
           <div className="mb-10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-400">Event Payouts</h2>
-              <span className="text-[10px] text-gray-600">Paid PPV only — comps excluded</span>
+              <span className="text-[10px] text-gray-600">Paid PPV; VOD shown separately — comps &amp; refunds excluded</span>
             </div>
             <div className="border border-white/10 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10">
-                    {['Event', 'Sales', 'Revenue', 'Tier', 'Promoter', 'You & Ryan', 'Report Link'].map((h) => (
+                    {['Event', 'Sales', 'Revenue', 'Tier', 'Promoter', 'You & Ryan', 'VOD Sales', 'Report Link'].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.15em] uppercase text-gray-500 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -280,6 +313,17 @@ export default async function AdminPage({
                       <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{Math.round(ev.rate * 100)}%</td>
                       <td className="px-4 py-3 text-white font-semibold">${(ev.promoterCut / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3 text-gray-300">${(ev.ourCut / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {ev.vodCount > 0 ? (
+                          <span className="text-gray-300">
+                            {ev.vodCount.toLocaleString()}
+                            <span className="text-gray-600"> · </span>
+                            ${(ev.vodRevenue / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </span>
+                        ) : (
+                          <span className="text-gray-700">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <AdminCopyButton url={ev.reportUrl} />
