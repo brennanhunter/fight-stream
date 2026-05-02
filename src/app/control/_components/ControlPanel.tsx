@@ -268,7 +268,6 @@ export default function ControlPanel({ event }: { event: ControlEvent }) {
   }
 
   function handleKillAll() {
-    if (!confirm('Hide every overlay immediately?')) return;
     startTransition(async () => {
       const res = await killAllOverlays();
       if (res.ok) toast.success('All overlays hidden');
