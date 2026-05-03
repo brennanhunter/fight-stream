@@ -1,6 +1,11 @@
 import { timingSafeEqual } from 'crypto';
 
-const TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+/**
+ * Default TTL for tokens minted via the recovery flow. Purchase-confirmation
+ * emails pass an explicit `ttlMs` matching the VOD access window so the
+ * watch link stays valid for as long as the buyer's access does.
+ */
+const DEFAULT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function b64url(input: string): string {
   return Buffer.from(input, 'utf8').toString('base64url');
@@ -32,9 +37,12 @@ async function hmac(message: string): Promise<string> {
  * Token format: base64url(email).base64url(expMs).hexHmac
  * The HMAC binds email + expiry so neither can be tampered with.
  */
-export async function generateVodRecoveryToken(email: string): Promise<string> {
+export async function generateVodRecoveryToken(
+  email: string,
+  ttlMs: number = DEFAULT_TOKEN_TTL_MS,
+): Promise<string> {
   const lower = email.trim().toLowerCase();
-  const expMs = Date.now() + TOKEN_TTL_MS;
+  const expMs = Date.now() + ttlMs;
   const payload = `${b64url(lower)}.${b64url(String(expMs))}`;
   const sig = await hmac(`bstv_vodrec:${payload}`);
   return `${payload}.${sig}`;

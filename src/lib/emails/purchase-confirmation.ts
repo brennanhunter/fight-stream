@@ -6,12 +6,20 @@ export function purchaseConfirmationEmail({
   amountPaid,
   purchaseType = 'ppv',
   vodPurchaseId,
+  magicLink,
 }: {
   eventName: string;
   expiresAt: string | null;
   amountPaid: number; // cents
   purchaseType?: 'ppv' | 'vod';
   vodPurchaseId?: string;
+  /**
+   * Tokenized watch link that grants access on whatever device the buyer
+   * clicks from. When present on a VOD email this overrides the
+   * session-bound /watch?purchase_id link — guests can watch from any
+   * device without going through the recovery flow.
+   */
+  magicLink?: string;
 }) {
   const safeEventName = escapeHtml(eventName);
   const isVod = purchaseType === 'vod';
@@ -37,11 +45,13 @@ export function purchaseConfirmationEmail({
     ? `<strong style="color:#ffffff;">${safeEventName}</strong> is available to watch now in your VOD library.`
     : `Your purchase for <strong style="color:#ffffff;">${safeEventName}</strong> has been confirmed. Head to the home page when the fight starts — your access is ready.`;
   const ctaLabel = isVod ? 'Watch Now' : 'Go to BoxStreamTV';
-  const ctaUrl = isVod && vodPurchaseId
-    ? `https://boxstreamtv.com/watch?purchase_id=${encodeURIComponent(vodPurchaseId)}`
-    : isVod
-      ? 'https://boxstreamtv.com/vod'
-      : 'https://boxstreamtv.com';
+  const ctaUrl = isVod && magicLink
+    ? magicLink
+    : isVod && vodPurchaseId
+      ? `https://boxstreamtv.com/watch?purchase_id=${encodeURIComponent(vodPurchaseId)}`
+      : isVod
+        ? 'https://boxstreamtv.com/vod'
+        : 'https://boxstreamtv.com';
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -120,6 +130,14 @@ export function purchaseConfirmationEmail({
                 </tr>
               </table>
 
+              ${
+                isVod && magicLink
+                  ? `<p style="margin:0 0 16px;font-size:12px;color:#6b7280;text-align:center;line-height:1.6;">
+                      Save this email — the button above unlocks your replay on <strong style="color:#9ca3af;">any device</strong>, no account required.
+                    </p>`
+                  : ''
+              }
+
               <!-- Support note -->
               <p style="margin:0;font-size:12px;color:#4b5563;text-align:center;line-height:1.6;">
                 Having trouble? Email us at
@@ -151,6 +169,12 @@ export function purchaseConfirmationEmail({
 </body>
 </html>`;
 
+  const watchUrlText = isVod && magicLink
+    ? magicLink
+    : vodPurchaseId
+      ? `https://boxstreamtv.com/watch?purchase_id=${vodPurchaseId}`
+      : 'https://boxstreamtv.com/vod';
+
   const text = isVod
     ? `Purchase Confirmed – BoxStreamTV
 
@@ -160,8 +184,8 @@ Video: ${eventName}
 Access: ${expiryFormatted}
 Amount Paid: ${amountFormatted}
 
-Watch now at ${vodPurchaseId ? `https://boxstreamtv.com/watch?purchase_id=${vodPurchaseId}` : 'https://boxstreamtv.com/vod'}
-
+Watch now: ${watchUrlText}
+${magicLink ? '\nThis link unlocks your replay on any device — no account required. Save this email.\n' : ''}
 Having trouble? Email hunter@boxstreamtv.com and we'll make it right.
 
 BoxStreamTV | https://boxstreamtv.com`

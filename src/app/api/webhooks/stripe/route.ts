@@ -9,6 +9,7 @@ import { subscriptionCanceledEmail } from '@/lib/emails/subscription-canceled';
 import { paymentFailedEmail } from '@/lib/emails/payment-failed';
 import { subscriptionRenewedEmail } from '@/lib/emails/subscription-renewed';
 import { purchaseConfirmationEmail } from '@/lib/emails/purchase-confirmation';
+import { generateVodRecoveryToken } from '@/lib/vod-recovery-token';
 import { REPLAY_WINDOW_DAYS, VOD_ACCESS_HOURS } from '@/lib/constants';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -132,12 +133,33 @@ export async function POST(request: Request) {
               } else {
                 console.log('Webhook: VOD purchase saved for:', customerEmail);
                 try {
+                  // Mint a tokenized magic link so the buyer can watch from
+                  // any device without going through the recovery flow. The
+                  // verify route sets a long-lived customer_email cookie on
+                  // click, granting access to all VODs tied to this email.
+                  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://boxstreamtv.com';
+                  let magicLink: string | undefined;
+                  try {
+                    // Token TTL matches the VOD access window so the link
+                    // stays valid for as long as the buyer can watch.
+                    const token = await generateVodRecoveryToken(
+                      customerEmail,
+                      VOD_ACCESS_HOURS * 60 * 60 * 1000,
+                    );
+                    magicLink = `${baseUrl}/api/recover-vod/verify?token=${encodeURIComponent(token)}`;
+                  } catch (tokenErr) {
+                    // Token mint failure shouldn't block the email — we'll
+                    // fall back to the session-bound /watch link.
+                    console.error('VOD magic link generation failed:', tokenErr);
+                  }
+
                   const { html, text } = purchaseConfirmationEmail({
                     eventName: product.name,
                     expiresAt: vodExpiresAt,
                     amountPaid: actualAmountPaid,
                     purchaseType: 'vod',
                     vodPurchaseId: vodPurchase?.id,
+                    magicLink,
                   });
                   await resend.emails.send({
                     from: 'BoxStreamTV <hunter@boxstreamtv.com>',
