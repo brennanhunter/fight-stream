@@ -32,14 +32,13 @@ export async function GET(req: NextRequest) {
     (v) => !v.expires_at || new Date(v.expires_at).getTime() > now,
   );
 
-  let destination: string;
-  if (active.length === 1) {
-    destination = `${baseUrl}/watch?purchase_id=${active[0].id}`;
-  } else if (active.length > 1) {
-    destination = `${baseUrl}/vod?recover=success`;
-  } else {
-    destination = `${baseUrl}/vod?recover=expired`;
-  }
+  // Always drop them on the most recent active replay — that's almost
+  // always the one they just clicked the email for. Other replays are one
+  // click away from the watch page header.
+  const destination =
+    active.length > 0
+      ? `${baseUrl}/watch?purchase_id=${active[0].id}`
+      : `${baseUrl}/vod?recover=expired`;
 
   // Set the customer_email cookie on the response so /vod's getOwnedProducts
   // can find purchases by email on the very next render. Watch page also
