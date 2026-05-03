@@ -231,7 +231,7 @@ export default async function WatchPage({
         sessionOwner = true;
       }
     }
-    if (!sessionOwner) redirect('/recover-access');
+    if (!sessionOwner) redirect('/recover-access?postpurchase=1');
 
     const lineItem = session.line_items?.data[0];
     const product = lineItem?.price?.product as import('stripe').Stripe.Product;

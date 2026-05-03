@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { createBrowserClient } from '@/lib/supabase';
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -12,10 +13,21 @@ function PaymentSuccessContent() {
   const [errorType, setErrorType] = useState<'incomplete' | 'system' | 'no_session'>('system');
   const [eventInfo, setEventInfo] = useState<{ eventId: string; eventName: string; expiresAt: string; isStreaming: boolean } | null>(null);
   const [countdown, setCountdown] = useState(8);
+  const [isGuest, setIsGuest] = useState(false);
   const redirectTimer = useRef<NodeJS.Timeout | null>(null);
   const countdownTimer = useRef<NodeJS.Timeout | null>(null);
 
   const sessionId = searchParams.get('session_id');
+
+  // Detect whether the buyer has an account. Drives the "check your email"
+  // callout — guests need it most.
+  useEffect(() => {
+    const supabase = createBrowserClient();
+    supabase.auth
+      .getUser()
+      .then(({ data }) => setIsGuest(!data.user))
+      .catch(() => setIsGuest(true));
+  }, []);
 
   const verifyPayment = useCallback(async () => {
     if (!sessionId) {
@@ -176,6 +188,24 @@ function PaymentSuccessContent() {
             <p>You can start watching now from your library</p>
           )}
         </div>
+
+        {/* Guest-only: tell them to check email — important because they
+            have no account session to fall back on. */}
+        {isGuest && (
+          <div className="border border-white/15 bg-white/[0.03] p-4 mb-8 text-left">
+            <p className="text-xs font-bold tracking-[0.2em] uppercase text-white mb-1">
+              📧 Check your email
+            </p>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              We just sent your purchase confirmation. Save it — you can use the same email
+              to restore access on any device anytime via{' '}
+              <Link href="/recover-access" className="text-gray-200 underline underline-offset-2">
+                recover access
+              </Link>
+              .
+            </p>
+          </div>
+        )}
 
         {/* Redirect Message */}
         <p aria-live="polite" aria-atomic="true" className="text-gray-500 text-sm mb-6 tracking-wide">

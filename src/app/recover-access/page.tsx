@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function RecoverAccessPage() {
+function RecoverAccessContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromPurchase = searchParams.get('postpurchase') === '1';
   const [step, setStep] = useState<'email' | 'code' | 'success'>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -163,12 +165,30 @@ export default function RecoverAccessPage() {
             {step === 'email' ? 'Recover Access' : step === 'code' ? 'Enter Your Code' : 'Access Restored'}
           </h1>
           <div className="w-12 h-[2px] bg-white mx-auto mt-4" />
-          {step === 'email' && (
+          {step === 'email' && !fromPurchase && (
             <p className="mt-4 text-sm text-gray-400">
               Enter the email associated with your purchase or account and we&apos;ll send a 6-digit code to restore your access.
             </p>
           )}
+          {step === 'email' && fromPurchase && (
+            <p className="mt-4 text-sm text-gray-400">
+              Almost there — enter the email you used at checkout to restore access on this device.
+            </p>
+          )}
         </div>
+
+        {step === 'email' && fromPurchase && (
+          <div className="mb-6 p-4 border border-white/15 bg-white/[0.03] text-left">
+            <p className="text-xs font-bold tracking-[0.2em] uppercase text-white mb-1">
+              Purchase confirmed
+            </p>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              We just emailed your watch link. Click the button in that email and you&apos;re in
+              — works from any device, no account needed. Save the email so you can come back
+              to it later. Or restore access here using the same email below.
+            </p>
+          </div>
+        )}
 
         {error && step !== 'success' && (
           <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center">
@@ -287,5 +307,19 @@ export default function RecoverAccessPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RecoverAccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white" />
+        </div>
+      }
+    >
+      <RecoverAccessContent />
+    </Suspense>
   );
 }
