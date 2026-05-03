@@ -190,7 +190,7 @@ export async function showBoxerCard(matchId: string, fighterId: string): Promise
   const [{ data: match }, { data: fighter }] = await Promise.all([
     supabase
       .from('event_matches')
-      .select('id, label')
+      .select('id, label, fighter_left_id, fighter_right_id')
       .eq('id', matchId)
       .maybeSingle(),
     supabase
@@ -205,11 +205,15 @@ export async function showBoxerCard(matchId: string, fighterId: string): Promise
   if (!match) return { ok: false, error: 'Match not found' };
   if (!fighter) return { ok: false, error: 'Fighter not found' };
 
+  const corner: 'blue' | 'red' =
+    match.fighter_left_id === fighterId ? 'blue' : 'red';
+
   const payload = {
     match_id: match.id,
     match_label: match.label ?? '',
     fighter_id: fighter.id,
     fighter,
+    corner,
   };
 
   const { error } = await supabase

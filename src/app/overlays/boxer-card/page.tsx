@@ -26,6 +26,7 @@ type BoxerCardPayload = {
   match_label?: string;
   fighter_id?: string;
   fighter?: FighterSnapshot;
+  corner?: 'blue' | 'red';
 };
 
 const ASCII_CHARS = '!@#$%&*+-=|;:.<>?/~▓▒░█■□●◆◇※✦⌬╳╲╱┃═╬╪╫';
@@ -229,6 +230,12 @@ export default function BoxerCardDisplay() {
                   alt={fighter.display_name ?? ''}
                   triggerKey={payload.fighter_id}
                   objectFit="cover"
+                  color={payload.corner === 'red' ? '#dc2626' : '#2563eb'}
+                  glow={
+                    payload.corner === 'red'
+                      ? 'rgba(220,38,38,0.55)'
+                      : 'rgba(37,99,235,0.55)'
+                  }
                 />
               ) : (
                 <div

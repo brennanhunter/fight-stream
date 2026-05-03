@@ -21,6 +21,12 @@ type Props = {
   /** objectFit for the resolved image — `cover` for tale-of-the-tape /
    *  boxer-card frames; `contain` to letterbox. Defaults to `cover`. */
   objectFit?: 'cover' | 'contain';
+  /** Color of the ASCII glyphs. Defaults to white. Use the corner color
+   *  (blue/red) on overlays that already use corner accents. */
+  color?: string;
+  /** Optional glow tint behind the ASCII glyphs. Set this to a soft version
+   *  of `color` for a punchier reveal. */
+  glow?: string;
 };
 
 /**
@@ -38,6 +44,8 @@ export default function AsciiReveal({
   alt,
   triggerKey,
   objectFit = 'cover',
+  color = '#ffffff',
+  glow,
 }: Props) {
   const [revealed, setRevealed] = useState(false);
   const [displayed, setDisplayed] = useState('');
@@ -193,7 +201,7 @@ export default function AsciiReveal({
           style={{
             margin: 0,
             padding: 0,
-            color: '#ffffff',
+            color,
             background: 'transparent',
             fontFamily:
               'var(--font-geist-mono), ui-monospace, monospace',
@@ -204,6 +212,7 @@ export default function AsciiReveal({
             display: 'block',
             transform: `scale(${scale})`,
             transformOrigin: 'center center',
+            textShadow: glow ? `0 0 12px ${glow}` : undefined,
             maskImage:
               'linear-gradient(135deg, transparent 0%, transparent calc(var(--ar-stop) - 30%), black calc(var(--ar-stop) + 30%), black 100%)',
             WebkitMaskImage:

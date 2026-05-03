@@ -437,6 +437,8 @@ function FighterCard({
             alt={fighter.display_name ?? ''}
             triggerKey={fighter.id}
             objectFit="cover"
+            color={cornerColor}
+            glow={cornerSoft}
           />
         ) : (
           <div
