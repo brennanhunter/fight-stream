@@ -54,7 +54,7 @@ export function vodRecoveryLinkEmail({
               </table>
 
               <p style="margin:0 0 28px;font-size:13px;color:#6b7280;text-align:center;">
-                This link expires in <strong style="color:#9ca3af;">15 minutes</strong>.
+                This link expires in <strong style="color:#9ca3af;">24 hours</strong>.
               </p>
 
               <p style="margin:0;font-size:12px;color:#4b5563;text-align:center;line-height:1.6;">
@@ -89,7 +89,7 @@ We found ${vodLabel} linked to this email. Click the link below to restore acces
 
 ${link}
 
-This link expires in 15 minutes.
+This link expires in 24 hours.
 
 Didn't request this? Ignore this email — your access is safe.
 Need help? Email hunter@boxstreamtv.com`;

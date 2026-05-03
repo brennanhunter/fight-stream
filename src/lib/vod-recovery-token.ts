@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'crypto';
 
-const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function b64url(input: string): string {
   return Buffer.from(input, 'utf8').toString('base64url');
