@@ -341,6 +341,10 @@ CREATE TABLE IF NOT EXISTS event_fighters (
 );
 
 ALTER TABLE event_fighters ADD COLUMN IF NOT EXISTS nationality text;
+-- Pre-baked ASCII portrait of photo_url, generated server-side at save time
+-- (see src/lib/image-to-ascii.ts). Browser sources render this as the entrance
+-- frame and morph to photo_url over a diagonal sweep.
+ALTER TABLE event_fighters ADD COLUMN IF NOT EXISTS photo_ascii text;
 
 CREATE INDEX IF NOT EXISTS idx_event_fighters_event_id   ON event_fighters (event_id);
 CREATE INDEX IF NOT EXISTS idx_event_fighters_event_sort ON event_fighters (event_id, sort_order);

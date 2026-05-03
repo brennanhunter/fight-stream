@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useScramble } from 'use-scramble';
 import { useOverlay } from '@/lib/use-overlay';
 import { formatNationality } from '@/lib/countries';
+import AsciiReveal from '@/components/overlays/AsciiReveal';
 
 type FighterSnapshot = {
   display_name?: string;
@@ -17,6 +18,7 @@ type FighterSnapshot = {
   hometown?: string | null;
   nationality?: string | null;
   photo_url?: string | null;
+  photo_ascii?: string | null;
 };
 
 type BoxerCardPayload = {
@@ -221,17 +223,12 @@ export default function BoxerCardDisplay() {
               }}
             >
               {fighter.photo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={fighter.photo_url}
+                <AsciiReveal
+                  ascii={fighter.photo_ascii}
+                  photoUrl={fighter.photo_url}
                   alt={fighter.display_name ?? ''}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
+                  triggerKey={payload.fighter_id}
+                  objectFit="cover"
                 />
               ) : (
                 <div

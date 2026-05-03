@@ -5,10 +5,36 @@ import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'crypto';
 import { verifyAdminCookie, ADMIN_COOKIE } from '@/lib/admin-auth';
 import { createServerClient } from '@/lib/supabase';
+import { imageToAscii } from '@/lib/image-to-ascii';
 
 const PHOTO_BUCKET = 'boxer-photos';
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 MB
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+
+/**
+ * Fetch a photo URL and pre-bake its ASCII representation. Settings here
+ * mirror the prototype defaults the user signed off on (cols=100, classic
+ * ramp, alpha cutoff 32 — transparent backgrounds drop out as spaces). On
+ * any failure (404, sharp error, network blip) we return null so the save
+ * path proceeds without ASCII rather than blocking the operator.
+ */
+async function generateAsciiForPhotoUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    const result = await imageToAscii(buf, {
+      cols: 100,
+      cellAspect: 2,
+      ramp: ' .:-=+*#%@',
+      alphaThreshold: 32,
+    });
+    return result.ascii;
+  } catch (err) {
+    console.error('generateAsciiForPhotoUrl:', err);
+    return null;
+  }
+}
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -46,6 +72,8 @@ export async function addFighter(
   }
 
   const supabase = createServerClient();
+  const photoUrl = input.photo_url || null;
+  const photoAscii = photoUrl ? await generateAsciiForPhotoUrl(photoUrl) : null;
   const row = {
     event_id: eventId,
     display_name: input.display_name.trim(),
@@ -57,7 +85,8 @@ export async function addFighter(
     stance: input.stance || null,
     hometown: input.hometown || null,
     nationality: input.nationality || null,
-    photo_url: input.photo_url || null,
+    photo_url: photoUrl,
+    photo_ascii: photoAscii,
     promoter_logo_url: input.promoter_logo_url || null,
     sort_order: input.sort_order ?? 0,
   };
@@ -85,6 +114,23 @@ export async function updateFighter(
   await requireAdmin();
 
   const supabase = createServerClient();
+
+  // Only re-bake ASCII when the photo URL actually changed. Cheap guard so
+  // editing a fighter's name doesn't trigger a fetch + sharp pass.
+  const { data: existing } = await supabase
+    .from('event_fighters')
+    .select('photo_url, photo_ascii')
+    .eq('id', fighterId)
+    .maybeSingle();
+
+  const photoUrl = input.photo_url || null;
+  let photoAscii: string | null = existing?.photo_ascii ?? null;
+  if (photoUrl && photoUrl !== existing?.photo_url) {
+    photoAscii = await generateAsciiForPhotoUrl(photoUrl);
+  } else if (!photoUrl) {
+    photoAscii = null;
+  }
+
   const { error } = await supabase
     .from('event_fighters')
     .update({
@@ -97,7 +143,8 @@ export async function updateFighter(
       stance: input.stance || null,
       hometown: input.hometown || null,
       nationality: input.nationality || null,
-      photo_url: input.photo_url || null,
+      photo_url: photoUrl,
+      photo_ascii: photoAscii,
       promoter_logo_url: input.promoter_logo_url || null,
       sort_order: input.sort_order ?? 0,
       updated_at: new Date().toISOString(),
@@ -133,10 +180,13 @@ export async function updateFighterPhoto(
     .eq('id', fighterId)
     .maybeSingle();
 
+  const photoAscii = photoUrl ? await generateAsciiForPhotoUrl(photoUrl) : null;
+
   const { error } = await supabase
     .from('event_fighters')
     .update({
       photo_url: photoUrl,
+      photo_ascii: photoAscii,
       updated_at: new Date().toISOString(),
     })
     .eq('id', fighterId);
@@ -300,6 +350,61 @@ export async function uploadBoxerPhoto(
   }
 
   return { ok: true, url: data.publicUrl };
+}
+
+/**
+ * Re-bake the ASCII portrait for every fighter on the event that has a
+ * photo_url but is missing photo_ascii (or always — pass `force: true`).
+ * Useful after first deploying the ASCII feature, or after tweaking the
+ * generator settings.
+ */
+export async function backfillFighterAscii(
+  eventId: string,
+  options: { force?: boolean } = {},
+): Promise<Result<{ processed: number; succeeded: number; failed: number }>> {
+  await requireAdmin();
+  if (!eventId) return { ok: false, error: 'Missing eventId' };
+
+  const supabase = createServerClient();
+  const { data: fighters, error } = await supabase
+    .from('event_fighters')
+    .select('id, photo_url, photo_ascii')
+    .eq('event_id', eventId);
+
+  if (error) {
+    console.error('backfillFighterAscii:', error);
+    return { ok: false, error: 'Failed to load fighters' };
+  }
+  if (!fighters) {
+    return { ok: true, processed: 0, succeeded: 0, failed: 0 };
+  }
+
+  const targets = fighters.filter(
+    (f) => f.photo_url && (options.force || !f.photo_ascii),
+  );
+
+  let succeeded = 0;
+  let failed = 0;
+  for (const f of targets) {
+    const ascii = await generateAsciiForPhotoUrl(f.photo_url!);
+    if (!ascii) {
+      failed++;
+      continue;
+    }
+    const { error: updateErr } = await supabase
+      .from('event_fighters')
+      .update({ photo_ascii: ascii, updated_at: new Date().toISOString() })
+      .eq('id', f.id);
+    if (updateErr) {
+      console.error('backfillFighterAscii update:', updateErr);
+      failed++;
+    } else {
+      succeeded++;
+    }
+  }
+
+  revalidatePath(`/admin/overlays/${eventId}`);
+  return { ok: true, processed: targets.length, succeeded, failed };
 }
 
 /** Persist the event-level promoter logo URL. Read by the live /control

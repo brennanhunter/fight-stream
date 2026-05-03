@@ -26,7 +26,7 @@ export default async function EventOverlaySetupPage({
     supabase
       .from('event_fighters')
       .select(
-        'id, display_name, record, weight_class, height, reach, age, stance, hometown, nationality, photo_url, promoter_logo_url, sort_order',
+        'id, display_name, record, weight_class, height, reach, age, stance, hometown, nationality, photo_url, photo_ascii, promoter_logo_url, sort_order',
       )
       .eq('event_id', eventId)
       .order('sort_order', { ascending: true })

@@ -196,7 +196,7 @@ export async function showBoxerCard(matchId: string, fighterId: string): Promise
     supabase
       .from('event_fighters')
       .select(
-        'id, display_name, record, weight_class, height, reach, age, stance, hometown, nationality, photo_url',
+        'id, display_name, record, weight_class, height, reach, age, stance, hometown, nationality, photo_url, photo_ascii',
       )
       .eq('id', fighterId)
       .maybeSingle(),
@@ -246,7 +246,7 @@ export async function showTaleOfTape(matchId: string): Promise<Result> {
   const { data: fighters, error: fightersErr } = await supabase
     .from('event_fighters')
     .select(
-      'id, display_name, record, weight_class, height, reach, age, stance, hometown, nationality, photo_url',
+      'id, display_name, record, weight_class, height, reach, age, stance, hometown, nationality, photo_url, photo_ascii',
     )
     .in('id', [match.fighter_left_id, match.fighter_right_id]);
 

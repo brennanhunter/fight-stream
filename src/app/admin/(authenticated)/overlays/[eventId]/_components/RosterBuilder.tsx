@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
   updateFighter,
   updateFighterPhoto,
   deleteFighter,
+  backfillFighterAscii,
   type FighterInput,
 } from '../actions';
 import {
@@ -33,6 +34,7 @@ export type Fighter = {
   hometown: string | null;
   nationality: string | null;
   photo_url: string | null;
+  photo_ascii: string | null;
   promoter_logo_url: string | null;
   sort_order: number;
 };
@@ -110,6 +112,30 @@ export default function RosterBuilder({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [backfilling, startBackfill] = useTransition();
+
+  const missingAsciiCount = initialFighters.filter(
+    (f) => f.photo_url && !f.photo_ascii,
+  ).length;
+
+  function handleBackfill() {
+    startBackfill(async () => {
+      const res = await backfillFighterAscii(eventId);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.processed === 0) {
+        toast.success('All photos already have ASCII');
+      } else if (res.failed === 0) {
+        toast.success(`Generated ASCII for ${res.succeeded} fighter${res.succeeded === 1 ? '' : 's'}`);
+      } else {
+        toast.warning(
+          `Done: ${res.succeeded} succeeded, ${res.failed} failed`,
+        );
+      }
+    });
+  }
 
   return (
     <Card>
@@ -122,12 +148,28 @@ export default function RosterBuilder({
               will let you pick by name without typing.
             </CardDescription>
           </div>
-          {!adding && (
-            <Button size="sm" onClick={() => { setAdding(true); setEditingId(null); }}>
-              <Plus />
-              Add fighter
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {missingAsciiCount > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBackfill}
+                disabled={backfilling}
+                title={`${missingAsciiCount} fighter${missingAsciiCount === 1 ? '' : 's'} missing ASCII portraits`}
+              >
+                <Sparkles />
+                {backfilling
+                  ? 'Generating…'
+                  : `Generate ASCII (${missingAsciiCount})`}
+              </Button>
+            )}
+            {!adding && (
+              <Button size="sm" onClick={() => { setAdding(true); setEditingId(null); }}>
+                <Plus />
+                Add fighter
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
