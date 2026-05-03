@@ -60,7 +60,10 @@ export async function POST(request: NextRequest) {
           ...(userAgent ? { user_agent: userAgent.slice(0, 500) } : {}),
         },
       },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/watch?session_id={CHECKOUT_SESSION_ID}`,
+      // Goes through /api/claim-vod-session so a fresh guest buyer gets the
+      // customer_email cookie set + first-claim stamped before they land on
+      // /watch — no /recover-access detour for the legitimate buyer.
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/claim-vod-session?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/vod`,
     }, { idempotencyKey });
 
