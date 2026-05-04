@@ -147,8 +147,8 @@ export default function AsciiReveal({
 
   // Photo-only fallback — no ASCII to reveal from.
   if (!ascii && photoUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={photoUrl}
         alt={alt ?? ''}

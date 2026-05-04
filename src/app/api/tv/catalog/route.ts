@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
 
   // ── Ownership lookup (only when authed) ────────────────────────────────
   let ownedProductIds = new Set<string>();
-  let ownedLiveEventIds = new Set<string>();
+  const ownedLiveEventIds = new Set<string>();
   if (viewerEmail) {
     const nowIso = new Date().toISOString();
 
