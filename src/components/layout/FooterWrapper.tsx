@@ -9,5 +9,6 @@ export default function FooterWrapper() {
   if (pathname.startsWith('/overlays/')) return null;
   if (pathname.startsWith('/admin')) return null;
   if (pathname.startsWith('/control')) return null;
+  if (pathname.startsWith('/tv')) return null;
   return <Footer />;
 }

@@ -20,25 +20,10 @@ User clicks Buy Now
 
 ---
 
-## Step 1 — Database: Add `boxer_name` column to `purchases` 
+## Step 1 — Database: Add `boxer_name` column to `purchases`
 
-Run in Supabase SQL Editor:
+✅ **Shipped.** Column lives in [`supabase/schema.sql`](../supabase/schema.sql) on the `purchases` table. No further DB action needed — `schema.sql` is the single source of truth.
 
-```sql
-ALTER TABLE purchases
-  ADD COLUMN IF NOT EXISTS boxer_name text;
-```
-- I added to supabase
-
-No index needed — the admin query will GROUP BY on a small dataset.
-
-Also add this line to `supabase/schema.sql` inside the `purchases` CREATE TABLE block (after `session_claimed_at`):
-
-```sql
-  boxer_name                text,                    -- optional: boxer last name entered at checkout
-```
-
-✅ `schema.sql` updated — this file is just the local source-of-truth that mirrors the live DB. No action needed; it's been updated to match.
 ---
 
 ## Step 2 — Checkout UI: Add boxer name input in `EventHero.tsx`
@@ -207,8 +192,7 @@ And in the leaderboard render:
 
 | File | Change |
 |------|--------|
-| `supabase/schema.sql` | Add `boxer_name text` column to purchases CREATE TABLE |
-| Supabase SQL Editor | `ALTER TABLE purchases ADD COLUMN IF NOT EXISTS boxer_name text` |
+| `supabase/schema.sql` | ✅ `boxer_name text` column already on `purchases` (source of truth) |
 | `src/components/hero/EventHero.tsx` | Add `boxerName` state, input field, pass to checkout API |
 | `src/app/api/ppv-checkout/route.ts` | Parse + sanitize `boxerName`, add to Stripe session metadata |
 | `src/app/api/verify-payment/route.ts` | Read `boxer_name` from metadata, include in purchases insert |

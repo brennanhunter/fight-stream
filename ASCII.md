@@ -54,11 +54,7 @@ For our scale (a handful of fighter photos, refreshed per event), generate ASCII
 
 ### Schema change
 
-```sql
-ALTER TABLE event_fighters ADD COLUMN IF NOT EXISTS photo_ascii text;
-```
-
-One column, one big string per fighter. ~10 KB at 80×120 — negligible.
+✅ **Shipped.** `event_fighters.photo_ascii` lives in [`supabase/schema.sql`](supabase/schema.sql). One text column per fighter, ~10 KB at 80×120.
 
 ### Wire into the upload flow
 

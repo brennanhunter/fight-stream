@@ -469,3 +469,54 @@ CREATE INDEX IF NOT EXISTS idx_event_matches_event ON event_matches (event_id);
 
 ALTER TABLE event_matches ENABLE ROW LEVEL SECURITY;
 -- Service role (admin panel + control panel) only.
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: tv_pairings
+-- Device-pairing flow for TV apps (Roku, Apple TV, Fire TV, etc.).
+-- TV app calls /api/tv/pair/create on launch → gets back a short
+-- human-readable code + a long device_token. The user types the
+-- code at boxstreamtv.com/activate from a phone/laptop while
+-- signed in (or with a customer_email cookie). Server marks the
+-- pairing redeemed against that identity. The TV polls
+-- /api/tv/pair/status with its device_token until status=redeemed,
+-- at which point it receives an auth_token bound to the email.
+--
+-- Status lifecycle:
+--   pending  → just created, waiting for someone to enter the code
+--   redeemed → user submitted the code from /activate; TV can pull
+--              auth_token via /status
+--   expired  → TTL elapsed without redemption (TV starts over)
+--
+-- Why hash the device_token: the row is queryable by code (which
+-- is short and shoulder-surfable). Anyone who learns a code MUST
+-- NOT be able to impersonate the TV — the device_token (held only
+-- by the TV) is what authorizes /status polls.
+-- Added: 2026-05-03
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS tv_pairings (
+  id                  uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  code                text        NOT NULL,                       -- e.g. "ABCD-EF" — shown to user
+  device_token_hash   text        NOT NULL,                       -- sha256(device_token); device_token only ever known to the TV
+  status              text        NOT NULL DEFAULT 'pending'
+                                  CHECK (status IN ('pending', 'redeemed', 'expired')),
+  device_kind         text,                                       -- 'roku' | 'tvos' | 'firetv' | 'androidtv' | 'tizen' | 'webos'
+  device_label        text,                                       -- e.g. "Living Room TV"
+  redeemed_email      text,                                       -- normalized email at redeem time
+  redeemed_user_id    uuid,                                       -- supabase auth user id, nullable for guest redemptions
+  redeemed_at         timestamptz,
+  last_polled_at      timestamptz,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  expires_at          timestamptz NOT NULL                        -- ~10 min after creation
+);
+
+-- Code must be unique among ACTIVE (pending) pairings only — codes
+-- can be reused once an old pairing expires.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tv_pairings_code_pending
+  ON tv_pairings (code) WHERE status = 'pending';
+
+CREATE INDEX IF NOT EXISTS idx_tv_pairings_email
+  ON tv_pairings (redeemed_email) WHERE redeemed_email IS NOT NULL;
+
+ALTER TABLE tv_pairings ENABLE ROW LEVEL SECURITY;
+-- All access via Server Actions / Route Handlers using the service role key.

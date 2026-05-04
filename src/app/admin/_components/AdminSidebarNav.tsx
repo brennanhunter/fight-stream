@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   CalendarDays,
+  Gift,
   History,
   LayoutDashboard,
   Megaphone,
@@ -35,6 +36,7 @@ const groups: NavGroup[] = [
     items: [
       { label: 'Events', href: '/admin/events', icon: CalendarDays },
       { label: 'Purchases', href: '/admin/purchases', icon: ShoppingCart },
+      { label: 'Comp VOD', href: '/admin/comp-vod', icon: Gift },
       { label: 'Subscribers', href: '/admin/subscribers', icon: Users },
     ],
   },

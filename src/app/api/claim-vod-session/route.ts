@@ -66,6 +66,13 @@ export async function GET(req: NextRequest) {
     if (session.payment_status !== 'paid') {
       return NextResponse.redirect(`${baseUrl}/vod`);
     }
+    // Only accept sessions that were actually created as VOD checkouts —
+    // a stray PPV/subscription session_id should never hit this path, but
+    // refuse to interpret it as a VOD if it does.
+    if (session.metadata?.purchase_type !== 'vod') {
+      console.error('claim-vod-session: non-VOD session', sessionId);
+      return NextResponse.redirect(`${baseUrl}/vod`);
+    }
 
     const rawEmail = session.customer_details?.email || session.customer_email;
     if (!rawEmail) {

@@ -25,74 +25,15 @@ Control Panel (/control)  ─writes─▶  Postgres (overlay state tables)
 
 ## Schema
 
+> **Source of truth: [`supabase/schema.sql`](supabase/schema.sql).** The actual `CREATE TABLE` definitions live there — refer to them when implementing or migrating. The summary below describes intent only.
+
 `lower_third_state` (single-row legacy) is retired. Replaced with three tables:
 
-### `event_fighters` — roster
+- **`event_fighters`** — roster. One row per fighter on the card, with `display_name`, `record`, `weight_class`, `height`, `reach`, `age`, `stance`, `hometown`, `nationality`, `photo_url`, `photo_ascii`, `promoter_logo_url`, `sort_order`.
+- **`event_matches`** — bouts on the card. Pairs two `event_fighters` rows via `fighter_left_id` / `fighter_right_id`, plus `sequence`, `label` (e.g. "Main Event"), `scheduled_rounds`, `round_seconds`, `rest_seconds`, `status`.
+- **`overlay_state`** — current on-air state. PK `overlay_type` (`lower_third` | `boxer_card` | `tale_of_tape` | `round_timer` | `logo` | `promoter_logo`), `visible` boolean, `payload` jsonb. Public read enabled (OBS subscribes via Supabase Realtime); writes via service role only.
 
-```sql
-CREATE TABLE event_fighters (
-  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id          text NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  display_name      text NOT NULL,
-  record            text,                   -- "12-3 (5 KOs)"
-  weight_class      text,
-  height            text,                   -- free-form: 5'10" or 178 cm
-  reach             text,
-  age               integer,
-  stance            text,                   -- orthodox | southpaw | switch
-  hometown          text,
-  photo_url         text,
-  promoter_logo_url text,                   -- per-fighter promoter override
-  sort_order        integer NOT NULL DEFAULT 0,
-  created_at        timestamptz NOT NULL DEFAULT now(),
-  updated_at        timestamptz NOT NULL DEFAULT now()
-);
-```
-
-### `event_matches` — bouts on the card
-
-```sql
-CREATE TABLE event_matches (
-  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id          text        NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  sequence          integer     NOT NULL,                       -- 1, 2, 3 — order on card
-  fighter_left_id   uuid        NOT NULL REFERENCES event_fighters(id),
-  fighter_right_id  uuid        NOT NULL REFERENCES event_fighters(id),
-  scheduled_rounds  integer     NOT NULL DEFAULT 3,             -- 3 / 6 / 8 / 10 / 12
-  round_seconds     integer     NOT NULL DEFAULT 180,           -- 3:00 default
-  rest_seconds      integer     NOT NULL DEFAULT 60,            -- 1:00 default
-  status            text        NOT NULL DEFAULT 'scheduled'
-                              CHECK (status IN ('scheduled','in_progress','completed')),
-  created_at        timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE UNIQUE INDEX idx_event_matches_event_seq ON event_matches (event_id, sequence);
-```
-
-A 3-fight card on the example event = 6 rows in `event_fighters` + 3 rows in `event_matches`.
-
-### `overlay_state` — current on-air state
-
-```sql
-CREATE TABLE overlay_state (
-  overlay_type  text PRIMARY KEY CHECK (
-    overlay_type IN (
-      'lower_third','boxer_card','tale_of_tape',
-      'round_timer','logo','promoter_logo'
-    )
-  ),
-  visible       boolean     NOT NULL DEFAULT false,
-  payload       jsonb       NOT NULL DEFAULT '{}'::jsonb,
-  updated_at    timestamptz NOT NULL DEFAULT now()
-);
-
-INSERT INTO overlay_state (overlay_type) VALUES
-  ('lower_third'),('boxer_card'),('tale_of_tape'),
-  ('round_timer'),('logo'),('promoter_logo')
-ON CONFLICT DO NOTHING;
-```
-
-Public read enabled (OBS subscribes); writes via service role only. Realtime added to publication.
+A 3-fight card = 6 rows in `event_fighters` + 3 rows in `event_matches`.
 
 ### Payload shapes per overlay type
 
